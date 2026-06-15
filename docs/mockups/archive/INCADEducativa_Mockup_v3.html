@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INCADEducativa — Mockup Completo v3.0</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#8B3FE8;--pm:#A855F7;--mg:#C026D3;
+  --bg:#0A0A14;--sf:#111128;--sf2:#16163A;--sf3:#1E1E40;
+  --tx:#FFFFFF;--mu:rgba(255,255,255,.55);--mu2:rgba(255,255,255,.3);
+  --bd:rgba(139,63,232,.25);--bd2:rgba(139,63,232,.5);
+  --card:rgba(255,255,255,.04);
+  --ok:#10B981;--okl:rgba(16,185,129,.15);--okb:rgba(16,185,129,.3);
+  --warn:#F59E0B;--warnl:rgba(245,158,11,.12);--warnb:rgba(245,158,11,.3);
+  --err:#EF4444;--errl:rgba(239,68,68,.1);--errb:rgba(239,68,68,.25);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body{background:#050510;font-family:var(--font);color:var(--tx);font-size:13px;padding:20px}
+
+/* ── Outer shell ── */
+.app{background:var(--bg);border-radius:12px;overflow:hidden;max-width:1100px;margin:0 auto;border:0.5px solid var(--bd)}
+
+/* ── Screen nav ── */
+.snav-bar{background:var(--sf);border-bottom:0.5px solid var(--bd);display:flex;flex-wrap:wrap;gap:3px;padding:8px 12px}
+.snav{padding:5px 11px;border-radius:6px;font-size:11px;color:var(--mu);cursor:pointer;white-space:nowrap;transition:all .15s;border:0.5px solid transparent;user-select:none}
+.snav:hover{background:rgba(255,255,255,.06);color:var(--tx)}
+.snav.on{background:rgba(139,63,232,.2);color:var(--pm);border-color:var(--bd)}
+.snav-group{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.2);padding:5px 8px 2px;align-self:flex-end}
+
+/* ── Screens ── */
+.screen{display:none}
+.screen.on{display:flex;flex-direction:column}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.screen.on{animation:fi .18s ease}
+
+/* ── Topbar ── */
+.tb{background:rgba(0,0,0,.55);border-bottom:0.5px solid var(--bd);padding:0 16px;height:46px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tb-logo{display:flex;align-items:center;gap:9px;cursor:pointer}
+.tb-lm{width:28px;height:28px;border-radius:6px;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.tb-lt{font-size:13px;font-weight:500}
+.tb-ls{font-size:9px;color:var(--mu);letter-spacing:1px;text-transform:uppercase}
+.tb-nav{display:flex;gap:2px}
+.tn{padding:5px 11px;border-radius:5px;font-size:11px;color:var(--mu);cursor:pointer;transition:all .12s}
+.tn:hover{color:var(--tx)}
+.tn.on{background:rgba(139,63,232,.18);color:var(--pm)}
+.tb-r{display:flex;gap:8px;align-items:center}
+.av{width:28px;height:28px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;border:1.5px solid var(--bd2);flex-shrink:0}
+.role-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:500}
+.rb-admin{background:rgba(139,63,232,.2);color:var(--pm);border:0.5px solid var(--bd)}
+.rb-docente{background:rgba(192,38,211,.15);color:#e879f9;border:0.5px solid rgba(192,38,211,.3)}
+.rb-alumno{background:rgba(16,185,129,.12);color:#34d399;border:0.5px solid rgba(16,185,129,.25)}
+
+/* ── Layout ── */
+.layout{display:flex;flex:1;min-height:480px}
+.layout-full{flex:1;min-height:480px}
+
+/* ── Sidebar ── */
+.sb{background:rgba(0,0,0,.3);border-right:0.5px solid var(--bd);padding:10px 8px;display:flex;flex-direction:column;gap:1px;width:180px;flex-shrink:0}
+.ss{font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.22);padding:8px 6px 3px}
+.si{display:flex;align-items:center;gap:7px;padding:6px 7px;border-radius:5px;font-size:11.5px;color:rgba(255,255,255,.5);cursor:pointer;transition:all .12s}
+.si:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.85)}
+.si.on{background:rgba(139,63,232,.2);color:var(--pm);border-left:2px solid var(--p);padding-left:5px}
+.si i{font-size:15px;flex-shrink:0}
+.sb-badge{margin-left:auto;background:var(--p);color:#fff;font-size:9px;font-weight:600;border-radius:8px;padding:1px 6px}
+.sb-badge-w{background:var(--warn);color:#1a1000}
+
+/* ── Content area ── */
+.ca{flex:1;padding:16px;display:flex;flex-direction:column;gap:14px;overflow:hidden;min-width:0}
+
+/* ── Hero ── */
+.hero{background:var(--sf2);border:0.5px solid var(--bd);border-radius:8px;padding:16px 18px;position:relative;overflow:hidden}
+.hero-gl{position:absolute;right:-50px;top:-50px;width:180px;height:180px;border-radius:50%;background:rgba(139,63,232,.18);pointer-events:none}
+.hero-gl2{position:absolute;left:30%;bottom:-60px;width:140px;height:140px;border-radius:50%;background:rgba(192,38,211,.1);pointer-events:none}
+.ey{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--pm);margin-bottom:3px}
+.ht{font-size:17px;font-weight:500;margin-bottom:5px;line-height:1.25}
+.hs{font-size:11.5px;color:var(--mu);margin-bottom:12px;line-height:1.55;max-width:420px}
+
+/* ── Buttons ── */
+.btn-p{display:inline-flex;align-items:center;gap:6px;background:var(--p);color:#fff;font-size:11.5px;font-weight:500;padding:7px 14px;border-radius:6px;cursor:pointer;border:none;transition:opacity .12s}
+.btn-p:hover{opacity:.88}
+.btn-o{display:inline-flex;align-items:center;gap:6px;background:transparent;color:var(--pm);font-size:11.5px;font-weight:500;padding:6px 13px;border-radius:6px;cursor:pointer;border:0.5px solid var(--bd2);transition:background .12s}
+.btn-o:hover{background:rgba(139,63,232,.1)}
+.btn-ok{background:var(--okl);color:#34d399;border:0.5px solid var(--okb);font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.btn-no{background:var(--errl);color:#f87171;border:0.5px solid var(--errb);font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.btn-warn{background:var(--warnl);color:#fbbf24;border:0.5px solid var(--warnb);font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+
+/* ── Stats row ── */
+.stats{display:flex;gap:18px;margin-top:12px;padding-top:12px;border-top:0.5px solid rgba(255,255,255,.07)}
+.sv{font-size:15px;font-weight:600}
+.sl{font-size:9.5px;color:var(--mu);margin-top:1px}
+
+/* ── Section headers ── */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.st{font-size:12.5px;font-weight:500}
+.slink{font-size:10.5px;color:var(--pm);cursor:pointer}
+
+/* ── Course cards ── */
+.cg2{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.cg3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.cc{background:var(--card);border:0.5px solid var(--bd);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .12s}
+.cc:hover{border-color:var(--pm)}
+.cth{height:58px;display:flex;align-items:center;justify-content:center}
+.cth i{font-size:24px}
+.cb{padding:8px 10px}
+.ctag{font-size:9px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--pm);margin-bottom:2px}
+.cn{font-size:11.5px;font-weight:500;line-height:1.3;margin-bottom:6px}
+.cpb{display:flex;align-items:center;gap:6px}
+.cbar{flex:1;height:3px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.cfill{height:100%;background:linear-gradient(90deg,var(--p),var(--mg));border-radius:3px}
+.cpct{font-size:10px;color:var(--mu)}
+
+/* ── Chips ── */
+.chip{display:inline-block;font-size:9.5px;padding:2px 7px;border-radius:8px;font-weight:500}
+.chip-p{background:rgba(139,63,232,.18);color:var(--pm);border:0.5px solid var(--bd)}
+.chip-g{background:var(--okl);color:#34d399;border:0.5px solid var(--okb)}
+.chip-w{background:var(--warnl);color:#fbbf24;border:0.5px solid var(--warnb)}
+.chip-r{background:var(--errl);color:#f87171;border:0.5px solid var(--errb)}
+.chip-mg{background:rgba(192,38,211,.15);color:#e879f9;border:0.5px solid rgba(192,38,211,.3)}
+
+/* ── Service modules ── */
+.mg4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mc{background:var(--card);border:0.5px solid var(--bd);border-radius:7px;padding:10px;cursor:pointer;transition:border-color .12s;display:flex;flex-direction:column;gap:5px}
+.mc:hover{border-color:var(--pm)}
+.mi{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:rgba(139,63,232,.15);border:0.5px solid var(--bd)}
+.mi i{font-size:15px;color:var(--pm)}
+.mn{font-size:11.5px;font-weight:500}
+.mdesc{font-size:10px;color:var(--mu);line-height:1.4}
+
+/* ── Tables ── */
+.tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+.tbl th{text-align:left;padding:6px 9px;font-size:10px;font-weight:600;color:var(--mu);border-bottom:0.5px solid var(--bd);white-space:nowrap}
+.tbl td{padding:7px 9px;border-bottom:0.5px solid rgba(139,63,232,.08);color:rgba(255,255,255,.82);vertical-align:middle}
+.tbl tr:hover td{background:rgba(139,63,232,.04)}
+.tbl tr:last-child td{border-bottom:none}
+
+/* ── Metrics ── */
+.mw4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mw2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.met{background:var(--sf2);border:0.5px solid var(--bd);border-radius:7px;padding:10px 12px}
+.mv{font-size:21px;font-weight:600;margin-bottom:2px}
+.ml{font-size:10px;color:var(--mu)}
+.mv-p{color:var(--pm)}
+.mv-g{color:#34d399}
+.mv-w{color:#fbbf24}
+
+/* ── Forms ── */
+.inp{background:rgba(255,255,255,.06);border:0.5px solid var(--bd);border-radius:6px;padding:7px 11px;font-size:12px;color:var(--tx);width:100%;font-family:var(--font);transition:border-color .12s}
+.inp:focus{outline:none;border-color:var(--p)}
+.inp::placeholder{color:var(--mu2)}
+.lbl{font-size:10.5px;color:var(--mu);margin-bottom:4px;display:block}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fcol{display:flex;flex-direction:column;gap:4px}
+
+/* ── Video player ── */
+.vp{background:#000;border-radius:8px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;border:0.5px solid var(--bd);position:relative;overflow:hidden}
+.vp-btn{width:52px;height:52px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:1}
+.vp-btn i{font-size:24px}
+.vp-time{position:absolute;bottom:10px;right:12px;font-size:10px;color:var(--mu);background:rgba(0,0,0,.5);padding:2px 7px;border-radius:4px}
+.prog-track{background:rgba(255,255,255,.1);border-radius:4px;height:4px;overflow:hidden;cursor:pointer;flex:1}
+.prog-fill{height:100%;background:var(--p);border-radius:4px}
+
+/* ── Lesson sidebar ── */
+.lsb{background:var(--card);border:0.5px solid var(--bd);border-radius:8px;overflow:hidden;width:210px;flex-shrink:0}
+.lsb-h{padding:9px 11px;font-size:11.5px;font-weight:500;border-bottom:0.5px solid var(--bd);background:rgba(139,63,232,.08)}
+.lsb-item{display:flex;align-items:center;gap:8px;padding:7px 11px;border-bottom:0.5px solid rgba(139,63,232,.07);cursor:pointer;transition:background .12s;font-size:11px}
+.lsb-item:hover{background:rgba(255,255,255,.03)}
+.lsb-item.on{background:rgba(139,63,232,.14)}
+.lsb-item:last-child{border-bottom:none}
+.lsb-ic{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ic-done{background:var(--okl);border:0.5px solid var(--okb)}
+.ic-done i{color:#34d399;font-size:11px}
+.ic-cur{background:rgba(139,63,232,.22);border:0.5px solid var(--bd2)}
+.ic-cur i{color:var(--pm);font-size:11px}
+.ic-lock{background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.1)}
+.ic-lock i{color:var(--mu);font-size:11px}
+
+/* ── Quiz options ── */
+.qopt{background:var(--card);border:0.5px solid var(--bd);border-radius:6px;padding:10px 13px;cursor:pointer;transition:all .12s;margin-bottom:7px;font-size:12px;line-height:1.4}
+.qopt:hover{border-color:var(--pm);background:rgba(139,63,232,.06)}
+.qopt.sel{border-color:var(--p);background:rgba(139,63,232,.14)}
+.qopt.right{border-color:var(--ok);background:rgba(16,185,129,.1);color:#34d399}
+.qopt.wrong{border-color:var(--err);background:var(--errl);color:#f87171}
+
+/* ── Review queue ── */
+.rq{background:var(--card);border:0.5px solid var(--bd);border-radius:7px;padding:11px 13px;display:flex;align-items:center;gap:11px;margin-bottom:7px}
+.rq-ico{width:38px;height:38px;border-radius:7px;background:rgba(139,63,232,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rq-ico i{font-size:18px;color:var(--pm)}
+.rq-info{flex:1;min-width:0}
+.rq-t{font-size:12px;font-weight:500;margin-bottom:2px}
+.rq-m{font-size:10px;color:var(--mu)}
+
+/* ── Coworking calendar grid ── */
+.cw-grid{display:grid;grid-template-columns:60px repeat(7,1fr);gap:1px;background:var(--bd);border-radius:6px;overflow:hidden;font-size:10px}
+.cw-cell{background:var(--sf);padding:5px 4px;text-align:center}
+.cw-h{background:var(--sf2);font-weight:500;color:var(--pm)}
+.cw-avail{background:rgba(16,185,129,.12);color:#34d399;cursor:pointer;transition:background .12s}
+.cw-avail:hover{background:rgba(16,185,129,.25)}
+.cw-occ{background:rgba(139,63,232,.12);color:var(--pm)}
+.cw-block{background:rgba(239,68,68,.08);color:#f87171}
+.cw-sel{background:rgba(139,63,232,.35);color:#fff;font-weight:600}
+
+/* ── Career map ── */
+.cmap{display:flex;flex-direction:column;gap:8px;align-items:center;padding:8px}
+.cmap-row{display:flex;gap:12px;align-items:center}
+.cmap-node{width:90px;height:60px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.cn-done{background:rgba(16,185,129,.15);border:0.5px solid var(--okb)}
+.cn-done:hover{background:rgba(16,185,129,.25)}
+.cn-done i{color:#34d399;font-size:18px}
+.cn-done .cnn{color:#34d399}
+.cn-active{background:rgba(139,63,232,.2);border:1px solid var(--p)}
+.cn-active:hover{background:rgba(139,63,232,.3)}
+.cn-active i{color:var(--pm);font-size:18px}
+.cn-active .cnn{color:var(--pm)}
+.cn-locked{background:rgba(255,255,255,.04);border:0.5px solid rgba(255,255,255,.08)}
+.cn-locked i{color:var(--mu2);font-size:18px}
+.cn-locked .cnn{color:var(--mu2)}
+.cnn{font-size:9.5px;font-weight:500;text-align:center;line-height:1.25}
+.cn-cert{background:rgba(201,168,76,.12);border:0.5px solid rgba(201,168,76,.3)}
+.cn-cert i{color:#E8C97A;font-size:20px}
+.cn-cert .cnn{color:#E8C97A}
+.cmap-arrow{color:var(--mu2);font-size:18px}
+
+/* ── Notif banner ── */
+.notif-ok{background:rgba(16,185,129,.08);border:0.5px solid var(--okb);border-radius:7px;padding:9px 13px;display:flex;align-items:center;gap:9px;font-size:11.5px;color:#34d399}
+.notif-w{background:var(--warnl);border:0.5px solid var(--warnb);border-radius:7px;padding:9px 13px;display:flex;align-items:center;gap:9px;font-size:11.5px;color:#fbbf24}
+.notif-p{background:rgba(139,63,232,.1);border:0.5px solid var(--bd2);border-radius:7px;padding:9px 13px;display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--pm)}
+
+/* ── Progress bar standalone ── */
+.pb-wrap{display:flex;align-items:center;gap:8px}
+.pb-track{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+.pb-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--mg));border-radius:4px}
+.pb-lbl{font-size:10.5px;color:var(--mu);min-width:30px;text-align:right}
+
+/* ── Cert card ── */
+.cert-card{background:var(--sf2);border:0.5px solid var(--bd2);border-radius:10px;padding:16px;display:flex;align-items:center;gap:14px}
+.cert-ico{width:52px;height:52px;border-radius:10px;background:rgba(139,63,232,.2);border:0.5px solid var(--bd2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cert-ico i{font-size:28px;color:var(--pm)}
+.cert-qr{width:64px;height:64px;background:rgba(139,63,232,.12);border:0.5px solid var(--bd2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cert-qr i{font-size:32px;color:var(--pm)}
+
+/* ── List day (coworking admin) ── */
+.ld-item{background:var(--card);border:0.5px solid var(--bd);border-radius:7px;padding:10px 13px;display:flex;align-items:center;gap:11px;margin-bottom:6px}
+.ld-time{font-size:12px;font-weight:600;color:var(--pm);width:48px;flex-shrink:0}
+.ld-info{flex:1}
+.ld-name{font-size:12px;font-weight:500;margin-bottom:1px}
+.ld-meta{font-size:10px;color:var(--mu)}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:10px}
+</style>
+</head>
+<body>
+
+<div class="app">
+<!-- ── Screen navigation ─────────────────────────────────────── -->
+<div class="snav-bar">
+  <span class="snav-group">Alumno</span>
+  <div class="snav on" onclick="show('s-dashboard')">Dashboard</div>
+  <div class="snav" onclick="show('s-player')">Clase / Player</div>
+  <div class="snav" onclick="show('s-quiz')">Cuestionario</div>
+  <div class="snav" onclick="show('s-carrera')">Mapa de carrera</div>
+  <div class="snav" onclick="show('s-certs')">Certificados</div>
+  <div class="snav" onclick="show('s-tutorias')">Tutorías</div>
+  <span class="snav-group">Admin</span>
+  <div class="snav" onclick="show('s-admin')">Panel admin</div>
+  <div class="snav" onclick="show('s-revision')">Revisión contenido</div>
+  <div class="snav" onclick="show('s-coworking-admin')">Coworking admin</div>
+  <span class="snav-group">Docente</span>
+  <div class="snav" onclick="show('s-docente')">Panel docente</div>
+  <span class="snav-group">Auth &amp; Servicios</span>
+  <div class="snav" onclick="show('s-activacion')">Activar cuenta</div>
+  <div class="snav" onclick="show('s-coworking')">Coworking E1</div>
+  <div class="snav" onclick="show('s-lead')">Lead / Taller gratuito</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S1: Dashboard alumno
+═══════════════════════════════════════════════════════ -->
+<div class="screen on" id="s-dashboard">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">INCADEducativa</div><div class="tb-ls">incadeducativa.com</div></div></div>
+    <div class="tb-nav"><div class="tn on">Mi aprendizaje</div><div class="tn">Catálogo</div><div class="tn">Comunidad</div><div class="tn">Servicios</div></div>
+    <div class="tb-r">
+      <i class="ti ti-bell" style="color:var(--mu);font-size:16px"></i>
+      <div class="av">MS</div>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sb">
+      <div class="ss">Plataforma</div>
+      <div class="si on"><i class="ti ti-layout-dashboard"></i> Inicio</div>
+      <div class="si"><i class="ti ti-books"></i> Mis cursos</div>
+      <div class="si"><i class="ti ti-road"></i> Carreras <span class="sb-badge">3</span></div>
+      <div class="si"><i class="ti ti-certificate"></i> Certificados</div>
+      <div class="si"><i class="ti ti-calendar-event"></i> Talleres</div>
+      <div class="si"><i class="ti ti-users"></i> Tutorías</div>
+      <div class="ss">Servicios</div>
+      <div class="si"><i class="ti ti-armchair"></i> Coworking</div>
+      <div class="ss">Cuenta</div>
+      <div class="si"><i class="ti ti-user-circle"></i> Mi perfil</div>
+      <div class="si"><i class="ti ti-star"></i> Puntos <span class="sb-badge">240</span></div>
+    </div>
+    <div class="ca">
+      <div class="hero">
+        <div class="hero-gl"></div><div class="hero-gl2"></div>
+        <div class="ey">Bienvenido de nuevo</div>
+        <div class="ht">Hola, Marcos. Seguí creciendo hoy.</div>
+        <div class="hs">Tenés 2 clases pendientes y una tutoría el jueves a las 18hs. Tu próxima meta: certificado en Marketing Digital.</div>
+        <button class="btn-p"><i class="ti ti-player-play" style="font-size:12px"></i> Continuar aprendiendo</button>
+        <div class="stats">
+          <div><div class="sv">3</div><div class="sl">Cursos activos</div></div>
+          <div><div class="sv">68%</div><div class="sl">Progreso general</div></div>
+          <div><div class="sv">240</div><div class="sl">Puntos</div></div>
+          <div><div class="sv">1</div><div class="sl">Certificado</div></div>
+          <div><div class="sv">4hs</div><div class="sl">Créditos coworking</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="sh"><span class="st">Cursos en progreso</span><span class="slink">Ver todos <i class="ti ti-arrow-right" style="font-size:10px;vertical-align:-1px"></i></span></div>
+        <div class="cg3">
+          <div class="cc"><div class="cth" style="background:rgba(139,63,232,.1)"><i class="ti ti-chart-bar" style="color:var(--pm)"></i></div><div class="cb"><div class="ctag">Marketing</div><div class="cn">Estrategia de marca y posicionamiento</div><div class="cpb"><div class="cbar"><div class="cfill" style="width:72%"></div></div><span class="cpct">72%</span></div></div></div>
+          <div class="cc"><div class="cth" style="background:rgba(192,38,211,.08)"><i class="ti ti-report-analytics" style="color:var(--mg)"></i></div><div class="cb"><div class="ctag">Finanzas</div><div class="cn">Análisis financiero para directivos</div><div class="cpb"><div class="cbar"><div class="cfill" style="width:45%"></div></div><span class="cpct">45%</span></div></div></div>
+          <div class="cc"><div class="cth" style="background:rgba(139,63,232,.06)"><i class="ti ti-bulb" style="color:var(--mu)"></i></div><div class="cb"><div class="ctag">Innovación <span class="chip chip-p" style="font-size:8px">Nuevo</span></div><div class="cn">Design thinking aplicado al negocio</div><div class="cpb"><div class="cbar"><div class="cfill" style="width:10%"></div></div><span class="cpct">10%</span></div></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="sh"><span class="st">Servicios disponibles</span></div>
+        <div class="mg4">
+          <div class="mc"><div class="mi"><i class="ti ti-armchair"></i></div><div class="mn">Coworking</div><div class="mdesc">Reservá un espacio</div><span class="chip chip-g">Disponible</span></div>
+          <div class="mc"><div class="mi"><i class="ti ti-calendar-event"></i></div><div class="mn">Talleres</div><div class="mdesc">Próximo: jueves 19hs</div><span class="chip chip-p">Esta semana</span></div>
+          <div class="mc"><div class="mi"><i class="ti ti-messages"></i></div><div class="mn">Tutorías</div><div class="mdesc">1 agendada esta semana</div><span class="chip chip-w">Jue 18hs</span></div>
+          <div class="mc"><div class="mi"><i class="ti ti-users-group"></i></div><div class="mn">Comunidad</div><div class="mdesc">Foros y red INCADE</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S2: Player de clase
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-player">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Marketing Digital › Módulo 2 › Clase 3</div></div></div>
+    <div style="font-size:11px;color:var(--mu)"><i class="ti ti-check-circle" style="color:#34d399;font-size:13px;vertical-align:-2px"></i> Progreso guardado</div>
+    <div class="tb-r"><div class="av">MS</div></div>
+  </div>
+  <div class="layout">
+    <div class="ca">
+      <div class="vp">
+        <div class="vp-btn"><i class="ti ti-player-play" style="color:#fff"></i></div>
+        <div class="vp-time">6:18 / 18:00</div>
+      </div>
+      <div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:4px">Posicionamiento de marca: fundamentos y aplicación práctica</div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Módulo 2 · Clase 3 de 5 · 18 min · <span style="color:var(--pm)">Desbloqueo progresivo activo</span></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="prog-track"><div class="prog-fill" style="width:35%"></div></div>
+          <span style="font-size:10px;color:var(--mu);white-space:nowrap">35% visto</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mu);margin-top:4px"><span>6:18</span><span>18:00</span></div>
+      </div>
+      <div style="border-top:0.5px solid var(--bd);padding-top:10px">
+        <div style="font-size:11.5px;font-weight:500;margin-bottom:8px">Recursos de esta clase</div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:10.5px;display:flex;align-items:center;gap:5px;cursor:pointer"><i class="ti ti-file-type-pdf" style="color:var(--pm)"></i> Guía de posicionamiento.pdf</div>
+          <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:10.5px;display:flex;align-items:center;gap:5px;cursor:pointer"><i class="ti ti-presentation" style="color:var(--pm)"></i> Slides de la clase</div>
+          <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:10.5px;display:flex;align-items:center;gap:5px;cursor:pointer"><i class="ti ti-text-caption" style="color:var(--pm)"></i> Transcripción</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:14px 14px 14px 0;display:flex;flex-direction:column;gap:10px;width:220px;flex-shrink:0">
+      <div class="lsb">
+        <div class="lsb-h"><i class="ti ti-list" style="font-size:13px;vertical-align:-2px;margin-right:5px"></i>Módulo 2 — Posicionamiento</div>
+        <div class="lsb-item"><div class="lsb-ic ic-done"><i class="ti ti-check"></i></div><span style="color:rgba(255,255,255,.6)">Clase 1: Qué es una marca</span></div>
+        <div class="lsb-item"><div class="lsb-ic ic-done"><i class="ti ti-check"></i></div><span style="color:rgba(255,255,255,.6)">Clase 2: Propuesta de valor</span></div>
+        <div class="lsb-item on"><div class="lsb-ic ic-cur"><i class="ti ti-player-play"></i></div><span>Clase 3: Fundamentos</span></div>
+        <div class="lsb-item"><div class="lsb-ic ic-lock"><i class="ti ti-lock"></i></div><span style="color:var(--mu)">Clase 4: Casos reales</span></div>
+        <div class="lsb-item"><div class="lsb-ic ic-lock"><i class="ti ti-lock"></i></div><span style="color:var(--mu)">Clase 5: Ejercicio final</span></div>
+        <div style="padding:8px 11px;border-top:0.5px solid var(--bd);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:10px;color:var(--mu)">Cuestionario M2</span>
+          <span class="chip chip-w" style="font-size:9px">Pendiente</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-o" style="flex:1;justify-content:center;font-size:11px"><i class="ti ti-arrow-left" style="font-size:12px"></i></button>
+        <button class="btn-p" style="flex:1;justify-content:center;font-size:11px"><i class="ti ti-arrow-right" style="font-size:12px"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S3: Cuestionario
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-quiz">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Cuestionario — Módulo 2</div></div></div>
+    <div style="font-size:11px;color:var(--mu)">Marketing Digital · 3 de 5 respondidas</div>
+    <div class="tb-r"><i class="ti ti-clock" style="color:var(--warn);font-size:15px"></i><span style="font-size:12px;color:var(--warn);margin-left:5px;font-weight:500">08:42</span></div>
+  </div>
+  <div class="layout-full" style="display:flex;align-items:flex-start;padding:20px">
+    <div style="width:100%;max-width:540px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+      <div style="background:var(--sf2);border:0.5px solid var(--bd);border-radius:9px;padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:10px;color:var(--mu)">Pregunta 4 de 5</span>
+          <span class="chip chip-w">Nota mínima: 60%</span>
+        </div>
+        <div style="display:flex;gap:3px;margin-bottom:12px">
+          <div style="height:3px;flex:1;background:var(--ok);border-radius:2px"></div>
+          <div style="height:3px;flex:1;background:var(--ok);border-radius:2px"></div>
+          <div style="height:3px;flex:1;background:var(--ok);border-radius:2px"></div>
+          <div style="height:3px;flex:1;background:var(--p);border-radius:2px"></div>
+          <div style="height:3px;flex:1;background:rgba(255,255,255,.1);border-radius:2px"></div>
+        </div>
+        <div style="font-size:13.5px;font-weight:500;margin-bottom:14px;line-height:1.55">¿Cuál de los siguientes elementos NO forma parte de la propuesta de valor de una marca?</div>
+        <div class="qopt">A. Beneficios funcionales del producto o servicio</div>
+        <div class="qopt sel">B. El precio de la competencia directa</div>
+        <div class="qopt">C. Atributos emocionales que genera en el cliente</div>
+        <div class="qopt">D. Diferenciación respecto al mercado</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+          <button class="btn-o"><i class="ti ti-arrow-left" style="font-size:12px"></i> Anterior</button>
+          <button class="btn-p">Confirmar <i class="ti ti-arrow-right" style="font-size:12px"></i></button>
+        </div>
+      </div>
+      <div class="notif-p" style="font-size:11px">
+        <i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0"></i>
+        Si no aprobás (60%), podés reintentar pasadas 24 hs. El progreso del intento no se pierde.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S4: Mapa visual de carrera
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-carrera">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Mapa de carrera</div></div></div>
+    <div style="font-size:11px;color:var(--mu)">Tecnicatura en Marketing Digital · 2 de 5 módulos completados</div>
+    <div class="tb-r"><div class="av">MS</div></div>
+  </div>
+  <div class="layout-full" style="display:flex;padding:20px">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="font-size:12px;color:var(--mu);margin-bottom:6px">Seguí el camino en orden — cada módulo desbloquea el siguiente</div>
+      <div class="cmap">
+        <div class="cmap-row">
+          <div class="cmap-node cn-done"><i class="ti ti-check-circle"></i><span class="cnn">Fundamentos<br>de Marketing</span></div>
+          <i class="ti ti-arrow-right cmap-arrow"></i>
+          <div class="cmap-node cn-done"><i class="ti ti-check-circle"></i><span class="cnn">Comunicación<br>y Marca</span></div>
+          <i class="ti ti-arrow-right cmap-arrow"></i>
+          <div class="cmap-node cn-active"><i class="ti ti-player-play"></i><span class="cnn">Estrategia<br>Digital</span></div>
+          <i class="ti ti-arrow-right cmap-arrow"></i>
+          <div class="cmap-node cn-locked"><i class="ti ti-lock"></i><span class="cnn">Analytics<br>y Datos</span></div>
+          <i class="ti ti-arrow-right cmap-arrow"></i>
+          <div class="cmap-node cn-locked"><i class="ti ti-lock"></i><span class="cnn">Proyecto<br>Integrador</span></div>
+          <i class="ti ti-arrow-right cmap-arrow"></i>
+          <div class="cmap-node cn-cert"><i class="ti ti-certificate"></i><span class="cnn">Certificado<br>Especialización</span></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;width:100%;max-width:520px">
+        <div class="sh"><span class="st">Estado del módulo activo: Estrategia Digital</span></div>
+        <div style="background:var(--sf2);border:0.5px solid var(--bd);border-radius:8px;padding:14px;display:flex;gap:14px;align-items:center">
+          <div style="flex:1">
+            <div style="font-size:12px;color:var(--mu);margin-bottom:6px">Progreso del módulo</div>
+            <div class="pb-wrap"><div class="pb-track"><div class="pb-fill" style="width:45%"></div></div><span class="pb-lbl">45%</span></div>
+            <div style="font-size:11px;color:var(--mu);margin-top:6px">5 de 11 clases completadas · Cuestionario disponible al 100%</div>
+          </div>
+          <button class="btn-p" style="font-size:11px;white-space:nowrap"><i class="ti ti-player-play" style="font-size:12px"></i> Continuar módulo</button>
+        </div>
+      </div>
+      <div style="width:100%;max-width:520px;margin-top:4px">
+        <div class="sh"><span class="st">Módulos completados</span></div>
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;background:var(--okl);border:0.5px solid var(--okb);border-radius:7px;padding:10px 12px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><i class="ti ti-check-circle" style="color:#34d399;font-size:15px"></i><span style="font-size:12px;font-weight:500;color:#34d399">Fundamentos de Marketing</span></div>
+            <div style="font-size:10px;color:rgba(52,211,153,.7)">Aprobado · Nota examen: 78% · +100 pts</div>
+          </div>
+          <div style="flex:1;background:var(--okl);border:0.5px solid var(--okb);border-radius:7px;padding:10px 12px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><i class="ti ti-check-circle" style="color:#34d399;font-size:15px"></i><span style="font-size:12px;font-weight:500;color:#34d399">Comunicación y Marca</span></div>
+            <div style="font-size:10px;color:rgba(52,211,153,.7)">Aprobado · Nota examen: 84% · +100 pts</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S5: Certificados
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-certs">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Mis certificados</div></div></div>
+    <div class="tb-r"><div class="av">MS</div></div>
+  </div>
+  <div class="layout">
+    <div class="sb">
+      <div class="ss">Plataforma</div>
+      <div class="si"><i class="ti ti-layout-dashboard"></i> Inicio</div>
+      <div class="si"><i class="ti ti-books"></i> Mis cursos</div>
+      <div class="si"><i class="ti ti-road"></i> Carreras</div>
+      <div class="si on"><i class="ti ti-certificate"></i> Certificados</div>
+      <div class="ss">Logros</div>
+      <div class="si"><i class="ti ti-star"></i> Puntos <span class="sb-badge">240</span></div>
+      <div class="si"><i class="ti ti-trophy"></i> Historial</div>
+    </div>
+    <div class="ca">
+      <div class="cert-card">
+        <div class="cert-ico"><i class="ti ti-certificate"></i></div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:500;margin-bottom:3px">Fundamentos de Marketing Digital</div>
+          <div style="font-size:11px;color:var(--mu);margin-bottom:4px">Completado el 2 de mayo de 2026 · Nota final: 84%</div>
+          <div style="font-size:10px;color:var(--mu)">ID: <span style="color:var(--pm);font-family:monospace">4f2a-9b1c-e83d-7c12</span></div>
+          <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap">
+            <button class="btn-p" style="font-size:11px;padding:6px 12px"><i class="ti ti-download" style="font-size:11px"></i> Descargar PDF</button>
+            <button class="btn-o" style="font-size:11px;padding:5px 11px"><i class="ti ti-external-link" style="font-size:11px"></i> Ver verificación pública</button>
+            <button class="btn-o" style="font-size:11px;padding:5px 11px"><i class="ti ti-share" style="font-size:11px"></i> Compartir</button>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div class="cert-qr"><i class="ti ti-qrcode"></i></div>
+          <div style="font-size:9px;color:var(--mu);margin-top:5px">QR verificación<br>Sin login</div>
+        </div>
+      </div>
+      <div style="border:0.5px dashed var(--bd);border-radius:9px;padding:16px;text-align:center">
+        <i class="ti ti-lock" style="font-size:28px;color:var(--mu);margin-bottom:7px;display:block"></i>
+        <div style="font-size:12.5px;font-weight:500;margin-bottom:4px">Estrategia Digital — en progreso</div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px;max-width:300px;margin-left:auto;margin-right:auto">Completá todos los módulos y aprobá el examen final con 60% o más</div>
+        <div class="pb-wrap" style="max-width:220px;margin:0 auto 10px"><div class="pb-track"><div class="pb-fill" style="width:45%"></div></div><span class="pb-lbl">45%</span></div>
+        <button class="btn-o" style="font-size:11px">Continuar módulo</button>
+      </div>
+      <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:8px;padding:12px">
+        <div style="font-size:12px;font-weight:500;margin-bottom:9px">Historial de puntos — Ledger</div>
+        <table class="tbl">
+          <tr><th>Actividad</th><th>Puntos</th><th>Saldo</th><th>Fecha</th></tr>
+          <tr><td>Certificado: Fund. Marketing</td><td style="color:#34d399">+100</td><td style="color:var(--mu)">240</td><td style="color:var(--mu)">02/05/26</td></tr>
+          <tr><td>Examen final aprobado</td><td style="color:#34d399">+25</td><td style="color:var(--mu)">140</td><td style="color:var(--mu)">02/05/26</td></tr>
+          <tr><td>Módulo 3 completado</td><td style="color:#34d399">+25</td><td style="color:var(--mu)">115</td><td style="color:var(--mu)">28/04/26</td></tr>
+          <tr><td>Canje: 2hs coworking</td><td style="color:#f87171">-50</td><td style="color:var(--mu)">90</td><td style="color:var(--mu)">20/04/26</td></tr>
+          <tr><td>Clases completadas ×9</td><td style="color:#34d399">+90</td><td style="color:var(--mu)">140</td><td style="color:var(--mu)">Abr 26</td></tr>
+        </table>
+        <div style="font-size:10px;color:var(--mu);margin-top:7px;padding-top:7px;border-top:0.5px solid var(--bd)"><i class="ti ti-info-circle" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>Los puntos nunca se editan. Cada movimiento queda registrado permanentemente.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S6: Tutorías alumno
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-tutorias">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Mis tutorías</div></div></div>
+    <div style="font-size:11px;color:var(--mu)">Marketing Digital · Próxima: jueves 19/06 18:00</div>
+    <div class="tb-r"><div class="av">MS</div></div>
+  </div>
+  <div class="layout-full">
+    <div class="ca">
+      <div class="notif-w"><i class="ti ti-bell-ringing" style="font-size:16px;flex-shrink:0"></i> Recordatorio enviado — Tutoría en 1 hs · Jueves 19/06 18:00 · Link Meet listo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:rgba(139,63,232,.1);border:1px solid var(--p);border-radius:9px;padding:13px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+            <span style="font-size:12.5px;font-weight:500">Próxima tutoría</span>
+            <span class="chip chip-p">Virtual · Meet</span>
+          </div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:4px">Resolución de ejercicio de posicionamiento</div>
+          <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Con: Ana García · Jue 19/06 · 18:00–19:00</div>
+          <button class="btn-p" style="width:100%;justify-content:center"><i class="ti ti-video" style="font-size:13px"></i> Unirse al Meet</button>
+        </div>
+        <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:9px;padding:13px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+            <span style="font-size:12.5px;font-weight:500">Tutoría presencial</span>
+            <span class="chip chip-g">Aula reservada</span>
+          </div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:4px">Revisión de proyecto de marca</div>
+          <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Con: Ana García · Vie 27/06 · 10:00 · Aula 2, Sede Central</div>
+          <button class="btn-o" style="width:100%;justify-content:center"><i class="ti ti-map-pin" style="font-size:12px"></i> Ver en mapa</button>
+        </div>
+      </div>
+      <div class="sh"><span class="st">Historial de tutorías</span></div>
+      <table class="tbl">
+        <tr><th>Tutoría</th><th>Tipo</th><th>Fecha</th><th>Docente</th><th>Grabación</th></tr>
+        <tr><td>Análisis FODA aplicado</td><td><span class="chip chip-p">Virtual</span></td><td style="color:var(--mu)">12/06/26</td><td style="color:var(--mu)">Ana García</td><td><button class="btn-o" style="font-size:10px;padding:3px 9px"><i class="ti ti-player-play" style="font-size:11px"></i> Ver</button></td></tr>
+        <tr><td>Segmentación de mercado</td><td><span class="chip chip-g">Presencial</span></td><td style="color:var(--mu)">05/06/26</td><td style="color:var(--mu)">Ana García</td><td style="color:var(--mu);font-size:10px">Sin grabación</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S7: Panel admin
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-admin">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">INCADEducativa — Panel Admin</div></div></div>
+    <div class="tb-nav"><div class="tn on">Dashboard</div><div class="tn">Usuarios</div><div class="tn">Cursos</div><div class="tn">Feature flags</div><div class="tn">Reportes</div></div>
+    <div class="tb-r"><span class="role-badge rb-admin">Admin</span><div class="av" style="background:#2d1b5e">JE</div></div>
+  </div>
+  <div class="layout-full">
+    <div class="ca">
+      <div class="mw4">
+        <div class="met"><div class="mv mv-p">148</div><div class="ml">Alumnos activos</div></div>
+        <div class="met"><div class="mv mv-g">23</div><div class="ml">Cursos publicados</div></div>
+        <div class="met"><div class="mv mv-w">4</div><div class="ml">Pendientes revisión</div></div>
+        <div class="met"><div class="mv mv-g">37</div><div class="ml">Certificados emitidos</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div class="sh"><span class="st">Feature flags</span><span class="chip chip-g" style="font-size:9px">Etapa 1 activa</span></div>
+          <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:8px;overflow:hidden">
+            <table class="tbl">
+              <tr><th>Módulo</th><th>Flag</th><th>Estado</th></tr>
+              <tr><td>Auth y perfiles</td><td style="font-family:monospace;font-size:10px;color:var(--mu)">core/auth</td><td><span class="chip chip-g">Siempre activo</span></td></tr>
+              <tr><td>Coworking</td><td style="font-family:monospace;font-size:10px;color:var(--mu)">FEATURE_COWORKING</td><td><span class="chip chip-g">✓ Activo E1</span></td></tr>
+              <tr><td>Plataforma educativa</td><td style="font-family:monospace;font-size:10px;color:var(--mu)">FEATURE_EDUCATIVA</td><td><span class="chip chip-g">✓ Activo E2</span></td></tr>
+              <tr><td>Tutorías</td><td style="font-family:monospace;font-size:10px;color:var(--mu)">FEATURE_TUTORIAS</td><td><span class="chip chip-w">Pendiente E2</span></td></tr>
+              <tr><td>Talleres en vivo</td><td style="font-family:monospace;font-size:10px;color:var(--mu)">FEATURE_TALLERES</td><td><span class="chip chip-w">Pendiente E2</span></td></tr>
+              <tr><td>Comunidad / foro</td><td style="font-family:monospace;font-size:10px;color:var(--mu)">FEATURE_COMUNIDAD</td><td><span class="chip chip-r">Inactivo E3</span></td></tr>
+              <tr><td>Catálogo público</td><td style="font-family:monospace;font-size:10px;color:var(--mu)">FEATURE_PUBLICA</td><td><span class="chip chip-r">Inactivo E3</span></td></tr>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="sh"><span class="st">Alumnos recientes</span><span class="slink">Ver todos</span></div>
+          <table class="tbl">
+            <tr><th>Alumno</th><th>Progreso</th><th>Último acceso</th><th></th></tr>
+            <tr><td>Marcos Suárez</td><td><div style="display:flex;align-items:center;gap:5px"><div class="pb-track" style="width:60px"><div class="pb-fill" style="width:68%"></div></div><span style="font-size:10px;color:var(--mu)">68%</span></div></td><td style="color:var(--mu)">Hoy</td><td><span class="chip chip-g">Activo</span></td></tr>
+            <tr><td>Valentina López</td><td><div style="display:flex;align-items:center;gap:5px"><div class="pb-track" style="width:60px"><div class="pb-fill" style="width:45%"></div></div><span style="font-size:10px;color:var(--mu)">45%</span></div></td><td style="color:var(--mu)">Ayer</td><td><span class="chip chip-g">Activo</span></td></tr>
+            <tr><td>Diego Fernández</td><td><div style="display:flex;align-items:center;gap:5px"><div class="pb-track" style="width:60px"><div class="pb-fill" style="width:100%"></div></div><span style="font-size:10px;color:var(--mu)">100%</span></div></td><td style="color:var(--mu)">03/06</td><td><span class="chip chip-p">Completado</span></td></tr>
+            <tr><td>Sofía Ramírez</td><td><div style="display:flex;align-items:center;gap:5px"><div class="pb-track" style="width:60px"><div class="pb-fill" style="width:12%"></div></div><span style="font-size:10px;color:var(--mu)">12%</span></div></td><td style="color:var(--mu)">01/06</td><td><span class="chip chip-w">Inactivo</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="sh"><span class="st">Importación CSV — Alumnos</span><span class="chip chip-p">E2</span></div>
+        <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px">
+          <i class="ti ti-file-type-csv" style="font-size:32px;color:var(--pm);flex-shrink:0"></i>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500;margin-bottom:2px">Importar base de alumnos</div>
+            <div style="font-size:11px;color:var(--mu)">Formato: DNI, nombre, apellido, email, carrera — Los alumnos reciben email de activación automático</div>
+          </div>
+          <button class="btn-p" style="font-size:11px;white-space:nowrap"><i class="ti ti-upload" style="font-size:12px"></i> Subir CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S8: Revisión contenido docente
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-revision">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Cola de revisión</div></div></div>
+    <div style="font-size:11px"><span class="chip chip-w">4 pendientes</span></div>
+    <div class="tb-r"><span class="role-badge rb-admin">Admin</span><div class="av" style="background:#2d1b5e">JE</div></div>
+  </div>
+  <div class="layout-full">
+    <div class="ca">
+      <div class="notif-p"><i class="ti ti-info-circle" style="font-size:16px;flex-shrink:0"></i> Solo el Admin puede publicar contenido. Revisá y aprobá o rechazá desde acá sin entrar al editor del curso.</div>
+      <div class="rq">
+        <div class="rq-ico"><i class="ti ti-books"></i></div>
+        <div class="rq-info">
+          <div class="rq-t">Liderazgo y gestión de equipos — Módulo 4 completo</div>
+          <div class="rq-m">Docente: Ana García · 5 clases · 3 videos · 2 PDFs · enviado hace 2 hs</div>
+          <div style="display:flex;gap:5px;margin-top:5px"><span class="chip chip-w">En revisión</span><span style="font-size:10px;color:var(--mu);align-self:center">Primer envío</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <button class="btn-ok"><i class="ti ti-check"></i> Aprobar</button>
+          <button class="btn-no"><i class="ti ti-x"></i> Rechazar</button>
+        </div>
+      </div>
+      <div class="rq">
+        <div class="rq-ico" style="background:rgba(239,68,68,.1)"><i class="ti ti-refresh" style="color:#f87171"></i></div>
+        <div class="rq-info">
+          <div class="rq-t">Comunicación organizacional — Módulo 3 (corregido)</div>
+          <div class="rq-m">Docente: Carlos Ruiz · Audio corregido según feedback · 2.° envío</div>
+          <div style="background:rgba(245,158,11,.06);border:0.5px solid var(--warnb);border-radius:5px;padding:6px 9px;margin-top:6px;font-size:10.5px;color:#fbbf24">Feedback anterior: "Los videos del módulo 3 no tienen audio claro."</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <button class="btn-ok"><i class="ti ti-check"></i> Aprobar</button>
+          <button class="btn-no"><i class="ti ti-x"></i> Rechazar</button>
+        </div>
+      </div>
+      <div class="rq" style="opacity:.6">
+        <div class="rq-ico" style="background:rgba(192,38,211,.1)"><i class="ti ti-report-analytics" style="color:#e879f9"></i></div>
+        <div class="rq-info">
+          <div class="rq-t">Finanzas para emprendedores — Curso completo</div>
+          <div class="rq-m">Docente: Carlos Ruiz · 4 módulos · 18 clases · enviado ayer</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <button class="btn-ok"><i class="ti ti-check"></i> Aprobar</button>
+          <button class="btn-no"><i class="ti ti-x"></i> Rechazar</button>
+        </div>
+      </div>
+      <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:8px;padding:12px">
+        <div style="font-size:12px;font-weight:500;margin-bottom:8px">Modal: Rechazar con feedback</div>
+        <div style="background:var(--sf2);border:0.5px solid var(--bd2);border-radius:7px;padding:12px">
+          <div class="lbl">Motivo del rechazo (visible para el docente)</div>
+          <textarea class="inp" rows="3" placeholder="Ej: Los videos del módulo 2 no tienen resolución suficiente. Por favor grabar en 1080p mínimo."></textarea>
+          <div style="display:flex;gap:7px;margin-top:10px;justify-content:flex-end">
+            <button class="btn-o" style="font-size:11px">Cancelar</button>
+            <button class="btn-no" style="font-size:11px"><i class="ti ti-x"></i> Enviar rechazo al docente</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S9: Coworking admin (lista del día + check-in)
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-coworking-admin">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Coworking — Lista del día</div></div></div>
+    <div style="font-size:11px;color:var(--mu)">Miércoles 4 jun · Sede Norte · 12 reservas</div>
+    <div class="tb-r"><span class="role-badge rb-admin">Admin</span><div class="av" style="background:#2d1b5e">JE</div></div>
+  </div>
+  <div class="layout-full">
+    <div class="ca">
+      <div class="mw4">
+        <div class="met"><div class="mv mv-g">8</div><div class="ml">Check-in realizados</div></div>
+        <div class="met"><div class="mv mv-w">2</div><div class="ml">No-show detectados</div></div>
+        <div class="met"><div class="mv mv-p">2</div><div class="ml">Pendientes check-in</div></div>
+        <div class="met"><div class="mv" style="color:#fbbf24">74%</div><div class="ml">Ocupación del día</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div class="sh"><span class="st">Lista del día — Sede Norte</span><span style="font-size:10.5px;color:var(--mu)">Cron cada 5 min</span></div>
+          <div class="ld-item">
+            <div class="ld-time">09:00</div>
+            <div class="ld-info"><div class="ld-name">Valentina López</div><div class="ld-meta">Hot Desk A-12 · 2 hs · $1.120</div></div>
+            <span class="chip chip-g"><i class="ti ti-check" style="font-size:11px;vertical-align:-1px"></i> Presente</span>
+          </div>
+          <div class="ld-item">
+            <div class="ld-time">10:00</div>
+            <div class="ld-info"><div class="ld-name">Diego Fernández</div><div class="ld-meta">Sala Reunión 2 · 3 hs · $4.620</div></div>
+            <span class="chip chip-g"><i class="ti ti-qrcode" style="font-size:11px;vertical-align:-1px"></i> QR</span>
+          </div>
+          <div class="ld-item" style="border:0.5px solid var(--errb);background:var(--errl)">
+            <div class="ld-time" style="color:#f87171">11:00</div>
+            <div class="ld-info"><div class="ld-name" style="color:#f87171">Marcos Suárez</div><div class="ld-meta">Hot Desk B-04 · No-show a las 11:15</div></div>
+            <span class="chip chip-r">No-show</span>
+          </div>
+          <div class="ld-item">
+            <div class="ld-time">14:00</div>
+            <div class="ld-info"><div class="ld-name">Sofía Ramírez</div><div class="ld-meta">Aula 1 · 4 hs · $8.960</div></div>
+            <button class="btn-ok" style="font-size:10px;padding:4px 10px"><i class="ti ti-user-check" style="font-size:12px"></i> Presente</button>
+          </div>
+        </div>
+        <div>
+          <div class="sh"><span class="st">Disponibilidad en tiempo real</span></div>
+          <div class="cw-grid">
+            <div class="cw-cell cw-h"></div>
+            <div class="cw-cell cw-h">Lun</div><div class="cw-cell cw-h">Mar</div><div class="cw-cell cw-h">Mié</div><div class="cw-cell cw-h">Jue</div><div class="cw-cell cw-h">Vie</div><div class="cw-cell cw-h">Sáb</div><div class="cw-cell cw-h">Dom</div>
+            <div class="cw-cell" style="color:var(--mu);text-align:right;font-size:9px;padding-right:5px">09:00</div>
+            <div class="cw-cell cw-occ">Ocup</div><div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-occ">Ocup</div><div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-block">Cerr</div>
+            <div class="cw-cell" style="color:var(--mu);text-align:right;font-size:9px;padding-right:5px">11:00</div>
+            <div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-occ">Ocup</div><div class="cw-cell cw-sel">Hoy</div><div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-occ">Ocup</div><div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-block">Cerr</div>
+            <div class="cw-cell" style="color:var(--mu);text-align:right;font-size:9px;padding-right:5px">14:00</div>
+            <div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-occ">Ocup</div><div class="cw-cell cw-occ">Ocup</div><div class="cw-cell cw-avail">Libre</div><div class="cw-cell cw-block">Mant</div><div class="cw-cell cw-block">Cerr</div>
+          </div>
+          <div style="font-size:10px;color:var(--mu);margin-top:8px;display:flex;gap:12px">
+            <span><span style="color:#34d399">■</span> Libre</span>
+            <span><span style="color:var(--pm)">■</span> Ocupado</span>
+            <span><span style="color:#f87171">■</span> Bloqueado / cerrado</span>
+            <span><span style="color:#fff">■</span> Hoy seleccionado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S10: Panel docente
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-docente">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Panel docente</div></div></div>
+    <div style="font-size:11px;color:var(--mu)">Ana García · Docente</div>
+    <div class="tb-r"><span class="role-badge rb-docente">Docente</span><div class="av" style="background:#2d1b69">AG</div></div>
+  </div>
+  <div class="layout-full">
+    <div class="ca">
+      <div class="notif-w"><i class="ti ti-alert-triangle" style="font-size:15px;flex-shrink:0"></i> <strong>Recordatorio:</strong> El docente nunca puede publicar directamente. Todo el contenido pasa por revisión del Admin antes de ser visible para los alumnos.</div>
+      <div class="cg3">
+        <div style="background:rgba(16,185,129,.06);border:0.5px solid var(--okb);border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;font-weight:500">Negociación estratégica</span><span class="chip chip-g">Publicado</span></div>
+          <div class="mw2" style="gap:6px;margin-bottom:8px">
+            <div class="met" style="padding:7px 9px"><div class="mv" style="font-size:15px;color:#34d399">42</div><div class="ml">Alumnos</div></div>
+            <div class="met" style="padding:7px 9px"><div class="mv" style="font-size:15px;color:#34d399">89%</div><div class="ml">Aprobación</div></div>
+          </div>
+          <button class="btn-o" style="font-size:10.5px;width:100%;justify-content:center"><i class="ti ti-chart-bar" style="font-size:12px"></i> Ver reportes</button>
+        </div>
+        <div style="background:var(--warnl);border:0.5px solid var(--warnb);border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;font-weight:500">Liderazgo y equipos</span><span class="chip chip-w">En revisión</span></div>
+          <div style="font-size:11px;color:#fbbf24;margin-bottom:8px">Enviado hace 2 hs · Esperando aprobación del Admin</div>
+          <div class="pb-wrap" style="margin-bottom:8px"><div class="pb-track"><div class="pb-fill" style="width:100%;background:var(--warn)"></div></div><span class="pb-lbl" style="color:#fbbf24">100%</span></div>
+          <button class="btn-warn" style="font-size:10.5px;width:100%;justify-content:center"><i class="ti ti-eye" style="font-size:12px"></i> Ver contenido enviado</button>
+        </div>
+        <div style="background:var(--errl);border:0.5px solid var(--errb);border-radius:8px;padding:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;font-weight:500">Comunicación org.</span><span class="chip chip-r">Rechazado</span></div>
+          <div style="background:rgba(239,68,68,.1);border:0.5px solid var(--errb);border-radius:5px;padding:8px;font-size:10.5px;color:#f87171;line-height:1.5;margin-bottom:8px">
+            <strong>Feedback Admin:</strong> Los videos del módulo 3 no tienen audio claro. Grabar nuevamente con micrófono externo.
+          </div>
+          <button class="btn-no" style="font-size:10.5px;width:100%;justify-content:center"><i class="ti ti-edit" style="font-size:12px"></i> Corregir y reenviar</button>
+        </div>
+      </div>
+      <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:8px;padding:12px">
+        <div style="font-size:12px;font-weight:500;margin-bottom:9px">Editor de estructura — Liderazgo y gestión de equipos</div>
+        <div style="display:flex;gap:9px;overflow-x:auto;padding-bottom:4px">
+          <div style="background:var(--sf2);border:0.5px solid var(--okb);border-radius:7px;padding:10px;min-width:140px;flex-shrink:0">
+            <div style="font-size:10px;color:#34d399;margin-bottom:3px;font-weight:600">MÓDULO 1</div>
+            <div style="font-size:11px;font-weight:500;margin-bottom:6px">Fundamentos del liderazgo</div>
+            <div style="font-size:10px;color:var(--mu)">4 clases · 2 videos ✓</div>
+          </div>
+          <div style="background:var(--sf2);border:0.5px solid var(--okb);border-radius:7px;padding:10px;min-width:140px;flex-shrink:0">
+            <div style="font-size:10px;color:#34d399;margin-bottom:3px;font-weight:600">MÓDULO 2</div>
+            <div style="font-size:11px;font-weight:500;margin-bottom:6px">Gestión de equipos</div>
+            <div style="font-size:10px;color:var(--mu)">5 clases · 3 videos ✓</div>
+          </div>
+          <div style="background:var(--sf2);border:0.5px solid var(--bd);border-radius:7px;padding:10px;min-width:140px;flex-shrink:0">
+            <div style="font-size:10px;color:var(--pm);margin-bottom:3px;font-weight:600">MÓDULO 3</div>
+            <div style="font-size:11px;font-weight:500;margin-bottom:6px">Comunicación efectiva</div>
+            <div style="font-size:10px;color:var(--mu)">4 clases · 1 video pendiente</div>
+          </div>
+          <div style="background:var(--card);border:0.5px dashed var(--bd);border-radius:7px;padding:10px;min-width:140px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <span style="font-size:11px;color:var(--mu)"><i class="ti ti-plus" style="vertical-align:-2px"></i> Agregar módulo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S11: Activación de cuenta
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-activacion">
+  <div style="background:var(--bg);min-height:490px;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="width:100%;max-width:400px">
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="width:52px;height:52px;border-radius:12px;background:var(--p);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px"><span style="font-size:16px;font-weight:700">IN</span></div>
+        <div style="font-size:20px;font-weight:500;margin-bottom:5px">Activá tu cuenta</div>
+        <div style="font-size:12px;color:var(--mu);line-height:1.5">Bienvenido a INCADEducativa. Configurá tu contraseña para comenzar tu formación.</div>
+      </div>
+      <div style="background:var(--sf2);border:0.5px solid var(--bd);border-radius:11px;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <div class="notif-ok" style="font-size:11px">
+          <i class="ti ti-user-check" style="font-size:16px;flex-shrink:0"></i>
+          <div><div style="font-weight:500">Marcos Suárez · DNI 32.456.789</div><div style="opacity:.8">Carrera: Tecnicatura en Marketing Digital</div></div>
+        </div>
+        <div class="frow2">
+          <div class="fcol"><span class="lbl">Nueva contraseña</span><input type="password" class="inp" placeholder="Mínimo 8 caracteres"></div>
+          <div class="fcol"><span class="lbl">Confirmar contraseña</span><input type="password" class="inp" placeholder="Repetir"></div>
+        </div>
+        <div class="fcol"><span class="lbl">Celular para notificaciones WhatsApp</span><input type="tel" class="inp" placeholder="+54 376 ..."></div>
+        <button class="btn-p" style="width:100%;justify-content:center;padding:10px;font-size:13px">Activar mi cuenta <i class="ti ti-arrow-right" style="font-size:13px"></i></button>
+      </div>
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--mu)">¿Problemas? <span style="color:var(--pm);cursor:pointer">soporte@incadeducativa.com</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S12: Coworking alumno (E1)
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-coworking">
+  <div class="tb">
+    <div class="tb-logo"><div class="tb-lm">IN</div><div><div class="tb-lt">Coworking INCADE</div><div class="tb-ls">Módulo de servicios · E1</div></div></div>
+    <div style="display:flex;gap:5px">
+      <div style="background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.1);border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer"><i class="ti ti-building" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>Sede Central</div>
+      <div style="background:rgba(139,63,232,.12);border:0.5px solid var(--bd);border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--pm)"><i class="ti ti-building" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>Sede Norte</div>
+    </div>
+    <div class="tb-r"><div class="av">MS</div></div>
+  </div>
+  <div class="layout-full">
+    <div class="ca">
+      <div class="notif-ok"><i class="ti ti-discount-check" style="font-size:16px;flex-shrink:0"></i> Alumno activo INCADE — descuento del 30% aplicado automáticamente en todas las reservas</div>
+      <div class="sh"><span class="st">Espacios disponibles — Sede Norte · Miércoles 4 jun</span></div>
+      <div class="cg3">
+        <div style="background:var(--card);border:0.5px solid var(--okb);border-radius:9px;overflow:hidden">
+          <div style="height:56px;background:var(--okl);display:flex;align-items:center;justify-content:center"><i class="ti ti-armchair" style="font-size:26px;color:#34d399"></i></div>
+          <div style="padding:9px">
+            <div style="font-size:12px;font-weight:500;margin-bottom:2px">Hot Desk A-12</div>
+            <div style="font-size:10.5px;color:var(--mu);margin-bottom:7px">Individual · Planta baja</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:12px"><s style="color:var(--mu);font-size:10px">$800</s> <span style="color:#34d399;font-weight:600">$560</span>/hs</span>
+              <span class="chip chip-g">Libre</span>
+            </div>
+            <button class="btn-p" style="font-size:11px;width:100%;justify-content:center">Reservar</button>
+          </div>
+        </div>
+        <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:9px;overflow:hidden">
+          <div style="height:56px;background:rgba(139,63,232,.1);display:flex;align-items:center;justify-content:center"><i class="ti ti-users" style="font-size:26px;color:var(--pm)"></i></div>
+          <div style="padding:9px">
+            <div style="font-size:12px;font-weight:500;margin-bottom:2px">Sala Reunión 2</div>
+            <div style="font-size:10.5px;color:var(--mu);margin-bottom:7px">Hasta 8 personas</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:12px"><s style="color:var(--mu);font-size:10px">$2.200</s> <span style="color:#34d399;font-weight:600">$1.540</span>/hs</span>
+              <span class="chip chip-g">Libre</span>
+            </div>
+            <button class="btn-p" style="font-size:11px;width:100%;justify-content:center">Reservar</button>
+          </div>
+        </div>
+        <div style="background:var(--card);border:0.5px solid var(--errb);border-radius:9px;overflow:hidden;opacity:.55">
+          <div style="height:56px;background:var(--errl);display:flex;align-items:center;justify-content:center"><i class="ti ti-school" style="font-size:26px;color:#f87171"></i></div>
+          <div style="padding:9px">
+            <div style="font-size:12px;font-weight:500;margin-bottom:2px">Aula 1</div>
+            <div style="font-size:10.5px;color:var(--mu);margin-bottom:7px">Hasta 25 personas</div>
+            <div style="margin-bottom:8px"><span style="font-size:11px;color:var(--mu)">Reservada hasta las 20:00</span></div>
+            <button disabled style="background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.08);color:var(--mu);font-size:11px;width:100%;border-radius:6px;padding:7px;cursor:not-allowed">No disponible</button>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:8px;padding:12px">
+        <div style="font-size:12px;font-weight:500;margin-bottom:9px">Mis reservas activas</div>
+        <table class="tbl">
+          <tr><th>Espacio</th><th>Fecha y hora</th><th>Monto (con desc.)</th><th>Estado</th><th>QR</th></tr>
+          <tr><td>Hot Desk B-04 · Sede Central</td><td style="color:var(--mu)">Hoy 14:00–17:00</td><td style="color:#34d399">$1.680</td><td><span class="chip chip-g">Confirmada</span></td><td><i class="ti ti-qrcode" style="color:var(--pm);font-size:16px;cursor:pointer"></i></td></tr>
+          <tr><td>Sala Reunión 1 · Sede Norte</td><td style="color:var(--mu)">06/06 10:00–12:00</td><td style="color:#34d399">$3.080</td><td><span class="chip chip-p">Pendiente pago</span></td><td style="color:var(--mu);font-size:10px">—</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     S13: Lead / Taller gratuito (E3)
+═══════════════════════════════════════════════════════ -->
+<div class="screen" id="s-lead">
+  <div style="background:var(--bg);min-height:490px;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px">
+      <div style="text-align:center">
+        <div style="width:52px;height:52px;border-radius:12px;background:var(--p);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px"><span style="font-size:16px;font-weight:700">IN</span></div>
+        <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--pm);margin-bottom:5px">Taller gratuito</div>
+        <div style="font-size:19px;font-weight:500;margin-bottom:6px">Claves para escalar tu negocio en 2026</div>
+        <div style="font-size:12px;color:var(--mu)">Dictado por la Escuela de Negocios INCADE · Online · 90 minutos</div>
+      </div>
+      <div style="background:var(--sf2);border:0.5px solid var(--bd);border-radius:11px;padding:18px;display:flex;flex-direction:column;gap:12px">
+        <div class="frow2">
+          <div class="fcol"><span class="lbl">Nombre</span><input class="inp" placeholder="Tu nombre"></div>
+          <div class="fcol"><span class="lbl">Apellido</span><input class="inp" placeholder="Tu apellido"></div>
+        </div>
+        <div class="fcol"><span class="lbl">Email</span><input type="email" class="inp" placeholder="tu@email.com"></div>
+        <div class="fcol">
+          <span class="lbl">Área de interés (para personalizar tu experiencia)</span>
+          <select class="inp" style="cursor:pointer">
+            <option value="">Seleccioná tu área</option>
+            <option>Marketing y ventas</option>
+            <option>Finanzas y contabilidad</option>
+            <option>Recursos humanos</option>
+            <option>Emprendimiento</option>
+            <option>Tecnología y negocios</option>
+          </select>
+        </div>
+        <button class="btn-p" style="width:100%;justify-content:center;padding:10px;font-size:13px"><i class="ti ti-player-play" style="font-size:13px"></i> Acceder al taller gratis</button>
+        <div style="font-size:10px;color:var(--mu);text-align:center;line-height:1.5">Al registrarte aceptás recibir contenido educativo de INCADE. Podés darte de baja cuando quieras.</div>
+      </div>
+      <div style="background:var(--card);border:0.5px solid var(--bd);border-radius:8px;padding:10px 12px">
+        <div style="font-size:10.5px;font-weight:500;color:var(--pm);margin-bottom:5px"><i class="ti ti-mail" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>Secuencia de nurturing automática</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--mu)"><span style="background:rgba(139,63,232,.2);color:var(--pm);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:600">Día 1</span> Acceso inmediato al taller + recursos descargables</div>
+          <div style="display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--mu)"><span style="background:rgba(139,63,232,.2);color:var(--pm);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:600">Día 3</span> Contenido complementario según tu área de interés</div>
+          <div style="display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--mu)"><span style="background:rgba(139,63,232,.2);color:var(--pm);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:600">Día 7</span> Oferta especial: upgrade a Usuario Comunidad Online</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .app -->
+
+<div style="text-align:center;padding:14px 0 8px;font-size:11px;color:rgba(255,255,255,.25)">
+  INCADEducativa — Mockup completo v3.0 · Spec-Driven Development · incadeducativa.com<br>
+  Escobar, José Gustavo · Schwegler, Alan · Junio 2026
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.snav').forEach(s => s.classList.remove('on'));
+  const screen = document.getElementById(id);
+  if (screen) screen.classList.add('on');
+  const navs = document.querySelectorAll('.snav');
+  navs.forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)) {
+      n.classList.add('on');
+    }
+  });
+}
+</script>
+</body>
+</html>
