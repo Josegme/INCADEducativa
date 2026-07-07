@@ -11,12 +11,12 @@
 
 ### 1.1 Autenticación y Perfiles
 
-- [ ] Login con email + contraseña (todos los roles)
-- [ ] Activación de cuenta por email (link de activación)
-- [ ] Recuperación de contraseña
-- [ ] Un solo perfil unificado para coworking + educativa
-- [ ] Asignación de rol al momento de creación de cuenta
-- [ ] Logout con limpieza de sesión
+- [x] Login con email + contraseña (todos los roles) — verificado con 2 roles de prueba (admin/alumno), sesión persistente ~30 días, redirect por rol vía middleware (`/admin` protegido, `/dashboard` compartido con sidebar adaptado por rol)
+- [ ] Activación de cuenta por email (link de activación) — **parcial**: la pantalla `/activar-cuenta` y el mecanismo de confirmación (`/auth/confirm`, comparte `verifyOtp` con recuperación) ya están armados y compilan, pero no se probó de punta a punta porque depende de la importación CSV (Sprint 1b, genera la invitación real) y de Resend (`RESEND_API_KEY` sin configurar)
+- [x] Recuperación de contraseña — flujo de pedido (`/recuperar`) verificado en navegador end-to-end; el envío real del email depende de Resend (no configurado todavía), pero el mecanismo de confirmación es el mismo que ya se probó
+- [ ] Un solo perfil unificado para coworking + educativa — sin cambios, el módulo coworking todavía no existe (Etapa 2)
+- [ ] Asignación de rol al momento de creación de cuenta — diferido a Sprint 1b (importación CSV); por ahora los roles de prueba se asignaron manualmente
+- [x] Logout con limpieza de sesión — verificado en navegador
 - [ ] Perfil de usuario: nombre, foto, carrera/área, historial
 
 ### 1.2 Notificaciones Automáticas
