@@ -1,6 +1,6 @@
 # CLAUDE.md — INCADEducativa
 > Fuente de verdad para Cursor + Claude Code CLI. Leer antes de escribir cualquier línea de código.
-> Versión: 3.4 — Design System v2.0 integrado
+> Versión: 3.4 — Design System v2.1 integrado
 
 ## Proyecto
 INCADEducativa — Plataforma Educativa Digital · incadeducativa.com
@@ -27,7 +27,7 @@ para la comunidad interna y externa de Posadas.
 
 ## Stack
 - Frontend/PWA: Next.js 14 + TypeScript + App Router
-- UI: shadcn/ui tematizado con DS v2.0 + Tailwind CSS + Lucide React + Inter
+- UI: shadcn/ui tematizado con DS v2.1 + Tailwind CSS + Lucide React + Inter
 - Backend: tRPC + Next.js API Routes
 - DB/Auth: Supabase (PostgreSQL + RLS + Auth + Storage + Realtime)
 - Pagos: MercadoPago SDK v2 (coworking en E2; cursos pagos en E3)
@@ -84,7 +84,7 @@ FEATURE_PUBLICA=false      # E3
    — nunca SELECT directo (la página /verificar/[uuid] no tiene sesión)
 6. Feature flags via env vars — nunca hardcodear módulos desactivados
 7. Sistema de puntos es ledger APPEND-ONLY: nunca UPDATE ni DELETE en points_log
-8. Design System v2.0 obligatorio — solo tokens --edu-* e --inc-* documentados.
+8. Design System v2.1 obligatorio — solo tokens --edu-* e --inc-* documentados.
    Fuente: Inter (Google Fonts). Íconos: Lucide React exclusivamente.
    Sin colores hex hardcodeados en componentes. Sin ALL CAPS en botones.
 9. Webhook de MercadoPago es la ÚNICA fuente de verdad del estado de pago.
@@ -102,7 +102,7 @@ FEATURE_PUBLICA=false      # E3
     convert_user_role() — nunca UPDATE directo de role (ADR-16).
 
 ## Design System (obligatorio — leer ANTES de crear componentes)
-Fuente: docs/design/DESIGN_SYSTEM_INCADEducativa.md v2.0
+Fuente: docs/design/DESIGN_SYSTEM_INCADEducativa.md v2.1
 
 - Modo: dark mode exclusivo. Sin light mode.
 - Primario: `--inc-violet #9B30FF` · Acento: `--inc-magenta #C026D3`
@@ -141,7 +141,7 @@ incadeducativa/
 ├── README.md
 ├── docs/
 │   ├── design/                        ← fuente de verdad visual
-│   │   ├── DESIGN_SYSTEM_INCADEducativa.md  ← DS v2.0 (leer primero)
+│   │   ├── DESIGN_SYSTEM_INCADEducativa.md  ← DS v2.1 (leer primero)
 │   │   ├── SHADCN_THEME.md            ← mapeo tokens → shadcn
 │   │   └── COMPONENTS.md              ← catálogo mínimo E1
 │   ├── INCADEducativa_Spec_v3.md      ← spec completo (v3.4, fuente de verdad)
@@ -153,7 +153,7 @@ incadeducativa/
 │   │   ├── ADDENDUM_03_Coworking_Modulo_Independiente.md
 │   │   └── ADDENDUM_04_Conversion_Roles_Casos_Uso.md
 │   └── mockups/
-│       ├── INCADEducativa_Mockup_v4.html  ← 13 pantallas navegables (DS v2.0)
+│       ├── INCADEducativa_Mockup_v4.html  ← 13 pantallas navegables (DS v2.1)
 │       └── archive/
 │           └── INCADEducativa_Mockup_v3.html  ← obsoleto, no usar
 ├── supabase/
@@ -179,7 +179,7 @@ incadeducativa/
 │   │   ├── design-preview/            ← QA visual de tokens y componentes
 │   │   └── api/                       ← tRPC + webhooks MP
 │   ├── components/
-│   │   ├── ui/                        ← shadcn tematizado (DS v2.0)
+│   │   ├── ui/                        ← shadcn tematizado (DS v2.1)
 │   │   └── layout/                    ← AuthLayout, DashboardLayout, Sidebar, Topbar
 │   ├── lib/                           ← supabase/, trpc/, mercadopago/, flags.ts
 │   └── modules/                       ← educativa/, coworking/, admin/
@@ -202,16 +202,16 @@ incadeducativa/
 ## Prompts tipo para Claude Code
 Feature nueva:
   "Según CLAUDE.md v3.4 y el spec v3.4, implementá [funcionalidad] para el rol [rol].
-   Stack definido. Design System v2.0: Inter + Lucide + tokens --edu-* e --inc-*."
+   Stack definido. Design System v2.1: Inter + Lucide + tokens --edu-* e --inc-*."
 Migración:
   "Creá la migración SQL para [tabla] respetando los ADRs del spec.
    Usá is_admin() en las RLS policies. Número secuencial siguiente."
 Componente:
-  "Creá [Nombre] según DESIGN_SYSTEM v2.0 y COMPONENTS.md.
+  "Creá [Nombre] según DESIGN_SYSTEM v2.1 y COMPONENTS.md.
    shadcn/ui base con SHADCN_THEME, Lucide React, accesible (aria labels, keyboard nav)."
 Tests:
   "Escribí tests Playwright para CU-[N] del spec.
    Cubrir flujo principal + alternativas + criterios de aceptación."
 Review:
   "Revisá este código contra las reglas críticas del CLAUDE.md:
-   RLS con is_admin(), flags, naming, DS v2.0 (tokens + Inter + Lucide), ledger append-only, tipos."
+   RLS con is_admin(), flags, naming, DS v2.1 (tokens + Inter + Lucide), ledger append-only, tipos."

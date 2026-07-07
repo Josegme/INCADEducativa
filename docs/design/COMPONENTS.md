@@ -1,9 +1,9 @@
 # COMPONENTS — INCADEducativa · Catálogo mínimo E1
-**Versión 1.0 · Junio 2026**
+**Versión 1.1 · Julio 2026**
 Especificación de tokens y variantes por componente para el MVP Educativo.
 
 > Referencia de implementación para Cursor + Claude Code. Antes de crear un componente, verificar que exista aquí. Si no existe, documentarlo primero (SDD).
-> Fuente de tokens: `docs/design/DESIGN_SYSTEM_INCADEducativa.md v2.0`
+> Fuente de tokens: `docs/design/DESIGN_SYSTEM_INCADEducativa.md v2.1`
 > Mapeo shadcn: `docs/design/SHADCN_THEME.md v1.0`
 
 ---
@@ -96,10 +96,10 @@ No es un componente shadcn extendido — es un `<span>` con clases Tailwind + to
 
 | Estado | Fondo | Texto | Border | Uso en LMS |
 |---|---|---|---|---|
-| `active` / `published` | `--inc-violet-subtle` | `#A855F7` | `--inc-violet-border` | Curso activo, sesión en curso |
-| `completed` / `approved` | `--edu-success-subtle` | `#34d399` | `--edu-success-border` | Módulo completado, clase aprobada |
-| `pending` / `in-review` | `--edu-warning-subtle` | `#FBBF24` | `--edu-warning-border` | Cuestionario pendiente, contenido en revisión |
-| `error` / `failed` | `--edu-danger-subtle` | `#F87171` | `--edu-danger-border` | Quiz reprobado, no-show |
+| `active` / `published` | `--inc-violet-subtle` | `--inc-violet-text` | `--inc-violet-border` | Curso activo, sesión en curso |
+| `completed` / `approved` | `--edu-success-subtle` | `--edu-success-text` | `--edu-success-border` | Módulo completado, clase aprobada |
+| `pending` / `in-review` | `--edu-warning-subtle` | `--edu-warning-text` | `--edu-warning-border` | Cuestionario pendiente, contenido en revisión |
+| `error` / `failed` | `--edu-danger-subtle` | `--edu-danger-text` | `--edu-danger-border` | Quiz reprobado, no-show |
 | `locked` | `rgba(255,255,255,0.05)` | `--edu-text-faint` | `rgba(255,255,255,0.08)` | Contenido bloqueado |
 | `gold` | `--edu-gold-subtle` | `--edu-gold` | `--edu-gold-border` | Solo certificados / logros máximos |
 
@@ -185,7 +185,7 @@ Navegación lateral del dashboard — presente en todas las pantallas con layout
 |---|---|---|---|---|
 | Inactivo | transparent | `--edu-text-faint` | none | `18px` / `w-[18px]` |
 | Hover | `rgba(255,255,255,0.05)` | `--edu-text-muted` | none | `18px` |
-| Activo | `--inc-violet-subtle` | `#A855F7` | `2px solid --inc-violet` | `18px` |
+| Activo | `--inc-violet-subtle` | `--inc-violet-text` | `2px solid --inc-violet` | `18px` |
 
 ### Sección heading
 
@@ -227,7 +227,7 @@ Barra superior fija del dashboard.
 
 - Font-size: `13px` · Medium 500 (inactivo) · SemiBold 600 (activo)
 - Padding: `5px 11px` · `border-radius: 5px`
-- Activo: `--inc-violet-subtle` bg, `#A855F7` text
+- Activo: `--inc-violet-subtle` bg, `--inc-violet-text` text
 
 ### Avatar de usuario
 
@@ -240,9 +240,9 @@ Barra superior fija del dashboard.
 
 | Rol | Background | Text | Border |
 |---|---|---|---|
-| admin | `--inc-violet-subtle` | `#A855F7` | `--inc-violet-border` |
-| docente | `rgba(192,38,211,0.15)` | `#e879f9` | `rgba(192,38,211,0.30)` |
-| alumno | `--edu-success-subtle` | `#34d399` | `--edu-success-border` |
+| admin | `--inc-violet-subtle` | `--inc-violet-text` | `--inc-violet-border` |
+| docente | `rgba(192,38,211,0.15)` | `--inc-magenta-text` | `rgba(192,38,211,0.30)` |
+| alumno | `--edu-success-subtle` | `--edu-success-text` | `--edu-success-border` |
 
 ---
 
@@ -295,10 +295,10 @@ Banners y notificaciones inline. No son Toasts de shadcn — son elementos persi
 
 | Tipo | Background | Border | Text | Lucide icon |
 |---|---|---|---|---|
-| `info` (violeta) | `--inc-violet-subtle` | `--inc-violet-border-strong` | `#A855F7` | `Info` |
-| `success` | `--edu-success-subtle` | `--edu-success-border` | `#34d399` | `CheckCircle2` |
-| `warning` | `--edu-warning-subtle` | `--edu-warning-border` | `#FBBF24` | `AlertTriangle` |
-| `danger` | `--edu-danger-subtle` | `--edu-danger-border` | `#F87171` | `XCircle` |
+| `info` (violeta) | `--inc-violet-subtle` | `--inc-violet-border-strong` | `--inc-violet-text` | `Info` |
+| `success` | `--edu-success-subtle` | `--edu-success-border` | `--edu-success-text` | `CheckCircle2` |
+| `warning` | `--edu-warning-subtle` | `--edu-warning-border` | `--edu-warning-text` | `AlertTriangle` |
+| `danger` | `--edu-danger-subtle` | `--edu-danger-border` | `--edu-danger-text` | `XCircle` |
 
 ### Dimensiones
 
@@ -343,4 +343,4 @@ CertificateCard
 
 ---
 
-*INCADEducativa · Design System v2.0 — COMPONENTS v1.0 · Junio 2026*
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.1 · Julio 2026*

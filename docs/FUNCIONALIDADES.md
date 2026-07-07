@@ -44,24 +44,24 @@
 
 > Prerrequisito de todo el desarrollo. Completar antes del Sprint 1.
 
-- [ ] `src/app/globals.css` con variables `--inc-*` y `--edu-*` del DS §5
-- [ ] Mapeo shadcn aplicado en `globals.css` según `docs/design/SHADCN_THEME.md`
-- [ ] `tailwind.config.ts` extendido con colores `inc` / `edu`, radios y sombras del DS §5
-- [ ] Inter cargada desde Google Fonts — verificado en DevTools → Network → Fonts
-- [ ] Lucide React instalado como única librería de íconos (`lucide-react`)
-- [ ] `<html className="dark">` en `layout.tsx` — dark mode activo
-- [ ] Shell: `AuthLayout` vacío con fondo `--edu-bg`
-- [ ] Shell: `DashboardLayout` vacío con sidebar `--edu-surface` y topbar con blur
-- [ ] Shell: `Sidebar` con ítems de nav por rol (tokens DS, Lucide icons)
-- [ ] Shell: `Topbar` con logo mark "IN" (`--inc-violet`) y avatar de usuario
-- [ ] Componentes base tematizados: `Button` (primary/outline/destructive), `Card`, `Input`
-- [ ] Componentes de estado LMS: `Badge` (6 estados: active/completed/pending/error/locked/gold)
-- [ ] `Progress` con gradiente `--inc-violet → --inc-magenta`
-- [ ] `CertificateCard` con tokens dorado (`--edu-gold`) exclusivos
-- [ ] Banners de notificación: info/success/warning/danger con tokens semánticos
-- [ ] Página `/design-preview` con muestra de todos los componentes base
-- [ ] QA visual: contraste WCAG AA verificado en texto principal y CTA primario
-- [ ] Ningún hex hardcodeado en componentes — solo tokens CSS variables o clases Tailwind
+- [x] `src/app/globals.css` con variables `--inc-*` y `--edu-*` del DS §5
+- [x] Mapeo shadcn aplicado en `globals.css` según `docs/design/SHADCN_THEME.md`
+- [x] `tailwind.config.ts` extendido con colores `inc` / `edu`, radios y sombras del DS §5
+- [x] Inter cargada desde Google Fonts — verificado (`document.fonts.check` confirma pesos 400/600/700 `loaded`)
+- [x] Lucide React instalado como única librería de íconos (`lucide-react`)
+- [x] `<html className="dark">` en `layout.tsx` — dark mode activo
+- [x] Shell: `AuthLayout` vacío con fondo `--edu-bg`
+- [x] Shell: `DashboardLayout` vacío con sidebar `--edu-surface` y topbar con blur
+- [x] Shell: `Sidebar` con ítems de nav por rol (tokens DS, Lucide icons) — componente listo, recibe `items` por prop; la carga de ítems reales por rol es Sprint 1–2
+- [x] Shell: `Topbar` con logo mark "IN" (`--inc-violet`) y avatar de usuario
+- [x] Componentes base tematizados: `Button` (primary/outline/destructive/ghost), `Card`, `Input`
+- [x] Componentes de estado LMS: `Badge` (6 estados: active/completed/pending/error/locked/gold)
+- [x] `Progress` con gradiente `--inc-violet → --inc-magenta`
+- [ ] `CertificateCard` con tokens dorado (`--edu-gold`) exclusivos — diferido a Sprint 9–10 (no está en el checklist de `PRIMEROS_PASOS.md` Paso 4; ver nota de consistencia entregada al usuario)
+- [x] Banners de notificación: info/success/warning/danger con tokens semánticos
+- [x] Página `/design-preview` con muestra de todos los componentes base
+- [x] QA visual: contraste WCAG AA verificado — texto blanco sobre `--edu-bg` ≈ 19.6:1; texto blanco sobre `--inc-violet` (CTA primario) ≈ 4.93:1 (AA normal-text ≥ 4.5:1)
+- [x] Ningún hex hardcodeado en componentes — solo tokens CSS variables o clases Tailwind. Resuelto: se agregaron los tokens `--inc-violet-text`, `--inc-magenta-text`, `--edu-success-text`, `--edu-warning-text`, `--edu-danger-text` al DS v2.1 (`DESIGN_SYSTEM_INCADEducativa.md`, `COMPONENTS.md` v1.1) y se refactorizaron `Badge`, `Sidebar`, `Topbar` y `NotificationBanner` para usarlos en vez de hex literales
 
 ---
 

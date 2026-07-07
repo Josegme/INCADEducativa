@@ -1,5 +1,5 @@
 # Design System — INCADEducativa
-**Versión 2.0 · Junio 2026**
+**Versión 2.1 · Julio 2026**
 Preparado por: JosegmeDev + Alan Schwegler
 Ecosistema Digital INCADE — Posadas, Misiones
 
@@ -55,6 +55,7 @@ Extraído directamente del sitio incade.edu.ar. Este es el violeta real de la ma
 | `--inc-violet-subtle` | `rgba(155, 48, 255, 0.15)` | Fondos de íconos, backgrounds sutiles, hover de nav |
 | `--inc-violet-border` | `rgba(155, 48, 255, 0.25)` | Bordes de cards, separadores |
 | `--inc-violet-border-strong` | `rgba(155, 48, 255, 0.50)` | Bordes de focus, cards en hover |
+| `--inc-violet-text` | `#A855F7` | Texto de acento sobre fondos `-subtle` violeta — badge "activo", ítem de nav activo, role badge admin |
 
 ### 2.2 Magenta — acento secundario institucional
 
@@ -64,6 +65,7 @@ Presente en el sitio institucional como gradiente y acento. En INCADEducativa se
 |---|---|---|
 | `--inc-magenta` | `#C026D3` | Acento secundario — gradientes, badges destacados, elementos de llamada a la acción secundaria |
 | `--inc-magenta-subtle` | `rgba(192, 38, 211, 0.12)` | Fondos muy sutiles de acento |
+| `--inc-magenta-text` | `#e879f9` | Texto de acento sobre fondo magenta subtle — role badge docente |
 
 ### 2.3 Gradiente de marca INCADE
 
@@ -110,12 +112,15 @@ Semántica específica del LMS — progreso, logro, advertencia, error.
 | `--edu-success` | `#10B981` | Módulo completado, clase aprobada, checkmark |
 | `--edu-success-subtle` | `rgba(16, 185, 129, 0.15)` | Fondo de badge "Completado" / "Aprobado" |
 | `--edu-success-border` | `rgba(16, 185, 129, 0.30)` | Borde de elementos en estado completado |
+| `--edu-success-text` | `#34d399` | Texto de acento sobre `--edu-success-subtle` — badge "completado", role badge alumno |
 | `--edu-warning` | `#F59E0B` | Timer de quiz, clase pendiente, alerta |
 | `--edu-warning-subtle` | `rgba(245, 158, 11, 0.12)` | Fondo de badge "Pendiente" |
 | `--edu-warning-border` | `rgba(245, 158, 11, 0.30)` | Borde de elementos en estado pendiente |
+| `--edu-warning-text` | `#FBBF24` | Texto de acento sobre `--edu-warning-subtle` — badge "pendiente" |
 | `--edu-danger` | `#EF4444` | Error de formulario, quiz reprobado |
 | `--edu-danger-subtle` | `rgba(239, 68, 68, 0.10)` | Fondo de mensaje de error |
 | `--edu-danger-border` | `rgba(239, 68, 68, 0.25)` | Borde de elementos en error |
+| `--edu-danger-text` | `#F87171` | Texto de acento sobre `--edu-danger-subtle` — badge "error" |
 
 ### 2.8 Dorado — certificados y logros máximos
 
@@ -205,8 +210,10 @@ INCADEducativa define su propia geometría, coherente con el sitio institucional
   --inc-violet-subtle:       rgba(155, 48, 255, 0.15);
   --inc-violet-border:       rgba(155, 48, 255, 0.25);
   --inc-violet-border-strong:rgba(155, 48, 255, 0.50);
+  --inc-violet-text:         #A855F7;
   --inc-magenta:             #C026D3;
   --inc-magenta-subtle:      rgba(192, 38, 211, 0.12);
+  --inc-magenta-text:        #e879f9;
   --inc-gradient:            linear-gradient(135deg, #9B30FF 0%, #C026D3 100%);
   --inc-gradient-subtle:     linear-gradient(135deg, rgba(155,48,255,0.2) 0%, rgba(192,38,211,0.1) 100%);
 
@@ -230,12 +237,15 @@ INCADEducativa define su propia geometría, coherente con el sitio institucional
   --edu-success:             #10B981;
   --edu-success-subtle:      rgba(16, 185, 129, 0.15);
   --edu-success-border:      rgba(16, 185, 129, 0.30);
+  --edu-success-text:        #34d399;
   --edu-warning:             #F59E0B;
   --edu-warning-subtle:      rgba(245, 158, 11, 0.12);
   --edu-warning-border:      rgba(245, 158, 11, 0.30);
+  --edu-warning-text:        #FBBF24;
   --edu-danger:              #EF4444;
   --edu-danger-subtle:       rgba(239, 68, 68, 0.10);
   --edu-danger-border:       rgba(239, 68, 68, 0.25);
+  --edu-danger-text:         #F87171;
 
   /* Certificados */
   --edu-gold:                #E8C97A;
@@ -352,4 +362,4 @@ INCADEducativa es el hub central del ecosistema — no hereda layout ni componen
 
 *INCADEducativa · incadeducativa.com*
 *INCADE Escuela de Negocios — Posadas, Misiones*
-*Design System v2.0 — Junio 2026*
+*Design System v2.1 — Julio 2026*

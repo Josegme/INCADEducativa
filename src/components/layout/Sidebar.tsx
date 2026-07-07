@@ -1,0 +1,60 @@
+import * as React from "react";
+import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+export interface SidebarNavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  active?: boolean;
+  badge?: number;
+}
+
+export interface SidebarSection {
+  label?: string;
+  items: SidebarNavItem[];
+}
+
+export interface SidebarProps {
+  sections: SidebarSection[];
+}
+
+export function Sidebar({ sections }: SidebarProps) {
+  return (
+    <aside className="flex h-full w-[180px] shrink-0 flex-col gap-1 border-r-[0.5px] border-[--edu-border] bg-black/30 bg-[--edu-surface] p-[10px_8px]">
+      {sections.map((section, sectionIndex) => (
+        <div key={section.label ?? sectionIndex} className="flex flex-col gap-0.5">
+          {section.label ? (
+            <span className="px-[6px] pb-[3px] pt-2 text-[11px] font-semibold uppercase tracking-[1.2px] text-white/[0.22]">
+              {section.label}
+            </span>
+          ) : null}
+          {section.items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center justify-between gap-2 rounded-md px-[8px] py-[6px] text-[13px] font-medium transition-colors",
+                item.active
+                  ? "border-l-2 border-[--inc-violet] bg-[--inc-violet-subtle] font-semibold text-[--inc-violet-text]"
+                  : "border-l-2 border-transparent text-[--edu-text-faint] hover:bg-white/5 hover:text-[--edu-text-muted]"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <item.icon className="h-[18px] w-[18px]" aria-hidden />
+                {item.label}
+              </span>
+              {typeof item.badge === "number" && item.badge > 0 ? (
+                <span className="rounded-pill bg-[--inc-violet] px-[6px] py-[1px] text-[11px] font-semibold text-white">
+                  {item.badge}
+                </span>
+              ) : null}
+            </Link>
+          ))}
+        </div>
+      ))}
+    </aside>
+  );
+}

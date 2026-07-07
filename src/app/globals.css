@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Violeta institucional INCADE */
+  --inc-violet:              #9B30FF;
+  --inc-violet-hover:        #8520EE;
+  --inc-violet-subtle:       rgba(155, 48, 255, 0.15);
+  --inc-violet-border:       rgba(155, 48, 255, 0.25);
+  --inc-violet-border-strong:rgba(155, 48, 255, 0.50);
+  --inc-violet-text:         #A855F7;
+  --inc-magenta:             #C026D3;
+  --inc-magenta-subtle:      rgba(192, 38, 211, 0.12);
+  --inc-magenta-text:        #e879f9;
+  --inc-gradient:            linear-gradient(135deg, #9B30FF 0%, #C026D3 100%);
+  --inc-gradient-subtle:     linear-gradient(135deg, rgba(155,48,255,0.2) 0%, rgba(192,38,211,0.1) 100%);
+
+  /* Superficies */
+  --edu-bg:                  #08080F;
+  --edu-surface:             #100F1E;
+  --edu-surface-alt:         #151428;
+  --edu-surface-raised:      #1C1A35;
+
+  /* Texto */
+  --edu-text:                #FFFFFF;
+  --edu-text-muted:          rgba(255, 255, 255, 0.55);
+  --edu-text-faint:          rgba(255, 255, 255, 0.30);
+
+  /* Bordes */
+  --edu-border:              rgba(155, 48, 255, 0.20);
+  --edu-border-strong:       rgba(155, 48, 255, 0.45);
+  --edu-border-neutral:      rgba(255, 255, 255, 0.07);
+
+  /* Estados educativos */
+  --edu-success:             #10B981;
+  --edu-success-subtle:      rgba(16, 185, 129, 0.15);
+  --edu-success-border:      rgba(16, 185, 129, 0.30);
+  --edu-success-text:        #34d399;
+  --edu-warning:             #F59E0B;
+  --edu-warning-subtle:      rgba(245, 158, 11, 0.12);
+  --edu-warning-border:      rgba(245, 158, 11, 0.30);
+  --edu-warning-text:        #FBBF24;
+  --edu-danger:              #EF4444;
+  --edu-danger-subtle:       rgba(239, 68, 68, 0.10);
+  --edu-danger-border:       rgba(239, 68, 68, 0.25);
+  --edu-danger-text:         #F87171;
+
+  /* Certificados */
+  --edu-gold:                #E8C97A;
+  --edu-gold-subtle:         rgba(232, 201, 122, 0.12);
+  --edu-gold-border:         rgba(232, 201, 122, 0.30);
+
+  /* Geometría */
+  --radius-sm:               6px;
+  --radius-md:               10px;
+  --radius-lg:               14px;
+  --radius-xl:               20px;
+  --radius-pill:             999px;
+
+  /* Sombras */
+  --shadow-card:             0px 2px 8px rgba(0, 0, 0, 0.40);
+  --shadow-card-violet:      0px 4px 20px rgba(155, 48, 255, 0.15);
+  --shadow-modal:            0px 8px 40px rgba(0, 0, 0, 0.70);
+}
+
+/* ── Mapeo shadcn/ui → Design System INCADEducativa v2.1 ── */
+/* Fuente: docs/design/SHADCN_THEME.md — no editar a mano sin actualizar ese doc */
+:root {
+  /* shadcn: fondos y superficies */
+  --background:           var(--edu-bg);           /* #08080F */
+  --foreground:           var(--edu-text);          /* #FFFFFF */
+  --card:                 var(--edu-surface);       /* #100F1E */
+  --card-foreground:      var(--edu-text);
+  --popover:              var(--edu-surface-raised); /* #1C1A35 */
+  --popover-foreground:   var(--edu-text);
+
+  /* shadcn: colores primarios */
+  --primary:              var(--inc-violet);        /* #9B30FF */
+  --primary-foreground:   #FFFFFF;
+
+  /* shadcn: colores secundarios */
+  --secondary:            var(--edu-surface-alt);   /* #151428 */
+  --secondary-foreground: var(--edu-text);
+
+  /* shadcn: muted (textos y fondos suaves) */
+  --muted:                var(--edu-surface-alt);   /* #151428 */
+  --muted-foreground:     var(--edu-text-muted);    /* rgba(255,255,255,0.55) */
+
+  /* shadcn: accent (hover de nav, fondos sutiles) */
+  --accent:               var(--inc-violet-subtle); /* rgba(155,48,255,0.15) */
+  --accent-foreground:    var(--edu-text);
+
+  /* shadcn: estados destructivos */
+  --destructive:          var(--edu-danger);        /* #EF4444 */
+  --destructive-foreground: #FFFFFF;
+
+  /* shadcn: bordes e inputs */
+  --border:               var(--edu-border);        /* rgba(155,48,255,0.20) */
+  --input:                var(--edu-border);
+  --ring:                 var(--inc-violet-border-strong); /* rgba(155,48,255,0.50) */
+
+  /* shadcn: radio base */
+  --radius: var(--radius-md); /* 10px — botones e inputs */
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--edu-bg);
+  color: var(--edu-text);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
