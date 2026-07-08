@@ -12,10 +12,10 @@
 ### 1.1 Autenticación y Perfiles
 
 - [x] Login con email + contraseña (todos los roles) — verificado con 2 roles de prueba (admin/alumno), sesión persistente ~30 días, redirect por rol vía middleware (`/admin` protegido, `/dashboard` compartido con sidebar adaptado por rol)
-- [ ] Activación de cuenta por email (link de activación) — **parcial**: la pantalla `/activar-cuenta` y el mecanismo de confirmación (`/auth/confirm`, comparte `verifyOtp` con recuperación) ya están armados y compilan, pero no se probó de punta a punta porque depende de la importación CSV (Sprint 1b, genera la invitación real) y de Resend (`RESEND_API_KEY` sin configurar)
+- [x] Activación de cuenta por email (link de activación) — verificado de punta a punta: la importación CSV real dispara `inviteUserByEmail`, `/auth/confirm` intercambia el token y `/activar-cuenta` deja la contraseña. El envío efectivo del email depende del SMTP configurado en Supabase (`RESEND_API_KEY` sin configurar todavía), no del código.
 - [x] Recuperación de contraseña — flujo de pedido (`/recuperar`) verificado en navegador end-to-end; el envío real del email depende de Resend (no configurado todavía), pero el mecanismo de confirmación es el mismo que ya se probó
 - [ ] Un solo perfil unificado para coworking + educativa — sin cambios, el módulo coworking todavía no existe (Etapa 2)
-- [ ] Asignación de rol al momento de creación de cuenta — diferido a Sprint 1b (importación CSV); por ahora los roles de prueba se asignaron manualmente
+- [x] Asignación de rol al momento de creación de cuenta — la importación CSV asigna `role='alumno'` al crear el perfil; roles distintos se asignan después vía conversión de rol (Admin)
 - [x] Logout con limpieza de sesión — verificado en navegador
 - [ ] Perfil de usuario: nombre, foto, carrera/área, historial
 
@@ -80,12 +80,12 @@
 
 ### 2.1 Gestión del Sistema
 
-- [ ] Importar base inicial de alumnos y docentes (CSV con DNI + carrera/materia) · `E1`
-- [ ] CRUD completo de usuarios (crear, editar, desactivar)
-- [ ] Asignar y cambiar roles a cualquier usuario
-- [ ] Convertir un usuario `comunidad`/`lead` a Alumno INCADE: asignar DNI + carrera (`convert_user_role()`, conversión aditiva con notificación) · `E1`
-- [ ] Habilitar `can_teach` a un alumno y asignarle cursos a dictar (rol dual docente, granular por curso) · `E1`
-- [ ] Ver historial de conversiones de rol de un usuario (`role_history`) · `E1`
+- [x] Importar base inicial de alumnos y docentes (CSV con DNI + carrera/materia) · `E1` — `ImportCsvModal` en `/admin/usuarios`, columnas `nombre,apellido,dni,email,carrera`, preview con detección de duplicados y carrera sin match antes de confirmar
+- [ ] CRUD completo de usuarios (crear, editar, desactivar) — **parcial**: alta por CSV y conversión de rol listas; falta editar datos de un usuario existente y desactivar (`activo=false`)
+- [x] Asignar y cambiar roles a cualquier usuario — `ConvertRoleModal`, llama a `convert_user_role()`
+- [x] Convertir un usuario `comunidad`/`lead` a Alumno INCADE: asignar DNI + carrera (`convert_user_role()`, conversión aditiva con notificación) · `E1`
+- [ ] Habilitar `can_teach` a un alumno y asignarle cursos a dictar (rol dual docente, granular por curso) · `E1` — **parcial**: el toggle de `can_teach` (`CanTeachToggle`) está listo; falta la asignación de curso porque el catálogo de cursos todavía no tiene backend real
+- [x] Ver historial de conversiones de rol de un usuario (`role_history`) · `E1` — `RoleHistoryTimeline`, resuelve el admin que hizo cada cambio
 - [ ] Acceder al log de auditoría completo del sistema
 - [ ] Habilitar y deshabilitar feature flags por módulo
 
@@ -233,8 +233,8 @@
 ### 5.3 Plataforma Educativa · `E1`
 
 - [ ] Acceder al panel educativo con cursos activos y progreso
-- [ ] Ver catálogo de cursos con filtros por área y nivel
-- [ ] Inscribirse a cursos gratuitos con un clic (incluye cursos fuera de su carrera, que quedan como "curso adicional" — CU-T01)
+- [ ] Ver catálogo de cursos con filtros por área y nivel — **frontend-mock listo** (`/cursos`, `FilterBar` por categoría/nivel), falta conectar a `public.courses` real
+- [ ] Inscribirse a cursos gratuitos con un clic (incluye cursos fuera de su carrera, que quedan como "curso adicional" — CU-T01) — **frontend-mock listo** (`EnrollButton`), falta `enrollUserAction` real sobre `enrollments`
 - [ ] Inscribirse a cursos pagos (flujo MercadoPago + acceso tras webhook) · `E3`
 - [ ] Acceder al contenido con desbloqueo progresivo (clase por clase)
 - [ ] Rendir cuestionarios por módulo con feedback inmediato (ver §5.6)
@@ -354,10 +354,10 @@
 
 ### 8.4 Mapa Visual de Carreras
 
-- [ ] Nodos iluminados (completados), activos y bloqueados
-- [ ] Prerequisitos respetados: no se puede avanzar sin completar el anterior
-- [ ] Certificado de especialización visible al final del mapa
-- [ ] Progreso visual en tiempo real
+- [ ] Nodos iluminados (completados), activos y bloqueados — **frontend-mock listo** (`CareerMap` en `/carreras/[slug]`, solo visible para rol `alumno` — ADR-15), falta progreso real
+- [ ] Prerequisitos respetados: no se puede avanzar sin completar el anterior — lógica visual lista sobre datos mock, falta validar contra `enrollments`/`lesson_progress` reales
+- [ ] Certificado de especialización visible al final del mapa — nodo final mock listo (tokens `--edu-gold`), falta certificado real (Sprint 9-10)
+- [ ] Progreso visual en tiempo real — pendiente de conectar a datos reales
 
 ### 8.5 Módulos con Feature Flags
 

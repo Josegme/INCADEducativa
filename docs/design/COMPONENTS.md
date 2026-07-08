@@ -343,4 +343,214 @@ CertificateCard
 
 ---
 
+## 11. Table
+
+Tabla de datos — paneles de Admin (usuarios, cursos, resultados de evaluación).
+
+shadcn base: `<Table>` sobre `@radix-ui/react-slot` (sin dependencia Radix propia, es HTML semántico tematizado).
+
+### Especificación
+
+| Elemento | Token | Valor |
+|---|---|---|
+| Header row | Background | `rgba(255,255,255,0.03)` |
+| Header text | Color | `--edu-text-muted` · `12px` · SemiBold 600 · UPPERCASE · `letter-spacing 0.5px` |
+| Row border | Border-bottom | `0.5px solid --edu-border-neutral` |
+| Row hover | Background | `rgba(255,255,255,0.04)` |
+| Cell text | Color / size | `--edu-text` · `13px` · Regular 400 |
+| Cell padding | — | `10px 12px` |
+
+---
+
+## 12. Dialog / Modal
+
+Overlay modal — confirmaciones, formularios cortos, importación CSV.
+
+shadcn base: `<Dialog>` sobre `@radix-ui/react-dialog` (foco atrapado, cierre con `Esc`, `aria-modal`).
+
+### Especificación
+
+| Token | Valor |
+|---|---|
+| Overlay | `rgba(0,0,0,0.70)` |
+| Content background | `--edu-surface-raised` `#1C1A35` |
+| Content border | `0.5px solid --edu-border-strong` |
+| Content border-radius | `--radius-xl` `20px` |
+| Content shadow | `--shadow-modal` `0px 8px 40px rgba(0,0,0,0.70)` |
+| Título | `16px` · SemiBold 600 |
+| Descripción | `13px` · `--edu-text-muted` |
+| Botón cerrar | Ícono `X` de Lucide, `18px`, esquina superior derecha |
+
+---
+
+## 13. ImportCsvModal
+
+Modal de importación masiva de usuarios (Admin → `/admin/usuarios`). Ver Spec v3.4 §2.1.
+
+### Estructura interna
+
+```
+ImportCsvModal (Dialog, content raised)
+├── Header: "Importar usuarios" + descripción (formato esperado de columnas)
+├── FileDropzone (estado sin archivo)
+│   ├── Border: dashed 1px --edu-border-strong, radius-lg
+│   ├── Ícono Upload (Lucide, 24px, --inc-violet) centrado
+│   └── Texto: "Arrastrá tu CSV acá o hacé clic para seleccionar" (--edu-text-muted)
+├── PreviewTable (tras seleccionar archivo)
+│   ├── Columnas: Nombre, Apellido, DNI, Email, Carrera, Estado
+│   └── Estado por fila (Badge): `completed` nuevo listo · `pending` duplicado (se omite) ·
+│       `error` carrera sin match / campo faltante
+└── Footer: Button outline "Cancelar" + Button primary "Confirmar importación"
+```
+
+**Formato de columnas del CSV (Sprint 1b, decisión cerrada):** `nombre,apellido,dni,email,carrera`
+— `carrera` es el nombre de la carrera tal cual figura en `public.careers.nombre` (matching
+exacto case-insensitive; sin match → fila en estado `error`).
+
+---
+
+## 14. Select (nativo)
+
+No es un componente nuevo del catálogo — es un `<select>` HTML tematizado con los mismos
+tokens que `Input` (§4): mismo background, border, radius, focus ring. Se usa en
+`ConvertRoleModal` para elegir rol/carrera. Las `<option>` llevan
+`bg-[--edu-surface-raised]` para que el dropdown nativo respete el dark mode.
+
+---
+
+## 15. RoleHistoryTimeline
+
+Historial de conversiones de rol de un usuario (`users.role_history`). Ver Spec v3.4 ADR-16.
+
+### Estructura interna
+
+```
+RoleHistoryTimeline (Dialog, trigger = ícono History de Lucide)
+└── Lista de entradas (más reciente primero)
+    └── Item
+        ├── Border-left: 2px solid --inc-violet
+        ├── Badge `locked` (rol anterior) → Badge `active` (rol nuevo)
+        └── Fecha + "por {nombre del admin}" (--edu-text-muted, 12px)
+```
+
+Si no hay conversiones, mensaje simple: "Sin conversiones registradas todavía."
+
+---
+
+## 16. ConvertRoleModal
+
+Modal de conversión de rol (Admin → `/admin/usuarios`, por fila de la tabla). Ver Spec v3.4
+CU-T04/CU-T05/CU-T06 y ADR-15/ADR-16.
+
+### Estructura interna
+
+```
+ConvertRoleModal (Dialog, content raised)
+├── Header: "Convertir rol — {nombre}" + Badge con el rol actual
+├── Select "Nuevo rol" (los 6 valores de user_role)
+├── Si nuevo rol = alumno:
+│   ├── Select "Carrera" (public.careers, obligatorio)
+│   └── Input "DNI" (obligatorio)
+└── Footer: Button outline "Cancelar" + Button primary "Confirmar conversión"
+```
+
+**Regla:** la carrera y el DNI solo se piden (y solo se envían al backend) cuando el rol
+destino es `alumno` — reflejo de ADR-15 (las carreras las asigna el Admin como matrícula
+real). La conversión es aditiva: nunca se pierde el historial previo.
+
+---
+
+## 17. FilterBar
+
+Barra de filtros del catálogo de cursos (`/cursos`). Ver Spec v3.4 §5.3.
+
+### Especificación
+
+```
+FilterBar
+├── Chips de categoría (Marketing / Finanzas / RRHH-Liderazgo / Innovación / Todas)
+│   ├── Inactivo: fondo transparente, border --edu-border, texto --edu-text-muted
+│   └── Activo: fondo --inc-violet-subtle, border --inc-violet-border, texto --inc-violet-text
+└── Select "Nivel" (básico / intermedio / avanzado / todos) — mismos tokens que Input (§4)
+```
+
+Los chips reusan la forma de `Badge` (`pill: true`) como elemento clickeable, no como
+estado read-only.
+
+---
+
+## 18. EnrollButton
+
+Botón de inscripción a curso — cambia de variante según el estado de la inscripción del
+alumno. Ver CU-T01 (Spec v3.4 §10.3).
+
+| Estado | Variante | Label | Extra |
+|---|---|---|---|
+| No inscripto, gratuito | `primary` | "Inscribirme gratis" | — |
+| No inscripto, pago | `primary` (disabled + tooltip) | "Disponible en Etapa 3" | Pagos son E3 |
+| Inscripto, en progreso | `outline` | "Continuar" | `Progress` inline con % |
+| Completado (100%) | `ghost` + `Badge state="completed"` | "Ver certificado" | Certificados: Sprint 9-10 |
+
+---
+
+## 19. CourseDetail
+
+Página de detalle de curso (`/cursos/[slug]`). Solo información de catálogo — el player de
+contenido (lecciones) es un sprint aparte (Sprint 5-6).
+
+### Estructura interna
+
+```
+CourseDetail
+├── Header
+│   ├── CategoryTag + Badge de nivel (básico/intermedio/avanzado)
+│   ├── CourseTitle (20px SemiBold)
+│   ├── Descripción (--edu-text-muted)
+│   └── Meta: duración (Clock, Lucide) · gratuito/pago
+├── EnrollButton (§18)
+└── "Contenido del curso" — lista de módulos (solo títulos, sin desglose de clases)
+```
+
+---
+
+## 20. CareerMap
+
+Mapa visual de una carrera (`/carreras/[slug]`) — solo visible en su forma completa para
+rol `alumno` (ADR-15). Ver FUNCIONALIDADES §8.4.
+
+### Especificación
+
+```
+CareerMap
+└── Path vertical de nodos (uno por curso de la carrera, en orden)
+    ├── Nodo `completado`: círculo relleno --edu-success, ícono Check
+    ├── Nodo `activo` (siguiente disponible): círculo --inc-violet, borde animado sutil
+    ├── Nodo `bloqueado`: círculo outline --edu-text-faint, ícono Lock
+    └── Conector entre nodos: línea 2px --edu-border-neutral (--edu-success si el tramo
+        anterior está completo)
+```
+
+Nodo final de una carrera 100% completa: `CertificateCard` (§10) con tokens dorado — único
+lugar fuera de "Mis certificados" donde aparece `--edu-gold`.
+
+---
+
+## 21. CareerBlockedCTA
+
+Vitrina de carrera para roles que no son `alumno` (`comunidad`, `lead`, y por defecto
+cualquier rol sin matrícula). Ver CU-T02, ADR-15.
+
+### Especificación
+
+```
+CareerBlockedCTA
+├── Descripción de la carrera (materias, salida laboral) — mismo contenido que CareerMap,
+│   sin el mapa de nodos ni progreso
+├── NotificationBanner type="info": "Esta carrera requiere matrícula presencial en INCADE"
+└── Button primary: "Inscribite en el Instituto" (NUNCA "Comprar" — ADR-15)
+    → enlace a información de admisiones, no a un flujo de pago
+```
+
+---
+
 *INCADEducativa · Design System v2.1 — COMPONENTS v1.1 · Julio 2026*

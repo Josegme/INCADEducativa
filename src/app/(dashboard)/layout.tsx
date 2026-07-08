@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Award, BookOpen, LayoutDashboard, Users } from "lucide-react";
+import { Award, BookOpen, GraduationCap, LayoutDashboard, Users } from "lucide-react";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import type { SidebarSection } from "@/components/layout/Sidebar";
@@ -15,6 +15,7 @@ function sectionsForRole(role: TopbarRole): SidebarSection[] {
       items: [
         { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className={ICON_CLASS} aria-hidden /> },
         { label: "Cursos", href: "/cursos", icon: <BookOpen className={ICON_CLASS} aria-hidden /> },
+        { label: "Carreras", href: "/carreras", icon: <GraduationCap className={ICON_CLASS} aria-hidden /> },
         { label: "Certificados", href: "/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
       ],
     },
@@ -23,7 +24,7 @@ function sectionsForRole(role: TopbarRole): SidebarSection[] {
   if (role === "admin") {
     sections.push({
       label: "Administración",
-      items: [{ label: "Usuarios", href: "/admin", icon: <Users className={ICON_CLASS} aria-hidden /> }],
+      items: [{ label: "Usuarios", href: "/admin/usuarios", icon: <Users className={ICON_CLASS} aria-hidden /> }],
     });
   }
 
