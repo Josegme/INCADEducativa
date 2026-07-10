@@ -24,7 +24,11 @@ function sectionsForRole(role: TopbarRole): SidebarSection[] {
   if (role === "admin") {
     sections.push({
       label: "Administración",
-      items: [{ label: "Usuarios", href: "/admin/usuarios", icon: <Users className={ICON_CLASS} aria-hidden /> }],
+      items: [
+        { label: "Usuarios", href: "/admin/usuarios", icon: <Users className={ICON_CLASS} aria-hidden /> },
+        { label: "Cursos", href: "/admin/cursos", icon: <BookOpen className={ICON_CLASS} aria-hidden /> },
+        { label: "Carreras", href: "/admin/carreras", icon: <GraduationCap className={ICON_CLASS} aria-hidden /> },
+      ],
     });
   }
 

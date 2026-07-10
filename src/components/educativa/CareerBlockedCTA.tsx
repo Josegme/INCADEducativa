@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { NotificationBanner } from "@/components/ui/notification-banner";
-import type { MockCareer } from "@/modules/educativa/mockCatalog";
+import type { CatalogCareer } from "@/modules/educativa/catalog";
 
 interface CareerBlockedCTAProps {
-  career: MockCareer;
+  career: CatalogCareer;
 }
 
 export function CareerBlockedCTA({ career }: CareerBlockedCTAProps) {
@@ -12,11 +12,6 @@ export function CareerBlockedCTA({ career }: CareerBlockedCTAProps) {
       <div>
         <h1 className="text-[20px] font-semibold text-white">{career.nombre}</h1>
         <p className="mt-1 text-sm text-[--edu-text-muted]">{career.descripcion}</p>
-      </div>
-
-      <div>
-        <h2 className="mb-1 text-[13px] font-semibold text-[--edu-text]">Salida laboral</h2>
-        <p className="text-sm text-[--edu-text-muted]">{career.salidaLaboral}</p>
       </div>
 
       <NotificationBanner type="info">

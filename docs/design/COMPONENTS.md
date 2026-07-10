@@ -266,24 +266,20 @@ Tarjeta de curso — usada en grillas de 2 y 3 columnas.
 ```
 CourseCard
 ├── Header (58px height)
-│   ├── Background: color sutil relacionado con categoría
-│   └── Lucide icon (24px, color de acento)
+│   ├── Background: --inc-violet-subtle (único estilo, sin variar por curso)
+│   └── Lucide icon (24px, BookOpen, --inc-violet)
 └── Body (padding 8px 10px)
-    ├── CategoryTag (12px · SemiBold · UPPERCASE · letter-spacing 0.7px · --inc-violet)
+    ├── CareerTag (12px · SemiBold · UPPERCASE · letter-spacing 0.7px · --inc-violet)
+    │   → "{carrera.nombre} · {nivel}"
     ├── CourseName (13px · Medium 500 · lh 1.3)
     └── ProgressRow
         ├── ProgressBar (3px, fill gradiente)
         └── ProgressPercent (10px · --edu-text-muted)
 ```
 
-### Colores de header por categoría (sugeridos)
-
-| Categoría | Background | Ícono Lucide | Color ícono |
-|---|---|---|---|
-| Marketing | `rgba(155,48,255,0.10)` | `BarChart3` | `--inc-violet` |
-| Finanzas | `rgba(192,38,211,0.08)` | `TrendingUp` | `--inc-magenta` |
-| RRHH / Liderazgo | `rgba(16,185,129,0.08)` | `Users` | `--edu-success` |
-| Innovación | `rgba(245,158,11,0.08)` | `Lightbulb` | `--edu-warning` |
+**Nota:** `courses` no tiene columna `categoria` en el schema — no hay header por
+categoría. El header usa un único estilo (violeta) y el tag muestra la carrera real
+(`carrera_id` → `careers.nombre`), no una categoría inventada.
 
 ---
 
@@ -468,14 +464,16 @@ Barra de filtros del catálogo de cursos (`/cursos`). Ver Spec v3.4 §5.3.
 
 ```
 FilterBar
-├── Chips de categoría (Marketing / Finanzas / RRHH-Liderazgo / Innovación / Todas)
+├── Chips de carrera (una por public.careers.activa=true + "Todas")
 │   ├── Inactivo: fondo transparente, border --edu-border, texto --edu-text-muted
 │   └── Activo: fondo --inc-violet-subtle, border --inc-violet-border, texto --inc-violet-text
 └── Select "Nivel" (básico / intermedio / avanzado / todos) — mismos tokens que Input (§4)
 ```
 
 Los chips reusan la forma de `Badge` (`pill: true`) como elemento clickeable, no como
-estado read-only.
+estado read-only. Filtra por carrera real, no por una categoría fija — un curso no tiene
+columna `categoria` en el schema (`courses`/`careers` de `001_educativa_core.sql`); su
+"categoría" de catálogo es la carrera a la que pertenece (`carrera_id`).
 
 ---
 
@@ -486,6 +484,7 @@ alumno. Ver CU-T01 (Spec v3.4 §10.3).
 
 | Estado | Variante | Label | Extra |
 |---|---|---|---|
+| Rol distinto de `alumno` | `Badge state="locked"` | "Vista previa — inscripción disponible para alumnos INCADE" | Sin botón de acción |
 | No inscripto, gratuito | `primary` | "Inscribirme gratis" | — |
 | No inscripto, pago | `primary` (disabled + tooltip) | "Disponible en Etapa 3" | Pagos son E3 |
 | Inscripto, en progreso | `outline` | "Continuar" | `Progress` inline con % |
@@ -533,6 +532,10 @@ CareerMap
 Nodo final de una carrera 100% completa: `CertificateCard` (§10) con tokens dorado — único
 lugar fuera de "Mis certificados" donde aparece `--edu-gold`.
 
+`public.careers` no tiene columna de "salida laboral" — solo `nombre`/`descripcion`. No se
+agregó por schema para este alcance; si hace falta, es una columna a sumar en una migración
+aparte, no algo que se derive del catálogo actual.
+
 ---
 
 ## 21. CareerBlockedCTA
@@ -544,11 +547,130 @@ cualquier rol sin matrícula). Ver CU-T02, ADR-15.
 
 ```
 CareerBlockedCTA
-├── Descripción de la carrera (materias, salida laboral) — mismo contenido que CareerMap,
+├── Descripción de la carrera (`careers.descripcion`) — mismo contenido que CareerMap,
 │   sin el mapa de nodos ni progreso
 ├── NotificationBanner type="info": "Esta carrera requiere matrícula presencial en INCADE"
 └── Button primary: "Inscribite en el Instituto" (NUNCA "Comprar" — ADR-15)
     → enlace a información de admisiones, no a un flujo de pago
+```
+
+---
+
+## 22. CareerForm / CareerModal
+
+Alta y edición de carreras (Admin → `/admin/carreras`). CRUD mínimo top-level — sin editor
+de módulos/clases (eso es `CourseEditor`, Sprint 7-8).
+
+### Estructura interna
+
+```
+CareerModal (Dialog, content raised)
+├── Header: "Nueva carrera" / "Editar carrera — {nombre}"
+├── Input "Nombre" (obligatorio)
+├── Input "Slug" (autogenerado desde Nombre, editable a mano)
+├── Textarea/Input "Descripción"
+├── Input "Imagen (URL)" (opcional)
+├── Switch/checkbox "Activa"
+└── Footer: Button outline "Cancelar" + Button primary "Guardar carrera"
+```
+
+Mismo patrón de Dialog + Server Action que `ConvertRoleModal` (§16). El slug se genera con
+`src/lib/slugify.ts` y es editable antes de guardar; un conflicto de unicidad (constraint
+`unique` de `careers.slug`) se muestra como error de formulario, no como excepción.
+
+---
+
+## 23. CourseForm / CourseModal
+
+Alta y edición de cursos (Admin → `/admin/cursos`). Solo el registro top-level del curso
+(título, carrera, docente, nivel, precio, estado) — la estructura de módulos/clases se
+carga en Sprint 7-8 con `CourseEditor`.
+
+### Estructura interna
+
+```
+CourseModal (Dialog, content raised)
+├── Header: "Nuevo curso" / "Editar curso — {titulo}"
+├── Input "Título" (obligatorio)
+├── Input "Slug" (autogenerado desde Título, editable a mano)
+├── Textarea/Input "Descripción"
+├── Select "Carrera" (public.careers, opcional — un curso puede no tener carrera)
+├── Select "Docente" (users con role='docente' o can_teach=true, opcional)
+├── Select "Nivel" (básico / intermedio / avanzado)
+├── Input "Duración (hs)"
+├── Checkbox "Es gratuito" → si se desmarca, habilita Input "Precio"
+└── Footer: Button outline "Cancelar" + Button primary "Guardar curso"
+```
+
+**Publicación:** en la tabla de `/admin/cursos`, cada fila tiene un botón
+"Publicar"/"Volver a borrador" separado del modal de edición (cambia solo `estado`, vía
+`setCourseEstadoAction`) — el Admin es quien publica directamente (regla crítica #1, es
+quien cura el contenido).
+
+---
+
+## 24. LessonSidebar / LessonNav
+
+Navegación de lecciones dentro de un curso (`/cursos/[slug]/lecciones/[leccionId]`).
+Ver FUNCIONALIDADES §8.1 (desbloqueo progresivo).
+
+### Estructura interna
+
+```
+LessonSidebar (sin "use client" — son <Link>, no hace falta usePathname)
+└── Por módulo: título + lista de lecciones
+    └── Por lección
+        ├── `completado`: círculo --edu-success, ícono Check
+        ├── `activa` (la que se está viendo): círculo --inc-violet
+        ├── `bloqueada`: círculo outline --edu-text-faint, ícono Lock, sin <Link> (span)
+        └── resto (desbloqueada, no vista): número, <Link> normal
+
+LessonNav
+├── Button outline "Anterior" (<Link>, disabled si no hay lección previa)
+└── Button primary "Siguiente" (<Link>, disabled si la siguiente está `bloqueada`)
+```
+
+**Regla de desbloqueo:** la primera lección publicada del curso siempre está desbloqueada;
+cada lección siguiente se desbloquea solo si la anterior tiene `lesson_progress.completada =
+true`. Se calcula en el server component de la página, no en el componente.
+
+`CompletionBadge` **no es un componente nuevo** — es `Badge state="completed"` (§3) usado
+directamente donde haga falta marcar una lección/curso completado.
+
+---
+
+## 25. LessonPlayer
+
+Reproductor de video de una lección (`tipo='video'`). Ver FUNCIONALIDADES §8.1.
+
+### Especificación
+
+```
+LessonPlayer ("use client")
+└── <video> HTML5, controles nativos, src = URL firmada de Storage (contenido-cursos)
+    ├── Al cargar metadata: si hay progreso previo, currentTime = tiempo_visto_seg
+    ├── onTimeUpdate: guarda progreso debounced (~10s) vía saveLessonProgressAction
+    └── onEnded: guarda progreso + completada=true
+```
+
+No tiene controles custom en esta etapa — controles nativos del navegador. El guardado de
+progreso nunca escribe `enrollments.progreso_pct` a mano: lo recalcula el trigger
+`trg_progress_recalc` (001) al hacer upsert en `lesson_progress`.
+
+---
+
+## 26. ContentViewer
+
+Visor de contenido no-video de una lección (`tipo='texto'` o `tipo='documento'`).
+
+### Estructura interna
+
+```
+ContentViewer ("use client", por el botón de completar)
+├── tipo='texto': texto plano de `lessons.contenido_text` (--edu-text, 14px, lh 1.65)
+├── tipo='documento': Button outline "Descargar material" → URL firmada de Storage
+└── Button primary "Marcar como completada" (guarda completada=true — no hay señal
+    automática de "visto" para estos tipos, a diferencia del video)
 ```
 
 ---

@@ -123,7 +123,7 @@
 
 ### 2.3 Módulo Educativo — Admin · `E1`
 
-- [ ] Crear, editar y publicar carreras, cursos y módulos
+- [ ] Crear, editar y publicar carreras, cursos y módulos — **carreras/cursos top-level: listo** (`/admin/carreras`, `/admin/cursos`, publicar/despublicar); **módulos y clases: Sprint 7-8** (`CourseEditor`)
 - [ ] Habilitar y deshabilitar permisos granulares a cada docente
 - [ ] Revisar cola de curación: aprobar o rechazar contenido enviado por docentes
 - [ ] Enviar feedback al docente sobre contenido rechazado
@@ -233,8 +233,8 @@
 ### 5.3 Plataforma Educativa · `E1`
 
 - [ ] Acceder al panel educativo con cursos activos y progreso
-- [ ] Ver catálogo de cursos con filtros por área y nivel — **frontend-mock listo** (`/cursos`, `FilterBar` por categoría/nivel), falta conectar a `public.courses` real
-- [ ] Inscribirse a cursos gratuitos con un clic (incluye cursos fuera de su carrera, que quedan como "curso adicional" — CU-T01) — **frontend-mock listo** (`EnrollButton`), falta `enrollUserAction` real sobre `enrollments`
+- [x] Ver catálogo de cursos con filtros por área y nivel — `/cursos` conectado a `public.courses` real, filtro por carrera (`FilterBar`) y nivel
+- [x] Inscribirse a cursos gratuitos con un clic (incluye cursos fuera de su carrera, que quedan como "curso adicional" — CU-T01) — `enrollUserAction` real sobre `enrollments`
 - [ ] Inscribirse a cursos pagos (flujo MercadoPago + acceso tras webhook) · `E3`
 - [ ] Acceder al contenido con desbloqueo progresivo (clase por clase)
 - [ ] Rendir cuestionarios por módulo con feedback inmediato (ver §5.6)
@@ -328,12 +328,16 @@
 
 ### 8.1 Player de Clases
 
-- [ ] Reproductor de video embebido
-- [ ] Materiales descargables adjuntos por clase
-- [ ] Texto/transcripción de la clase
-- [ ] Desbloqueo progresivo: la clase siguiente se habilita al completar la anterior
-- [ ] Registro de `lesson_progress` al completar cada clase
-- [ ] Barra de progreso actualizada en tiempo real
+- [x] Reproductor de video embebido — `LessonPlayer`, video servido desde Storage
+      (`contenido-cursos`) con URL firmada
+- [ ] Materiales descargables adjuntos por clase — **diferido a Sprint 7-8**: `lessons` no
+      tiene columna/tabla para adjuntos y no hay UI (`LessonUploader`) para cargarlos todavía
+- [x] Texto/transcripción de la clase — `ContentViewer` (`tipo='texto'`)
+- [x] Desbloqueo progresivo: la clase siguiente se habilita al completar la anterior
+- [x] Registro de `lesson_progress` al completar cada clase — guardado debounced (~10s) +
+      al finalizar el video o marcar como completada
+- [x] Barra de progreso actualizada en tiempo real — `enrollments.progreso_pct` vía el
+      trigger `trg_progress_recalc` (001), sin cálculo manual en la app
 
 ### 8.2 Certificados Digitales
 
