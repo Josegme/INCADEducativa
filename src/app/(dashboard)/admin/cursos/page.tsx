@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CourseModal } from "@/components/admin/CourseModal";
 import { PublishToggle } from "@/components/admin/PublishToggle";
+import { ReviewActions } from "@/components/admin/ReviewActions";
 import { createClient } from "@/lib/supabase/server";
 import { COURSE_LEVEL_LABEL, type CourseRow } from "@/modules/admin/courses";
 
@@ -33,7 +34,8 @@ export default async function AdminCursosPage() {
         <div>
           <h1 className="text-[20px] font-semibold text-white">Cursos</h1>
           <p className="text-sm text-[--edu-text-muted]">
-            Registro de cursos del catálogo. La carga de módulos y clases se hace en un sprint aparte.
+            Registro de cursos del catálogo. Los cursos en revisión los carga el docente
+            en <span className="text-[--edu-text]">/docente</span> — acá se aprueban o rechazan.
           </p>
         </div>
         <CourseModal careers={careerOptions} docentes={docenteOptions} />
@@ -64,8 +66,14 @@ export default async function AdminCursosPage() {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">
-                  <CourseModal course={course} careers={careerOptions} docentes={docenteOptions} />
-                  <PublishToggle courseId={course.id} estado={course.estado} />
+                  {course.estado === "revision" ? (
+                    <ReviewActions courseId={course.id} courseTitulo={course.titulo} />
+                  ) : (
+                    <>
+                      <CourseModal course={course} careers={careerOptions} docentes={docenteOptions} />
+                      <PublishToggle courseId={course.id} estado={course.estado} />
+                    </>
+                  )}
                 </div>
               </TableCell>
             </TableRow>

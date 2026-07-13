@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Award, BookOpen, GraduationCap, LayoutDashboard, Users } from "lucide-react";
+import { Award, BookOpen, GraduationCap, LayoutDashboard, Presentation, Users } from "lucide-react";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import type { SidebarSection } from "@/components/layout/Sidebar";
@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const ICON_CLASS = "h-[18px] w-[18px]";
 
-function sectionsForRole(role: TopbarRole): SidebarSection[] {
+function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] {
   const sections: SidebarSection[] = [
     {
       label: "Plataforma",
@@ -20,6 +20,13 @@ function sectionsForRole(role: TopbarRole): SidebarSection[] {
       ],
     },
   ];
+
+  if (role === "docente" || canTeach) {
+    sections.push({
+      label: "Docente",
+      items: [{ label: "Mis cursos", href: "/docente", icon: <Presentation className={ICON_CLASS} aria-hidden /> }],
+    });
+  }
 
   if (role === "admin") {
     sections.push({
@@ -58,7 +65,7 @@ export default async function DashboardGroupLayout({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("nombre, apellido, role")
+    .select("nombre, apellido, role, can_teach")
     .eq("id", user.id)
     .single();
 
@@ -66,7 +73,7 @@ export default async function DashboardGroupLayout({
 
   return (
     <DashboardLayout
-      sidebarSections={sectionsForRole(role)}
+      sidebarSections={sectionsForRole(role, profile?.can_teach ?? false)}
       userInitials={initialsFor(profile?.nombre, profile?.apellido, user.email)}
       role={role}
     >

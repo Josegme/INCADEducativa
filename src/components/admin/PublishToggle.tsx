@@ -17,6 +17,10 @@ export function PublishToggle({ courseId, estado }: PublishToggleProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const isPublicado = estado === "publicado";
 
+  if (estado === "revision") {
+    return null;
+  }
+
   async function handleClick() {
     setIsLoading(true);
     await setCourseEstadoAction(courseId, isPublicado ? "borrador" : "publicado");

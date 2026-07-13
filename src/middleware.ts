@@ -29,13 +29,14 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/admin") || pathname.startsWith("/docente")) {
     const { data: profile } = await supabase
       .from("users")
-      .select("role")
+      .select("role, can_teach")
       .eq("id", user.id)
       .single();
 
     const role = profile?.role;
-    const allowed =
-      pathname.startsWith("/admin") ? role === "admin" : role === "admin" || role === "docente";
+    const allowed = pathname.startsWith("/admin")
+      ? role === "admin"
+      : role === "admin" || role === "docente" || profile?.can_teach === true;
 
     if (!allowed) {
       return NextResponse.redirect(new URL("/dashboard", request.url));

@@ -123,10 +123,14 @@
 
 ### 2.3 Módulo Educativo — Admin · `E1`
 
-- [ ] Crear, editar y publicar carreras, cursos y módulos — **carreras/cursos top-level: listo** (`/admin/carreras`, `/admin/cursos`, publicar/despublicar); **módulos y clases: Sprint 7-8** (`CourseEditor`)
+- [x] Crear, editar y publicar carreras, cursos y módulos — carreras/cursos top-level
+      (`/admin/carreras`, `/admin/cursos`, publicar/despublicar); módulos y clases los carga
+      el Docente en `/docente/cursos/[id]` (`CourseEditor`, §27 de COMPONENTS.md)
 - [ ] Habilitar y deshabilitar permisos granulares a cada docente
-- [ ] Revisar cola de curación: aprobar o rechazar contenido enviado por docentes
-- [ ] Enviar feedback al docente sobre contenido rechazado
+- [x] Revisar cola de curación: aprobar o rechazar contenido enviado por docentes —
+      `ReviewActions` (§29) en `/admin/cursos`, filas en `estado='revision'`
+- [x] Enviar feedback al docente sobre contenido rechazado — motivo obligatorio al rechazar,
+      guardado en `courses.revision_comentario` y visible en `CourseEditor` (banner de rechazo)
 - [ ] Publicar cursos, talleres y programas (única entidad que puede publicar)
 - [ ] Editar nombre en certificado emitido y regenerar PDF
 - [ ] Ver métricas académicas: progreso de alumnos, reportes de engagement
@@ -164,11 +168,18 @@
 
 ### 4.1 Creación de Contenido · `E1`
 
-- [ ] Diseñar la estructura del programa: módulos, clases, orden
-- [ ] Subir videos, materiales descargables y textos por clase (estado: BORRADOR)
-- [ ] Enviar contenido a revisión del Admin (estado: EN REVISIÓN)
-- [ ] Recibir feedback del Admin sobre contenido rechazado
-- [ ] Editar y reenviar a revisión el contenido rechazado
+- [x] Diseñar la estructura del programa: módulos, clases, orden — `CourseEditor` (§27),
+      reordenar módulos y clases con drag (`@dnd-kit`)
+- [x] Subir videos y textos por clase (estado: BORRADOR) — `LessonUploader` (§28) para
+      video/documento, textarea directo para texto. **Materiales descargables *adjuntos*
+      (attachments aparte del contenido principal de la clase) siguen diferidos**, no hay
+      columna/tabla para eso todavía (ver §8.1)
+- [x] Enviar contenido a revisión del Admin (estado: EN REVISIÓN) — botón "Enviar a
+      revisión" en `CourseEditor`, requiere al menos un módulo cargado
+- [x] Recibir feedback del Admin sobre contenido rechazado — banner en `CourseEditor` con
+      `revision_comentario`
+- [x] Editar y reenviar a revisión el contenido rechazado — al rechazar el curso vuelve a
+      `borrador`, editable de nuevo, mismo botón "Enviar a revisión"
 
 ### 4.2 Gestión de sus Cursos · `E1`
 
@@ -330,8 +341,10 @@
 
 - [x] Reproductor de video embebido — `LessonPlayer`, video servido desde Storage
       (`contenido-cursos`) con URL firmada
-- [ ] Materiales descargables adjuntos por clase — **diferido a Sprint 7-8**: `lessons` no
-      tiene columna/tabla para adjuntos y no hay UI (`LessonUploader`) para cargarlos todavía
+- [ ] Materiales descargables *adjuntos* por clase (además del contenido principal) —
+      **sigue diferido**: `LessonUploader` (§28 de COMPONENTS.md, Sprint 7a) ya sube el
+      contenido principal de una clase `tipo='documento'`, pero un adjunto *extra* sobre una
+      clase de video necesitaría una tabla propia (`lessons` no tiene columna para eso)
 - [x] Texto/transcripción de la clase — `ContentViewer` (`tipo='texto'`)
 - [x] Desbloqueo progresivo: la clase siguiente se habilita al completar la anterior
 - [x] Registro de `lesson_progress` al completar cada clase — guardado debounced (~10s) +

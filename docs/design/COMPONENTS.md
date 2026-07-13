@@ -1,5 +1,5 @@
 # COMPONENTS — INCADEducativa · Catálogo mínimo E1
-**Versión 1.1 · Julio 2026**
+**Versión 1.2 · Julio 2026**
 Especificación de tokens y variantes por componente para el MVP Educativo.
 
 > Referencia de implementación para Cursor + Claude Code. Antes de crear un componente, verificar que exista aquí. Si no existe, documentarlo primero (SDD).
@@ -675,4 +675,78 @@ ContentViewer ("use client", por el botón de completar)
 
 ---
 
-*INCADEducativa · Design System v2.1 — COMPONENTS v1.1 · Julio 2026*
+## 27. CourseEditor
+
+Editor de estructura del curso para el Docente (`/docente/cursos/[id]`). Sprint 7a.
+
+### Estructura interna
+
+```
+CourseEditor ("use client")
+├── Header: título del curso + Badge de estado + Button "Enviar a revisión"
+│   (solo visible en estado='borrador')
+├── NotificationBanner warning: motivo de rechazo (revision_comentario), solo si
+│   estado='borrador' y hay un comentario del Admin de una revisión anterior
+├── NotificationBanner info: "en revisión, no editable" si estado='revision'
+├── DndContext (@dnd-kit) + SortableContext vertical de ModuleCard
+│   └── ModuleCard (por módulo)
+│       ├── drag handle + título + ModuleModal (editar) + borrar (confirm en 2 pasos)
+│       ├── DndContext + SortableContext vertical anidado de clases del módulo
+│       │   └── por clase: drag handle + ícono según tipo + título + LessonModal + borrar
+│       └── LessonModal trigger "+ Clase"
+└── ModuleModal trigger "+ Módulo"
+```
+
+**Regla de edición:** todos los controles de edición (agregar/editar/borrar/arrastrar) se
+ocultan cuando `estado !== 'borrador'` — mientras el curso está en revisión o publicado, el
+Docente ve la estructura pero no puede tocarla (RLS ya lo impide a nivel DB para `courses`,
+pero `modules`/`lessons` sí aceptan escritura del dueño en cualquier estado, así que el
+gating real de UX vive acá, no en RLS).
+
+`ModuleModal` y `LessonModal` son diálogos (Dialog, §12) con un solo campo — no ameritan
+entrada propia en este catálogo.
+
+---
+
+## 28. LessonUploader
+
+Sube el archivo de una clase (`video` o `documento`) directo a Storage desde el browser.
+Sprint 7a — usa por primera vez el cliente de Supabase de browser (`lib/supabase/client.ts`),
+necesario porque subir un archivo grande a través de un Server Action no escala.
+
+```
+LessonUploader ("use client")
+├── Ruta del objeto: `{course_id}/{timestamp}-{filename-sanitizado}` (misma convención
+│   del bucket `contenido-cursos` de la 006)
+├── Progress (§5): barra simulada (no hay callback de progreso por byte en supabase-js
+│   Storage) — sube hasta 90% mientras la promesa está pendiente, cierra a 100% al resolver
+└── Al confirmar: llama `onUploaded(path)` — el path (no la URL firmada) es lo que se
+    persiste en `lessons.contenido_url`; la URL firmada se genera recién al reproducir/descargar
+```
+
+Requiere las policies `lesson_content_write/update/delete` de la migración 007 (la 006 solo
+tenía SELECT).
+
+---
+
+## 29. ReviewActions
+
+Acciones de revisión del Admin para un curso en `estado='revision'` (`/admin/cursos`).
+Reemplaza a `PublishToggle` (§ver `PublishToggle`) solo para esa fila — `PublishToggle` sigue
+disponible para borrador↔publicado directo en cursos que el Admin arma sin pasar por un Docente.
+
+```
+ReviewActions ("use client")
+├── Button primary "Aprobar" — 1 clic, estado→publicado, limpia revision_comentario
+└── Button destructive "Rechazar" → Dialog con textarea de motivo (obligatorio)
+    → estado→borrador, guarda revision_comentario/revisado_por/revisado_at
+```
+
+El motivo de rechazo es el *último* nomás (se pisa en cada revisión), no un historial
+completo — alcanza para el nivel "básico" pedido en el plan de sprint. El Docente lo lee
+directo en `CourseEditor` (§27); no depende del bell de notificaciones (Sprint 7c, no
+construido todavía).
+
+---
+
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.2 · Julio 2026*
