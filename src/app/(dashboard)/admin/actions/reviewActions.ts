@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { notifyUsers } from "@/lib/notifications";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -31,6 +32,8 @@ export interface ReviewActionState {
 export async function approveCourseAction(courseId: string): Promise<ReviewActionState> {
   const { supabase, user } = await requireAdmin();
 
+  const { data: course } = await supabase.from("courses").select("titulo, docente_id").eq("id", courseId).single();
+
   const { error } = await supabase
     .from("courses")
     .update({
@@ -45,6 +48,13 @@ export async function approveCourseAction(courseId: string): Promise<ReviewActio
     return { error: error.message };
   }
 
+  await notifyCourseReview(supabase, courseId, course, {
+    tipo: "contenido_publicado",
+    titulo: `Tu curso "${course?.titulo}" fue aprobado`,
+    cuerpo: "El Admin aprobó tu curso — ya está publicado en el catálogo.",
+    emailSubject: `[${course?.titulo}] Curso aprobado`,
+  });
+
   revalidatePath("/admin/cursos");
   return { success: true };
 }
@@ -55,6 +65,8 @@ export async function rejectCourseAction(courseId: string, comentario: string): 
   }
 
   const { supabase, user } = await requireAdmin();
+
+  const { data: course } = await supabase.from("courses").select("titulo, docente_id").eq("id", courseId).single();
 
   const { error } = await supabase
     .from("courses")
@@ -70,6 +82,35 @@ export async function rejectCourseAction(courseId: string, comentario: string): 
     return { error: error.message };
   }
 
+  await notifyCourseReview(supabase, courseId, course, {
+    tipo: "sistema",
+    titulo: `Tu curso "${course?.titulo}" fue rechazado`,
+    cuerpo: `El Admin rechazó tu curso con el motivo: "${comentario.trim()}"`,
+    emailSubject: `[${course?.titulo}] Curso rechazado`,
+  });
+
   revalidatePath("/admin/cursos");
   return { success: true };
+}
+
+async function notifyCourseReview(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  courseId: string,
+  course: { titulo: string; docente_id: string | null } | null,
+  content: { tipo: "contenido_publicado" | "sistema"; titulo: string; cuerpo: string; emailSubject: string }
+) {
+  if (!course?.docente_id) return;
+
+  const { data: docente } = await supabase.from("users").select("email").eq("id", course.docente_id).single();
+
+  if (!docente) return;
+
+  await notifyUsers(supabase, {
+    tipo: content.tipo,
+    courseId,
+    titulo: content.titulo,
+    cuerpo: content.cuerpo,
+    recipients: [{ userId: course.docente_id, email: docente.email as string }],
+    emailSubject: content.emailSubject,
+  });
 }

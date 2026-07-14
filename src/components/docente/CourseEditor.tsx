@@ -19,17 +19,21 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { AlertTriangle, FileText, GripVertical, Trash2, Video } from "lucide-react";
+import { AlertTriangle, ClipboardList, FileText, GripVertical, Trash2, UploadCloud, Video } from "lucide-react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import { ModuleModal } from "@/components/docente/ModuleModal";
 import { LessonModal } from "@/components/docente/LessonModal";
+import { EvaluationModal } from "@/components/docente/EvaluationModal";
 import type { EditableCourse, EditableLesson, EditableModule } from "@/modules/docente/courseEditor";
+import { EVALUATION_TIPO_LABEL, type EvaluationSummary } from "@/modules/docente/evaluationEditor";
 import { deleteModuleAction, reorderModulesAction } from "@/app/(dashboard)/docente/actions/moduleActions";
 import { deleteLessonAction, reorderLessonsAction } from "@/app/(dashboard)/docente/actions/lessonActions";
 import { submitForReviewAction } from "@/app/(dashboard)/docente/actions/reviewActions";
+import { deleteEvaluationAction } from "@/app/(dashboard)/docente/actions/evaluationActions";
 
 const ESTADO_BADGE = {
   borrador: "locked",
@@ -122,16 +126,48 @@ function LessonRow({
   );
 }
 
-function ModuleCard({
-  courseModule,
+function EvaluationRow({
+  evaluation,
   courseId,
   editable,
   onDeleted,
 }: {
-  courseModule: EditableModule;
+  evaluation: EvaluationSummary;
   courseId: string;
   editable: boolean;
   onDeleted: () => void;
+}) {
+  const Icon = evaluation.tipo === "tp" ? UploadCloud : ClipboardList;
+
+  return (
+    <div className="flex items-center gap-2 rounded-md border-[0.5px] border-[--edu-border] bg-white/[0.03] px-3 py-2">
+      <Icon className="h-4 w-4 shrink-0 text-[--edu-text-muted]" aria-hidden />
+      <span className="flex-1 text-[13px] text-[--edu-text]">{evaluation.titulo}</span>
+      <Badge state="active">{EVALUATION_TIPO_LABEL[evaluation.tipo]}</Badge>
+      <Link href={`/docente/cursos/${courseId}/evaluaciones/${evaluation.id}`}>
+        <Button variant="ghost" size="sm">
+          {editable ? "Editar" : "Ver"}
+        </Button>
+      </Link>
+      {editable ? <ConfirmDelete onConfirm={onDeleted} /> : null}
+    </div>
+  );
+}
+
+function ModuleCard({
+  courseModule,
+  courseId,
+  editable,
+  evaluations,
+  onDeleted,
+  onDeletedEvaluation,
+}: {
+  courseModule: EditableModule;
+  courseId: string;
+  editable: boolean;
+  evaluations: EvaluationSummary[];
+  onDeleted: () => void;
+  onDeletedEvaluation: (evaluationId: string) => void;
 }) {
   const router = useRouter();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -213,6 +249,47 @@ function ModuleCard({
           <LessonModal courseId={courseId} moduleId={courseModule.id} nextOrden={lessons.length} />
         </div>
       ) : null}
+
+      {evaluations.length > 0 ? (
+        <div className="flex flex-col gap-1.5 pl-6">
+          {evaluations.map((evaluation) => (
+            <EvaluationRow
+              key={evaluation.id}
+              evaluation={evaluation}
+              courseId={courseId}
+              editable={editable}
+              onDeleted={() => onDeletedEvaluation(evaluation.id)}
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {editable ? (
+        <div className="flex flex-wrap gap-2 pl-6">
+          {evaluations.some((e) => e.tipo === "cuestionario_modulo") ? null : (
+            <EvaluationModal
+              courseId={courseId}
+              moduleId={courseModule.id}
+              tipo="cuestionario_modulo"
+              trigger={
+                <Button variant="outline" size="sm">
+                  + Cuestionario de módulo
+                </Button>
+              }
+            />
+          )}
+          <EvaluationModal
+            courseId={courseId}
+            moduleId={courseModule.id}
+            tipo="tp"
+            trigger={
+              <Button variant="outline" size="sm">
+                + Entrega de TP
+              </Button>
+            }
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -220,11 +297,13 @@ function ModuleCard({
 interface CourseEditorProps {
   course: EditableCourse;
   modules: EditableModule[];
+  evaluations: EvaluationSummary[];
 }
 
-export function CourseEditor({ course, modules: initialModules }: CourseEditorProps) {
+export function CourseEditor({ course, modules: initialModules, evaluations: initialEvaluations }: CourseEditorProps) {
   const router = useRouter();
   const [modules, setModules] = React.useState(initialModules);
+  const [evaluations, setEvaluations] = React.useState(initialEvaluations);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
 
@@ -232,8 +311,13 @@ export function CourseEditor({ course, modules: initialModules }: CourseEditorPr
     setModules(initialModules);
   }, [initialModules]);
 
+  React.useEffect(() => {
+    setEvaluations(initialEvaluations);
+  }, [initialEvaluations]);
+
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const editable = course.estado === "borrador";
+  const examenFinal = evaluations.find((e) => e.tipo === "examen_final");
 
   async function handleModuleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -249,6 +333,11 @@ export function CourseEditor({ course, modules: initialModules }: CourseEditorPr
 
   async function handleDeleteModule(moduleId: string) {
     await deleteModuleAction(moduleId, course.id);
+    router.refresh();
+  }
+
+  async function handleDeleteEvaluation(evaluationId: string) {
+    await deleteEvaluationAction(evaluationId, course.id);
     router.refresh();
   }
 
@@ -274,11 +363,18 @@ export function CourseEditor({ course, modules: initialModules }: CourseEditorPr
           <Badge state={ESTADO_BADGE[course.estado]}>{ESTADO_LABEL[course.estado]}</Badge>
         </div>
 
-        {course.estado === "borrador" ? (
-          <Button variant="primary" size="sm" disabled={isSubmitting} onClick={handleSubmitForReview}>
-            {isSubmitting ? "Enviando…" : "Enviar a revisión"}
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          <Link href={`/docente/cursos/${course.id}/anuncios`}>
+            <Button variant="outline" size="sm">
+              Anuncios
+            </Button>
+          </Link>
+          {course.estado === "borrador" ? (
+            <Button variant="primary" size="sm" disabled={isSubmitting} onClick={handleSubmitForReview}>
+              {isSubmitting ? "Enviando…" : "Enviar a revisión"}
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {submitError ? <NotificationBanner type="danger">{submitError}</NotificationBanner> : null}
@@ -305,7 +401,9 @@ export function CourseEditor({ course, modules: initialModules }: CourseEditorPr
                 courseModule={courseModule}
                 courseId={course.id}
                 editable={editable}
+                evaluations={evaluations.filter((e) => e.module_id === courseModule.id)}
                 onDeleted={() => handleDeleteModule(courseModule.id)}
+                onDeletedEvaluation={handleDeleteEvaluation}
               />
             ))}
           </div>
@@ -324,6 +422,31 @@ export function CourseEditor({ course, modules: initialModules }: CourseEditorPr
           <ModuleModal courseId={course.id} nextOrden={modules.length} />
         </div>
       ) : null}
+
+      <div className="flex flex-col gap-2 border-t-[0.5px] border-[--edu-border] pt-4">
+        <span className="text-sm font-semibold text-white">Examen final</span>
+        {examenFinal ? (
+          <EvaluationRow
+            evaluation={examenFinal}
+            courseId={course.id}
+            editable={editable}
+            onDeleted={() => handleDeleteEvaluation(examenFinal.id)}
+          />
+        ) : editable ? (
+          <EvaluationModal
+            courseId={course.id}
+            moduleId={null}
+            tipo="examen_final"
+            trigger={
+              <Button variant="outline" size="sm" className="self-start">
+                + Examen final
+              </Button>
+            }
+          />
+        ) : (
+          <span className="text-sm text-[--edu-text-muted]">Este curso no tiene examen final.</span>
+        )}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { CourseEditor } from "@/components/docente/CourseEditor";
 import type { EditableLesson, EditableModule } from "@/modules/docente/courseEditor";
+import type { EvaluationSummary } from "@/modules/docente/evaluationEditor";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DocenteCourseEditorPage({ params }: { params: { id: string } }) {
@@ -55,6 +56,18 @@ export default async function DocenteCourseEditorPage({ params }: { params: { id
     lessons: lessonsByModule.get(m.id as string) ?? [],
   }));
 
+  const { data: evaluationRows } = await supabase
+    .from("evaluations")
+    .select("id, titulo, tipo, module_id")
+    .eq("course_id", course.id);
+
+  const evaluations: EvaluationSummary[] = (evaluationRows ?? []).map((e) => ({
+    id: e.id as string,
+    titulo: e.titulo as string,
+    tipo: e.tipo as EvaluationSummary["tipo"],
+    module_id: e.module_id as string | null,
+  }));
+
   return (
     <CourseEditor
       course={{
@@ -64,6 +77,7 @@ export default async function DocenteCourseEditorPage({ params }: { params: { id
         revision_comentario: course.revision_comentario,
       }}
       modules={modules}
+      evaluations={evaluations}
     />
   );
 }

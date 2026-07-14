@@ -7,6 +7,13 @@ const AUTH_ONLY_WHEN_LOGGED_OUT = ["/login", "/recuperar", "/activar-cuenta"];
 
 function isPublicPath(pathname: string) {
   if (pathname.startsWith("/verificar/")) return true;
+  // Coworking es un servicio público desde E2 (Addendum 03 §2.1) — la landing
+  // y el catálogo se ven sin login; el login recién se pide al reservar.
+  if (pathname.startsWith("/servicios/coworking")) return true;
+  // Webhooks de servicios externos (MercadoPago) llegan sin sesión de usuario
+  // — la seguridad la da la verificación de x-signature dentro del route
+  // handler (CLAUDE.md regla #9), no el middleware de auth.
+  if (pathname.startsWith("/api/")) return true;
   return PUBLIC_PATHS.includes(pathname);
 }
 

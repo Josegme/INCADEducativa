@@ -1,6 +1,6 @@
 # CLAUDE.md — INCADEducativa
 > Fuente de verdad para Cursor + Claude Code CLI. Leer antes de escribir cualquier línea de código.
-> Versión: 3.4 — Design System v2.1 integrado
+> Versión: 3.5 — excepción de auto-registro acotada a Coworking (regla #2, Sprint 13-14)
 
 ## Proyecto
 INCADEducativa — Plataforma Educativa Digital · incadeducativa.com
@@ -75,7 +75,13 @@ FEATURE_PUBLICA=false      # E3
 ## REGLAS CRÍTICAS — nunca violar
 1. Docentes NO publican — toda publicación pasa por revisión del Admin
 2. Alumnos INCADE NO se auto-registran — se importan por CSV (E1/E2).
-   Usuarios comunidad SÍ se auto-registran, solo cuando FEATURE_PUBLICA=true (E3)
+   Usuarios comunidad SÍ se auto-registran, solo cuando FEATURE_PUBLICA=true (E3).
+   **Excepción acotada (v3.5, Sprint 13-14):** con FEATURE_COWORKING=true y
+   FEATURE_PUBLICA=false (E2), un visitante sin cuenta SÍ puede auto-registrarse como
+   `comunidad` únicamente como parte del flujo de reserva de Coworking (CU-06, registro
+   mínimo nombre+email+contraseña en el paso de pago). No abre registro general de la
+   plataforma — el único punto de entrada es el flujo de reserva bajo
+   `/servicios/coworking`, nunca `/registro` ni un link de alta libre en el resto del sitio
 3. Toda migración de schema va en supabase/migrations/ con número secuencial
 4. RLS siempre activo en Supabase — usar SIEMPRE la función is_admin()
    (security definer) en policies, NUNCA subqueries a public.users

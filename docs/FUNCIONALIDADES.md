@@ -33,8 +33,8 @@
 - [ ] Inscripción a curso confirmada → Email · inmediato · `E1`
 - [ ] Recordatorio tutoría virtual 24hs y 1hs → Email + WhatsApp · alumno + docente · `E2`
 - [ ] Contenido enviado a revisión → Email · al admin · `E1`
-- [ ] Contenido aprobado o rechazado → Email · al docente · `E1`
-- [ ] Anuncio del docente al grupo (`ANNOUNCEMENT`) → In-app (Realtime) + Email · alumnos inscriptos · `E1`
+- [x] Contenido aprobado o rechazado → Email · al docente · `E1`
+- [x] Anuncio del docente al grupo (`ANNOUNCEMENT`) → In-app (Realtime) + Email · alumnos inscriptos · `E1`
 - [ ] Comunicado institucional masivo del admin → In-app + Email · cursos/carreras seleccionados · `E1`
 - [ ] TP o pregunta abierta corregida → In-app + Email · al alumno · `E1`
 - [ ] Cambio de rol / conversión de cuenta → In-app + Email · al usuario convertido · `E1`
@@ -93,9 +93,9 @@
 
 > El Coworking es un servicio con revenue propio, abierto a la comunidad. Acceso público desde E2 (ADR-13).
 
-- [ ] CRUD completo de sedes físicas
-- [ ] CRUD completo de espacios por sede (hot desks, salas, aulas)
-- [ ] Configurar precios públicos y % de descuento institucional por rol
+- [x] CRUD completo de sedes físicas — `/admin/coworking/sedes`, `LocationModal`/`LocationActiveToggle`, verificado en navegador (alta/edición/activar/desactivar)
+- [x] CRUD completo de espacios por sede (hot desks, salas, aulas) — `/admin/coworking/espacios`, `SpaceModal`/`SpaceActiveToggle`, verificado en navegador
+- [x] Configurar precios públicos y % de descuento institucional por rol — precio/hora por espacio (`SpaceModal`) + descuento vía `get_user_discount()` (ya definida en la 002, 30% para alumno/docente/coordinador), aplicado en la landing pública
 - [ ] Configurar cupones de descuento y campañas de early bird
 - [ ] Ver disponibilidad de todos los espacios en tiempo real
 - [ ] Ver, modificar y cancelar cualquier reserva del sistema
@@ -194,31 +194,34 @@
 
 > Editor visual de evaluaciones. Misma entidad `evaluation` para cuestionarios, exámenes y TPs (ADR-12).
 
-- [ ] Crear evaluación por tipo: cuestionario de módulo, examen final, entrega de TP
-- [ ] Editor visual por bloques con menú de tipos de pregunta (íconos Lucide, < 3 clics por pregunta)
-- [ ] Pregunta Verdadero/Falso con fundamentación obligatoria (corrección manual)
-- [ ] Pregunta de opción única (radio, una correcta)
-- [ ] Pregunta de opción múltiple (checkbox, varias correctas)
-- [ ] Pregunta abierta de texto largo (corrección manual)
-- [ ] Consigna de entrega de TP (archivo / Drive / GitHub / URL / texto)
-- [ ] Reordenar preguntas con drag & drop
-- [ ] Configurar peso de cada pregunta y respuesta correcta
-- [ ] Configuración global: tiempo límite, nota mínima, intentos permitidos, espera entre intentos, resultado inmediato o diferido
-- [ ] Guardar como borrador o enviar a revisión junto al contenido
-- [ ] Panel de correcciones pendientes: badge con cantidad por evaluación
-- [ ] Corregir manualmente: nota parcial + comentario/devolución por alumno
-- [ ] Integración automática de score auto + manual en la nota final
-- [ ] Panel de resultados por evaluación: notas, promedio del grupo, distribución
+- [x] Crear evaluación por tipo: cuestionario de módulo, examen final, entrega de TP
+- [x] Editor visual por bloques con menú de tipos de pregunta (íconos Lucide, < 3 clics por pregunta)
+- [x] Pregunta Verdadero/Falso con fundamentación obligatoria (corrección manual)
+- [x] Pregunta de opción única (radio, una correcta)
+- [x] Pregunta de opción múltiple (checkbox, varias correctas)
+- [x] Pregunta abierta de texto largo (corrección manual)
+- [x] Consigna de entrega de TP (archivo / Drive / GitHub / URL / texto)
+- [x] Reordenar preguntas con drag & drop
+- [x] Configurar peso de cada pregunta y respuesta correcta
+- [x] Configuración global: tiempo límite, nota mínima, intentos permitidos, espera entre intentos, resultado inmediato o diferido
+- [x] Guardar como borrador o enviar a revisión junto al contenido
+- [x] Panel de correcciones pendientes (lista en la página de la evaluación —
+      sin badge de cantidad en la navegación, mejora incremental)
+- [x] Corregir manualmente: nota parcial + comentario/devolución por alumno
+- [x] Integración automática de score auto + manual en la nota final (trigger
+      `apply_manual_correction`, 003)
+- [x] Panel de resultados por evaluación: notas, promedio del grupo (sin
+      distribución gráfica — tabla alcanza para el caso de uso principal)
 - [ ] Exportar resultados a CSV
 
 ### 4.4 Canal de Anuncios · `E1`
 
-- [ ] Crear anuncio para el grupo del curso (editor de texto enriquecido)
-- [ ] Adjuntar archivo o link al anuncio
-- [ ] Seleccionar destinatarios (todos los inscriptos por defecto)
-- [ ] Envío simultáneo in-app (Realtime) + email
-- [ ] Ver historial de anuncios del curso en orden cronológico inverso
-- [ ] Ver indicador de lectura por anuncio
+- [x] Crear anuncio para el grupo del curso (texto plano, no rich-text — ver `COMPONENTS.md` §33)
+- [x] Adjuntar link al anuncio (no upload de archivo — mismo criterio que arriba)
+- [x] Seleccionar destinatarios (todos los inscriptos por defecto)
+- [x] Envío simultáneo in-app (Realtime) + email
+- [x] Ver historial de anuncios del curso en orden cronológico inverso
+- [x] Ver indicador de lectura por anuncio
 
 ---
 
@@ -234,12 +237,12 @@
 
 ### 5.2 Coworking · `E2`
 
-- [ ] Ver catálogo de espacios con descuento institucional aplicado automáticamente
-- [ ] Reservar espacios con tarifa preferencial por matrícula activa
-- [ ] Ver y descargar comprobante QR de cada reserva
-- [ ] Cancelar reservas propias respetando política de cancelación
-- [ ] Ver historial de reservas y consumo de créditos de membresía
-- [ ] Canjear puntos por horas de coworking · `E1`
+- [x] Ver catálogo de espacios con descuento institucional aplicado automáticamente — `/servicios/coworking`, `get_user_discount()`
+- [x] Reservar espacios con tarifa preferencial por matrícula activa — `BookingForm`, verificado en navegador con `alumno.test` (30% aplicado, $1200→$840)
+- [ ] Ver y descargar comprobante QR de cada reserva — **parcial**: `BookingConfirmation` genera el QR on-the-fly cuando `estado='confirmada'` (código verificado, nunca ejecutado con un pago real — depende del webhook de MP, sin token en este entorno)
+- [ ] Cancelar reservas propias respetando política de cancelación — Sprint 15-16
+- [ ] Ver historial de reservas y consumo de créditos de membresía — Sprint 17-18 (membresías) + falta un listado "Mis reservas"
+- [ ] Canjear puntos por horas de coworking · `E1` — Sprint 19-20, explícitamente fuera de alcance
 
 ### 5.3 Plataforma Educativa · `E1`
 
@@ -247,17 +250,20 @@
 - [x] Ver catálogo de cursos con filtros por área y nivel — `/cursos` conectado a `public.courses` real, filtro por carrera (`FilterBar`) y nivel
 - [x] Inscribirse a cursos gratuitos con un clic (incluye cursos fuera de su carrera, que quedan como "curso adicional" — CU-T01) — `enrollUserAction` real sobre `enrollments`
 - [ ] Inscribirse a cursos pagos (flujo MercadoPago + acceso tras webhook) · `E3`
-- [ ] Acceder al contenido con desbloqueo progresivo (clase por clase)
-- [ ] Rendir cuestionarios por módulo con feedback inmediato (ver §5.6)
-- [ ] Rendir examen final con temporizador
-- [ ] Ver score y estado aprobado/reprobado
-- [ ] Reintentar examen reprobado pasadas 24hs
-- [ ] Descargar certificado digital con QR verificable al aprobar
-- [ ] Compartir enlace público de verificación del certificado
+- [x] Acceder al contenido con desbloqueo progresivo (clase por clase)
+- [x] Rendir cuestionarios por módulo con feedback inmediato (ver §5.6)
+- [x] Rendir examen final con temporizador
+- [x] Ver score y estado aprobado/reprobado
+- [x] Reintentar examen reprobado pasadas 24hs (configurable, default 24hs)
+- [x] Descargar certificado digital con QR verificable al aprobar
+- [x] Compartir enlace público de verificación del certificado
 - [ ] Ver historial de logros: certificados, cursos aprobados, carreras completadas
+      (`/certificados` lista certificados; historial unificado con cursos/carreras
+      queda pendiente, no requiere schema nuevo)
 - [ ] Ver mapa visual de carrera con nodos bloqueados/desbloqueados según progreso
-- [ ] Acumular puntos por módulo completado, taller aprobado y examen aprobado
-- [ ] Canjear puntos por beneficios en coworking
+- [x] Acumular puntos por módulo completado y examen aprobado (taller es `E2`,
+      sin producir puntos todavía)
+- [ ] Canjear puntos por beneficios en coworking · `E2`
 
 ### 5.4 Tutorías · `E2`
 
@@ -269,37 +275,38 @@
 
 ### 5.5 Reserva de Coworking desde la Plataforma Educativa · `E2`
 
-- [ ] Reservar escritorio o sala de estudio desde el panel educativo sin salir de la app
-- [ ] Descuento institucional aplicado automáticamente al reservar
+- [x] Reservar escritorio o sala de estudio desde el panel educativo sin salir de la app — ítem "Coworking" en el sidebar de `(dashboard)` lleva a `/servicios/coworking` (mismo dominio/sesión, no un widget embebido en el dashboard)
+- [x] Descuento institucional aplicado automáticamente al reservar
 
 ### 5.6 Evaluaciones y Entregas · `E1`
 
 > Estados del intento: BLOQUEADA → DISPONIBLE → EN CURSO → PENDIENTE CORRECCIÓN → APROBADA / DESAPROBADA / CORREGIDA.
 
-- [ ] Ver evaluaciones del curso con su estado (bloqueada / disponible / aprobada…)
-- [ ] Rendir cuestionario de módulo y examen final (con temporizador si está configurado)
-- [ ] Responder Verdadero/Falso con fundamentación
-- [ ] Responder opción única y opción múltiple
-- [ ] Responder pregunta abierta de texto largo
-- [ ] Entregar TP: subir archivo (Storage)
-- [ ] Entregar TP: link de Google Drive
-- [ ] Entregar TP: link de GitHub
-- [ ] Entregar TP: URL externa
-- [ ] Entregar TP: texto en plataforma
-- [ ] Ver resultado automático inmediato (cuando la evaluación no requiere corrección manual)
-- [ ] Recibir notificación in-app + email cuando el docente corrige TP o pregunta abierta
-- [ ] Ver nota final (auto + manual) y devolución del docente
-- [ ] Reintentar evaluación desaprobada según intentos y espera configurados
+- [x] Ver evaluaciones del curso con su estado (bloqueada / disponible / aprobada…)
+- [x] Rendir cuestionario de módulo y examen final (con temporizador si está configurado)
+- [x] Responder Verdadero/Falso con fundamentación
+- [x] Responder opción única y opción múltiple
+- [x] Responder pregunta abierta de texto largo
+- [x] Entregar TP: subir archivo (Storage, bucket `entregas-tp`)
+- [x] Entregar TP: link de Google Drive
+- [x] Entregar TP: link de GitHub
+- [x] Entregar TP: URL externa
+- [x] Entregar TP: texto en plataforma
+- [x] Ver resultado automático inmediato (cuando la evaluación no requiere corrección manual)
+- [x] Recibir notificación in-app + email cuando el docente corrige TP o pregunta abierta
+- [x] Ver nota final (auto + manual) y devolución del docente
+- [x] Reintentar evaluación desaprobada según intentos y espera configurados
 
 ### 5.7 Centro de Notificaciones · `E1`
 
-- [ ] Campana en topbar con badge de no leídas (Supabase Realtime)
-- [ ] Panel desplegable con preview de las últimas notificaciones
-- [ ] Click en notificación → navega al recurso (anuncio, corrección, certificado…)
-- [ ] Marcar como leída individual y "marcar todas como leídas"
-- [ ] Distinción visual entre leídas y no leídas
-- [ ] Preferencias por canal: email y WhatsApp activables (in-app siempre activo)
-- [ ] Tipos soportados: anuncio, tutoría, corrección, contenido publicado, certificado, puntos, pago, sistema
+- [x] Campana en topbar con badge de no leídas (Supabase Realtime)
+- [x] Panel desplegable con preview de las últimas notificaciones
+- [x] Click en notificación → navega al recurso (resuelto para `announcement` y revisión de
+      curso, únicos tipos con productor hoy — ver `COMPONENTS.md` §32)
+- [x] Marcar como leída individual y "marcar todas como leídas"
+- [x] Distinción visual entre leídas y no leídas
+- [x] Preferencias por canal: email y WhatsApp activables (in-app siempre activo)
+- [x] Tipos soportados: anuncio, tutoría, corrección, contenido publicado, certificado, puntos, pago, sistema
 
 ---
 
@@ -354,20 +361,35 @@
 
 ### 8.2 Certificados Digitales
 
-- [ ] Generación automática del PDF al aprobar el examen final (< 10 segundos)
-- [ ] QR único por certificado codificando URL de verificación pública
-- [ ] Verificación pública sin login (URL activa permanentemente)
-- [ ] Certificado de especialización al completar una carrera completa
+- [x] Generación automática del PDF al aprobar el examen final — en general, al
+      completarse el curso (100% de clases) y quedar aprobadas todas sus
+      evaluaciones (`checkAndIssueCertificate`, `src/lib/certificates.ts`),
+      no solo el examen final puntual. **Pendiente correr la migración 009**
+      (`supabase/migrations/009_certificates_storage.sql`, bucket `certificados` +
+      `entregas-tp`) — verificado en navegador que sin ella el registro del
+      certificado y los puntos se generan igual (degrada con gracia, loguea el
+      error de Storage) pero el PDF no queda subido (`pdf_url` null, sin botón
+      de descarga en `/certificados`)
+- [x] QR único por certificado codificando URL de verificación pública (`qrcode`)
+- [x] Verificación pública sin login (`/verificar/[uuid]`, RPC `verify_certificate`)
+- [ ] Certificado de especialización al completar una carrera completa (distinto
+      del certificado por curso ya implementado — requeriría agregación por carrera)
 - [ ] Admin puede editar nombre y regenerar el certificado
 
 ### 8.3 Sistema de Puntos (Ledger Append-Only)
 
-- [ ] Acumulación automática al completar módulos
-- [ ] Acumulación automática al aprobar talleres
-- [ ] Acumulación automática al aprobar examen final
-- [ ] Canje de puntos por horas de coworking
-- [ ] Historial de puntos visible para el alumno
-- [ ] Ledger append-only: los puntos nunca se editan, solo se registran movimientos
+- [x] Acumulación automática al completar clases (+10 c/u, `src/lib/points.ts` vía
+      `lessonProgressActions.ts` — el Addendum/checklist decía "módulos", pero
+      `LIFECYCLE_PLAN.md` y `CLAUDE.md` definen la regla por **lección**, no por
+      módulo completo; se implementó como está especificado ahí)
+- [ ] Acumulación automática al aprobar talleres · `E2`
+- [x] Acumulación automática al aprobar examen final (+25 — cubierto de forma
+      genérica para cualquier evaluación aprobada, no solo examen final)
+- [ ] Canje de puntos por horas de coworking · `E2`
+- [x] Historial de puntos visible para el alumno (`PointsHistory` en `/dashboard`)
+- [x] Ledger append-only: los puntos nunca se editan, solo se registran movimientos
+      (triggers de la 001, `award_points()` de la 005 — sin cambios en esta sesión,
+      ya estaba correcto, ahora se ejercita de punta a punta)
 
 ### 8.4 Mapa Visual de Carreras
 

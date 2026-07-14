@@ -1,6 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { cn } from "@/lib/utils";
 
 export interface TopbarNavItem {
@@ -22,9 +23,10 @@ export interface TopbarProps {
   userInitials?: string;
   role?: TopbarRole;
   roleLabel?: string;
+  userId?: string;
 }
 
-export function Topbar({ navItems = [], userInitials, role, roleLabel }: TopbarProps) {
+export function Topbar({ navItems = [], userInitials, role, roleLabel, userId }: TopbarProps) {
   return (
     <header className="flex h-[46px] items-center justify-between border-b-[0.5px] border-[--edu-border] bg-black/[0.55] px-4 backdrop-blur-[8px]">
       <div className="flex items-center gap-6">
@@ -50,6 +52,7 @@ export function Topbar({ navItems = [], userInitials, role, roleLabel }: TopbarP
       </div>
 
       <div className="flex items-center gap-3">
+        {userId ? <NotificationBell userId={userId} /> : null}
         {role ? (
           <span
             className={cn(

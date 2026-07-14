@@ -9,6 +9,7 @@ export interface DashboardLayoutProps {
   userInitials?: string;
   role?: TopbarRole;
   roleLabel?: string;
+  userId?: string;
   children: React.ReactNode;
 }
 
@@ -18,6 +19,7 @@ export function DashboardLayout({
   userInitials,
   role,
   roleLabel,
+  userId,
   children,
 }: DashboardLayoutProps) {
   return (
@@ -29,6 +31,7 @@ export function DashboardLayout({
           userInitials={userInitials}
           role={role}
           roleLabel={roleLabel}
+          userId={userId}
         />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>

@@ -1,5 +1,5 @@
 # COMPONENTS — INCADEducativa · Catálogo mínimo E1
-**Versión 1.2 · Julio 2026**
+**Versión 1.3 · Julio 2026**
 Especificación de tokens y variantes por componente para el MVP Educativo.
 
 > Referencia de implementación para Cursor + Claude Code. Antes de crear un componente, verificar que exista aquí. Si no existe, documentarlo primero (SDD).
@@ -749,4 +749,411 @@ construido todavía).
 
 ---
 
-*INCADEducativa · Design System v2.1 — COMPONENTS v1.2 · Julio 2026*
+## 30. EvaluationBuilder
+
+Editor visual de una evaluación (`/docente/cursos/[id]/evaluaciones/[evaluationId]`), página
+completa (no modal — el contenido crece rápido con varias preguntas). Sprint 7b, Addendum 01.
+Misma entidad `evaluations` para los 3 contextos (`cuestionario_modulo` / `examen_final` /
+`tp`, ADR-12) — un único editor genérico, el `tipo` solo determina dónde aparece en la
+jerarquía del curso (§ ver integración en `CourseEditor`, §27).
+
+### Estructura interna
+
+```
+EvaluationBuilder ("use client")
+├── Header: Link "← Volver al curso" + Badge tipo + Input título + peso total (suma de
+│   `peso` de las preguntas, informativo — no bloquea el guardado si no suma 100)
+├── Card "Configuración" — tiempo límite (min, vacío = sin límite), nota mínima (%, default
+│   60), intentos permitidos, espera entre intentos (hs), mostrar resultado
+│   (inmediato/diferido) → persiste en `evaluations.config` (jsonb) + `nota_minima`
+├── "+ Agregar pregunta" — fila de 5 botones outline con ícono Lucide (uno por tipo), cada
+│   clic agrega la pregunta directo al final de la lista (1 clic, no hay menú/popover
+│   intermedio — cumple el criterio de aceptación "< 3 clics por pregunta" del sprint)
+├── DndContext (@dnd-kit) + SortableContext vertical de QuestionBlock (§31)
+└── Button primary "Guardar cambios" (persiste `preguntas` completo + config + nota_minima
+    en un solo update) + Button destructive "Eliminar evaluación" (confirm en 2 pasos)
+```
+
+**Regla de edición:** igual que `CourseEditor`, todos los controles se ocultan si
+`course.estado !== 'borrador'` — el gating vive en la página, no en RLS (`evaluations_write`
+permite escritura del docente dueño en cualquier estado del curso).
+
+**Simplificación documentada:** el enunciado de la pregunta es un `textarea` de texto plano,
+no un editor de texto enriquecido (el Addendum 01 §3 pedía negrita/listas/imágenes) — no hay
+dependencia de rich-text en el proyecto todavía y no ameritaba sumar una para el MVP. Si se
+necesita, es una mejora incremental sobre el mismo campo `enunciado` (string), no un cambio de
+schema.
+
+---
+
+## 31. QuestionBlock
+
+Bloque de edición de una pregunta dentro de `EvaluationBuilder` (§30). Una sola pieza con 5
+variantes según `tipo` — no son 5 componentes separados, sino un `switch` interno sobre los
+campos propios de cada tipo. Addendum 01 §2.
+
+```
+QuestionBlock ("use client", sorteable — igual que LessonRow en CourseEditor)
+├── Header: drag handle + ícono Lucide del tipo + Badge tipo + Input peso (número) +
+│   borrar (confirm en 2 pasos)
+├── Textarea enunciado (compartido por los 5 tipos)
+└── Campos propios por tipo:
+    ├── vf_fundamentada: toggle Verdadero/Falso (respuesta correcta) + Input número
+    │   "mínimo de caracteres para fundamentar"
+    ├── opcion_unica: lista de opciones (Input por opción, 2-6, + agregar/quitar) + radio
+    │   para marcar la correcta + Textarea "retroalimentación" (opcional)
+    ├── opcion_multiple: misma lista de opciones + checkbox para marcar correctas (varias) +
+    │   Select "proporcional" / "todo o nada"
+    ├── abierta: sin campos propios — corrección 100% manual (Sprint 9-10)
+    └── entrega_tp: checkboxes de tipos de entrega aceptados (archivo / Drive / GitHub / URL
+        externa / texto en plataforma) — mapea a `submission_kind` de la 003
+```
+
+Los íconos por tipo (Lucide): `CheckCircle2` (V/F), `CircleDot` (opción única), `ListChecks`
+(opción múltiple), `MessageSquareText` (abierta), `UploadCloud` (entrega TP).
+
+---
+
+## 32. NotificationBell / NotificationPanel
+
+Campana de notificaciones en `Topbar` (§7), visible para cualquier usuario logueado. Sprint 7c,
+Addendum 02. Dos componentes porque la campana (ícono + badge, siempre montada) y el panel
+(contenido, solo montado mientras está abierto) tienen ciclos de vida distintos.
+
+```
+NotificationBell ("use client")
+├── Ícono Lucide `Bell` + Badge pill con la cantidad de no leídas (oculto si es 0)
+├── Al montar: cuenta no leídas del usuario (`notifications` donde user_id=propio y leida=false)
+├── Suscripción Supabase Realtime (`postgres_changes`, INSERT en `public.notifications`
+│   filtrado por `user_id=eq.<uid>`) — incrementa el badge en vivo sin recargar la página
+│   (requiere migración 008, `alter publication supabase_realtime add table notifications`)
+└── Al click: abre/cierra NotificationPanel (posicionado debajo, mismo patrón que un Dialog
+    pero anclado, no modal — no bloquea el resto de la pantalla)
+
+NotificationPanel ("use client", hijo de NotificationBell)
+├── Fetch de las últimas ~20 notificaciones del usuario al abrir
+├── Por ítem: Badge tipo (§ NOTIFICATION_TYPE_LABEL) + preview del cuerpo (80 caracteres) +
+│   tiempo relativo ("hace 5 minutos") + punto violeta si no está leída
+├── Click en un ítem: marca como leída (`markNotificationReadAction`) + navega al origen
+│   (anuncio → `/cursos/[slug]`, revisión de curso → `/docente/cursos/[id]`)
+└── Button "Marcar todas como leídas" (`markAllNotificationsReadAction`)
+```
+
+**Simplificación documentada:** el link de "navegar al origen" solo está resuelto para los dos
+tipos que este sprint produce (`announcement` → curso del alumno, `contenido_publicado`/`sistema`
+de revisión → curso del docente). Los demás tipos del enum (`tutoria`, `correccion`,
+`certificado`, `puntos`, `pago`) todavía no tienen productor — quedan sin link hasta que se
+implementen en Sprint 9-10 / Etapa 2, mostrando el ítem sin navegación.
+
+---
+
+## 33. AnnouncementComposer
+
+Formulario para que el Docente (o Admin/Coordinador) publique un anuncio en un curso.
+`/docente/cursos/[id]/anuncios`. Sprint 7c, Addendum 02 §1.
+
+```
+AnnouncementComposer ("use client")
+├── Input título (opcional)
+├── Textarea body (obligatorio)
+├── Input URL de adjunto (opcional — link, no upload de archivo)
+└── Button primary "Publicar anuncio" → `createAnnouncementAction`: inserta el anuncio,
+    resuelve los inscriptos del curso y dispara `notifyUsers()` (in-app + email Resend)
+```
+
+**Simplificación documentada:** el Addendum 01/02 pide editor de texto enriquecido
+(negrita/listas/imágenes) y adjunto por upload — igual que en `EvaluationBuilder` (§30), se
+usa texto plano + URL para no sumar una dependencia de rich-text al MVP. Mejora incremental
+futura sobre el mismo campo `body` (string), no un cambio de schema.
+
+---
+
+## 34. AnnouncementList
+
+Historial de anuncios de un curso, en orden cronológico inverso. Se reusa en dos contextos:
+`/docente/cursos/[id]/anuncios` (vista del Docente, sin estado de lectura) y en
+`/cursos/[slug]` (vista del Alumno inscripto, con indicador leído/no leído). Sprint 7c,
+Addendum 02 §3.
+
+```
+AnnouncementList ("use client" — recibe los anuncios ya resueltos por la página, necesita
+interactividad para marcar como leído al click)
+├── Por anuncio: nombre del remitente + fecha + título (si tiene) + body + link de adjunto
+├── Si `readAnnouncementIds` viene definido (vista Alumno): punto violeta en los no leídos,
+│   el ítem completo es un botón que marca como leído al click (`markAnnouncementReadAction`)
+└── Si `showMarkAllRead` (vista Alumno): Button "Marcar todos como leídos"
+    (`markAllAnnouncementsReadAction`)
+```
+
+---
+
+## 35. NotificationPrefsToggle
+
+Preferencias de canal de notificación del usuario, en `/dashboard`. Sprint 7c, Addendum 02 §2.3.
+
+```
+NotificationPrefsToggle ("use client")
+├── Toggle "Email" — persiste en `users.notification_prefs.email`
+├── Toggle "WhatsApp" — persiste en `users.notification_prefs.whatsapp` (canal no operativo
+│   todavía, Twilio es Etapa 2 — el toggle ya queda funcional para cuando se active)
+└── In-app: texto fijo "siempre activo", sin toggle (no desactivable, regla del Addendum 02 §2.3)
+```
+
+No hay componente `Switch` en el catálogo (§1-31) — se implementa con un `<button>` simple
+con dos estados de fondo (violeta/gris), mismo patrón que los pills de tipo de entrega en
+`QuestionBlock` (§31), no ameritaba sumar Radix Switch para dos toggles.
+
+---
+
+## 36. EvaluationPlayer / QuestionAnswer
+
+Render y resolución de una evaluación por el Alumno. Sprint 9-10, Addendum 01 §7.
+`/cursos/[slug]/evaluaciones/[evaluationId]`.
+
+```
+EvaluationPlayer ("use client")
+├── Header: Badge tipo + título + countdown (mm:ss) si `config.tiempo_limite_min` —
+│   al llegar a 0 dispara el submit automáticamente con las respuestas actuales
+├── Si el intento ya es terminal (no 'en_curso'): NotificationBanner con el
+│   resultado — inputs deshabilitados, no se puede reenviar
+├── Lista de QuestionAnswer (uno por pregunta, mismo orden que armó el docente)
+└── Button "Entregar evaluación" → `submitAttemptAction` (corrección automática +
+    si no queda nada manual: award +25 pts y check de certificado in-line)
+
+QuestionAnswer ("use client", switch por tipo — igual patrón que QuestionBlock §31
+pero para responder, no para autorar)
+├── vf_fundamentada: toggle V/F + textarea fundamentación
+├── opcion_unica: lista de opciones clickeables (radio visual)
+├── opcion_multiple: lista de opciones clickeables (checkbox visual)
+├── abierta: textarea libre
+└── entrega_tp: pills de tipo de entrega + campo según tipo (texto → textarea,
+    drive/github/url → Input con placeholder, archivo → TpFileUploader §37)
+```
+
+**Simplificación documentada:** `mostrar_resultado` (inmediato/diferido) solo tiene
+efecto real cuando la evaluación es 100% auto-corregible (ahí el resultado siempre es
+inmediato, no hay nada que diferir). Si hay alguna pregunta de corrección manual
+(V/F fundamentado, abierta, entrega de TP), el resultado queda `pendiente_correccion`
+hasta que el docente corrija, sea cual sea el valor de `mostrar_resultado` — coincide
+con el comportamiento "diferido" en ambos casos, no se implementó un modo donde el
+alumno vea un score parcial mientras espera la corrección.
+
+---
+
+## 37. TpFileUploader
+
+Sube el archivo de una entrega de TP (tipo "archivo") directo a Storage desde el
+browser. Mismo patrón que `LessonUploader` (§28) — cliente de browser, progress
+simulado, bucket privado nuevo `entregas-tp` (migración 009), ruta
+`{evaluation_id}/{user_id}/{archivo}`.
+
+---
+
+## 38. CorrectionPanel
+
+Corrección manual del docente para un intento en `pendiente_correccion`. Sprint 9-10,
+Addendum 01 §4. Vive en la misma página que `EvaluationBuilder` (§30), debajo de las
+preguntas, visible para cualquier estado del curso (a diferencia del editor, que solo
+es editable en `borrador` — las correcciones pasan siempre, con el curso publicado).
+
+```
+CorrectionPanel ("use client")
+├── Lista de intentos `pendiente_correccion` de esta evaluación — nombre del alumno
+│   (vía vista `course_students`, RLS-03 de la 005) + fecha de entrega
+├── Por intento: muestra solo las respuestas de preguntas manuales (V/F fundamentado
+│   → la fundamentación; abierta → el texto; entrega_tp → link o archivo firmado)
+│   junto con el peso manual disponible (informativo)
+├── Input nota_parcial (0 a 100−score_auto) + Textarea comentario/devolución
+└── Button "Guardar corrección" → `correctAttemptAction`: INSERT en
+    `manual_corrections` (el trigger `apply_manual_correction`, 003, integra
+    score_auto+nota_parcial → `nota`/`aprobado`/`estado='corregida'`) — si queda
+    `aprobado=true`, la action dispara +25 pts y el check de certificado
+```
+
+## 39. EvaluationResults
+
+Panel de resultados por evaluación para el docente/admin. Sprint 9-10, Addendum 01 §5.
+Misma página, sección aparte.
+
+```
+EvaluationResults (server component)
+├── Tabla: alumno, nota, estado (aprobado/desaprobado/pendiente), fecha del último intento
+└── Promedio del grupo (solo intentos con nota no nula)
+```
+
+**Simplificación documentada:** no se implementó filtro por estado ni exportación a
+CSV en esta pasada (Addendum 01 §5 los pedía) — la tabla ya cubre el caso de uso
+principal (ver quién aprobó y con qué nota); quedan como mejora incremental sobre el
+mismo componente, no requieren cambio de schema.
+
+---
+
+## 40. CertificateVerifier / Mis certificados
+
+Página pública de verificación (`/verificar/[uuid]`, sin sesión — ya está en
+`PUBLIC_PATHS` de `middleware.ts`) y sección "Mis certificados" del alumno
+(`/certificados`). Sprint 9-10.
+
+```
+CertificateVerifier (server component, cliente anon — RPC verify_certificate, 001)
+└── Si existe: nombre completo + curso + fecha de emisión + Badge de estado
+    (emitido/revocado). Si no existe: mensaje "certificado no encontrado"
+    — nunca un SELECT directo a `certificates` (regla crítica #5 de CLAUDE.md)
+
+CertificateCard (server component, listado en /certificados)
+├── Por certificado: curso, fecha, Badge estado
+└── Link "Descargar PDF" → URL firmada de Storage (bucket `certificados`,
+    migración 009), generada en la propia page con el cliente de sesión normal
+    (la policy `certificate_select` ya permite al dueño leer su propio objeto)
+```
+
+La emisión del PDF (no un componente de UI) vive en `src/lib/certificatePdf.tsx`
+(`@react-pdf/renderer` + `qrcode`) y `src/lib/certificates.ts`
+(`checkAndIssueCertificate`, cliente admin — la policy `certs_admin_write` de la 001
+solo permite escribir a `is_admin()`, nunca al propio alumno). El certificado en PDF
+usa fondo claro (pensado para imprimir), no el dark mode exclusivo del resto de la
+plataforma — excepción documentada, es un documento descargable, no una pantalla.
+
+---
+
+## 41. PointsHistory
+
+Historial de puntos del alumno. Sprint 9-10. Se agregó como sección en `/dashboard`
+(no se creó una ruta nueva — mismo criterio que `NotificationPrefsToggle`, §35).
+
+```
+PointsHistory (server component)
+├── Total acumulado (`users.puntos`, cacheado por `award_points()`, 005)
+└── Últimos movimientos del ledger `points_log` (motivo + puntos + fecha)
+```
+
+---
+
+## 42. LocationModal / SpaceModal (admin Coworking)
+
+CRUD de sedes y espacios del módulo Coworking. Sprint 11-12 (Etapa 2), Addendum 03 §5.3.
+Mismo patrón exacto que `CareerModal`/`CourseModal` (§22-23): Dialog (§12) con un form
+`FormData` + server action, sin estado propio más allá del form.
+
+```
+LocationModal ("use client") — /admin/coworking/sedes
+├── Input nombre, Input dirección, checkbox "Activa"
+└── Button "Guardar sede" → createLocationAction / updateLocationAction
+
+SpaceModal ("use client") — /admin/coworking/espacios
+├── Select sede (`locations` activas), Input nombre, Select tipo
+│   (hot_desk / sala_reunion / aula), Input capacidad, Input precio por hora,
+│   Input descripción, Input imagen (URL), checkbox "Activo"
+└── Button "Guardar espacio" → createSpaceAction / updateSpaceAction
+```
+
+`ActiveToggle` no se creó como componente aparte — se reusa el patrón inline de
+`PublishToggle` (§ ver `PublishToggle`) directamente en cada fila de las tablas de
+sedes/espacios (`toggleLocationActiveAction`/`toggleSpaceActiveAction`).
+
+---
+
+## 43. CoworkingLanding / SpaceCard
+
+Landing pública del Coworking, `/servicios/coworking` — **fuera** del grupo `(dashboard)`
+adrede: el Addendum 03 §1.1/§2.1 exige acceso sin login (el árbol de carpetas de
+`CLAUDE.md` lo lista bajo `(dashboard)/servicios/`, pensado antes de integrarse el
+addendum; se prioriza el requisito explícito del addendum — decisión documentada, no
+un cambio de `CLAUDE.md`). Layout propio minimalista (mark "IN" + link a
+`/dashboard` o `/login` según sesión), no el `DashboardLayout` con sidebar.
+
+```
+CoworkingLanding (server component)
+├── Selector de sede (tabs o Select — solo sedes `activa=true`)
+├── Grilla de SpaceCard de la sede elegida (solo `activo=true`)
+└── Si hay sesión con rol alumno/docente/coordinador: precio ya calculado con el
+    descuento institucional (`get_user_discount()` RPC, 002) — precio original
+    tachado + precio final, igual que pide el Addendum 03 §4
+
+SpaceCard (server component)
+├── Imagen (o placeholder con ícono Lucide por `tipo`), nombre, Badge tipo,
+│   capacidad (ícono Users)
+├── Precio por hora (tachado + con descuento si corresponde)
+└── Button "Reservar" → `/servicios/coworking/reservar/[spaceId]` (BookingForm,
+    §44 — agregado en Sprint 13-14)
+```
+
+---
+
+## 44. BookingForm (reserva pública de Coworking)
+
+Flujo de reserva de un espacio, CU-06 del spec (Addendum 03 §3-4). Sprint 13-14.
+Página `/servicios/coworking/reservar/[spaceId]` (fuera de `(dashboard)`, mismo
+layout público que `CoworkingLanding`, §43). Todo en una sola pantalla para cumplir
+el criterio de "menos de 5 pasos" del addendum: seleccionar día → seleccionar
+horario → (si no hay sesión) registro mínimo → confirmar y pagar.
+
+```
+BookingForm ("use client") — recibe space/location/discountPct/user como props
+├── Selector de día: chips horizontales, próximos 14 días (mismo patrón visual
+│   que el selector de sede de CoworkingLanding — pill activa violeta)
+├── Grilla de horarios del día elegido (franja fija 08:00–22:00, slots de 1hs)
+│   ├── Ocupación vía RPC `get_occupied_slots()` (security definer, migración
+│   │   013) — NO se consulta `bookings` directo: su RLS ("bookings_own", 002)
+│   │   solo deja ver la reserva propia, así que un alumno/comunidad no vería
+│   │   los horarios que OTRO usuario ya tomó del mismo espacio (bug real
+│   │   encontrado en verificación de navegador). La función devuelve
+│   │   únicamente fecha_inicio/fecha_fin de reservas activas, sin monto,
+│   │   teléfono ni user_id de nadie
+│   ├── Suscripción Realtime a `bookings` filtrado por `space_id` (migración
+│   │   011) + polling cada 20s como respaldo — el canal de Supabase solo
+│   │   entrega el evento si la RLS de esa fila es visible para el usuario
+│   │   conectado (refresca al instante los cambios propios, ej. otra
+│   │   pestaña), por eso el polling cubre los cambios de otros usuarios sin
+│   │   necesitar abrir la RLS de `bookings` (que expondría datos ajenos)
+│   ├── Slot disponible → Button variante ghost, clickeable
+│   └── Slot ocupado (estado pendiente/confirmada/en_uso solapado) → disabled,
+│       Badge state="error" "Ocupado"
+├── Selector de duración (1 a 4 horas, stepper simple)
+├── Resumen: precio por hora × duración; si `discountPct > 0` (usuario
+│   alumno/docente/coordinador logueado, `get_user_discount()`), precio original
+│   tachado + precio final — mismo patrón visual que SpaceCard (§43)
+├── Si NO hay sesión: fieldset "Creá tu cuenta para reservar" — Input nombre,
+│   Input email, Input contraseña (registro mínimo, CU-06 paso 4 — ver
+│   excepción acotada de CLAUDE.md regla #2 v3.5). Si hay sesión, no se muestra.
+└── Button "Reservar y pagar" → `createBookingAction` (server action):
+    registra al usuario si hace falta, inserta la reserva (`estado=pendiente`,
+    el exclusion constraint `no_overlap` de la 002 es la garantía real
+    anti-doble-reserva, la grilla del cliente es solo UX), crea la preferencia
+    de MercadoPago y redirige al checkout. Si `MP_ACCESS_TOKEN` no está
+    configurada (dev sin credenciales), la reserva queda `pendiente` igual y
+    redirige a la página de confirmación con un aviso de que el pago no está
+    disponible en este entorno — mismo criterio de degradación que Resend.
+```
+
+No hay componente de calendario mensual completo (tipo date-picker de grilla) —
+simplificación documentada: 14 días en chips es suficiente para el caso de uso
+(reservar coworking con antelación corta) y evita sumar una librería de fechas
+nueva. Mejora incremental futura si se necesita reservar con más antelación.
+
+---
+
+## 45. BookingConfirmation (estado de la reserva + QR)
+
+Página `/servicios/coworking/reservas/[bookingId]` — a la que redirige MercadoPago
+tras el pago (`back_urls`) y también el flujo sin MP configurado. Requiere sesión
+(la RLS `bookings_own` de la 002 ya solo deja ver la reserva al dueño o al admin);
+si no hay sesión, redirect a `/login`.
+
+```
+BookingConfirmation (server component)
+├── Datos de la reserva: espacio, sede, fecha/horario, monto, tipo_descuento
+├── Badge de estado (`pendiente` amarillo / `confirmada` verde / `cancelada` rojo)
+├── Si `estado='pendiente'` y hay `payments.mp_preference_id`: aviso "esperando
+│   confirmación del pago" (el webhook es la única fuente de verdad, CLAUDE.md
+│   regla #9 — esta página nunca marca la reserva como confirmada por su cuenta)
+├── Si `estado='pendiente'` sin preferencia MP (entorno sin `MP_ACCESS_TOKEN`):
+│   aviso explícito "Pago no disponible en este entorno de desarrollo"
+└── Si `estado='confirmada'`: QR de acceso, generado on-the-fly con `qrcode`
+    (mismo paquete que `certificatePdf.tsx`, sin persistir imagen — el check-in
+    por QR recién lee este código en Sprint 15-16) + botón "Ver mis reservas"
+```
+
+---
+
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.3 · Julio 2026*

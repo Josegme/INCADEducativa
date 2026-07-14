@@ -1,6 +1,7 @@
 import type { createClient } from "@/lib/supabase/server";
 
 export const LESSON_CONTENT_BUCKET = "contenido-cursos";
+export const TP_SUBMISSIONS_BUCKET = "entregas-tp";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
