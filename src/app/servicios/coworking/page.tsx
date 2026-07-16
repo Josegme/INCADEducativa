@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MapPin } from "lucide-react";
 
 import { SpaceCard } from "@/components/coworking/SpaceCard";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import type { LocationRow, SpaceRow } from "@/modules/admin/coworking";
@@ -46,7 +47,19 @@ export default async function CoworkingLandingPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-[24px] font-semibold text-white">Coworking INCADE</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-[24px] font-semibold text-white">Coworking INCADE</h1>
+          <div className="flex gap-2">
+            {user ? (
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/servicios/coworking/mis-reservas">Mis reservas</Link>
+              </Button>
+            ) : null}
+            <Button asChild variant="outline" size="sm">
+              <Link href="/servicios/coworking/membresia">Ver membresías</Link>
+            </Button>
+          </div>
+        </div>
         <p className="text-sm text-[--edu-text-muted]">
           Espacios de trabajo y salas por hora en nuestras sedes de Posadas, Misiones. Reservá el que necesites.
         </p>

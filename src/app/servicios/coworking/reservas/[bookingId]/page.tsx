@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NotificationBanner } from "@/components/ui/notification-banner";
+import { CancelMyBookingButton } from "@/components/coworking/CancelMyBookingButton";
 import { createClient } from "@/lib/supabase/server";
 import { BOOKING_STATUS_LABEL, type BookingStatus } from "@/modules/coworking/booking";
 
@@ -93,6 +94,8 @@ export default async function BookingConfirmationPage({ params }: { params: { bo
           <p className="text-[12px] text-black/60">Mostrá este QR al ingresar</p>
         </div>
       ) : null}
+
+      {estado === "pendiente" || estado === "confirmada" ? <CancelMyBookingButton bookingId={booking.id} /> : null}
 
       <Button asChild variant="outline">
         <Link href="/dashboard">Ir a mi panel</Link>

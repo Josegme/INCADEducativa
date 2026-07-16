@@ -10,12 +10,13 @@ export interface TopbarNavItem {
   active?: boolean;
 }
 
-export type TopbarRole = "admin" | "docente" | "alumno";
+export type TopbarRole = "admin" | "docente" | "alumno" | "coordinador";
 
 const roleBadgeStyles: Record<TopbarRole, string> = {
   admin: "border-[--inc-violet-border] bg-[--inc-violet-subtle] text-[--inc-violet-text]",
   docente: "border-[rgba(192,38,211,0.30)] bg-[rgba(192,38,211,0.15)] text-[--inc-magenta-text]",
   alumno: "border-[--edu-success-border] bg-[--edu-success-subtle] text-[--edu-success-text]",
+  coordinador: "border-[--edu-warning-border] bg-[--edu-warning-subtle] text-[--edu-warning-text]",
 };
 
 export interface TopbarProps {

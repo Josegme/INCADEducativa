@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getPayment } from "@/lib/mercadopago/payment";
+import { getSubscription } from "@/lib/mercadopago/subscription";
 import { verifyMercadoPagoSignature } from "@/lib/mercadopago/verifySignature";
 import { sendEmail } from "@/lib/resend";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
   const xSignature = request.headers.get("x-signature");
   const xRequestId = request.headers.get("x-request-id");
 
-  let body: { data?: { id?: string } } | null = null;
+  let body: { type?: string; data?: { id?: string } } | null = null;
   try {
     body = await request.json();
   } catch {
@@ -33,6 +34,12 @@ export async function POST(request: NextRequest) {
 
   if (!dataId) {
     return NextResponse.json({ error: "Falta data.id" }, { status: 400 });
+  }
+
+  const type = body?.type ?? url.searchParams.get("type");
+
+  if (type === "subscription_preapproval") {
+    return handleSubscriptionWebhook(dataId);
   }
 
   const payment = await getPayment(dataId);
@@ -84,6 +91,70 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+/**
+ * Activa/desactiva una membresía según el estado real de la suscripción
+ * (nunca confía en el payload — re-consulta a la API de MP, mismo criterio
+ * que el pago único). `memberships.mp_preapproval_id` liga la suscripción a
+ * la fila creada por `createMembershipAction`.
+ */
+async function handleSubscriptionWebhook(preapprovalId: string) {
+  const subscription = await getSubscription(preapprovalId);
+  if (!subscription) {
+    return NextResponse.json({ error: "Suscripción no encontrada" }, { status: 404 });
+  }
+
+  const admin = createAdminClient();
+
+  const { data: membership } = await admin
+    .from("memberships")
+    .select("id, user_id, plan_id")
+    .eq("mp_preapproval_id", preapprovalId)
+    .maybeSingle();
+
+  if (!membership) {
+    return NextResponse.json({ error: "Membresía no encontrada" }, { status: 404 });
+  }
+
+  if (subscription.status === "authorized") {
+    const { data: plan } = await admin
+      .from("membership_plans")
+      .select("tipo, creditos_incluidos")
+      .eq("id", membership.plan_id)
+      .single();
+
+    const inicio = new Date();
+    const fin = new Date(inicio);
+    if (plan?.tipo === "anual") {
+      fin.setFullYear(fin.getFullYear() + 1);
+    } else {
+      fin.setMonth(fin.getMonth() + 1);
+    }
+
+    await admin
+      .from("memberships")
+      .update({
+        activa: true,
+        inicio: inicio.toISOString().slice(0, 10),
+        fin: fin.toISOString().slice(0, 10),
+        creditos_restantes: plan?.creditos_incluidos ?? 0,
+      })
+      .eq("id", membership.id);
+
+    const { data: profile } = await admin.from("users").select("email, nombre").eq("id", membership.user_id).single();
+    if (profile?.email) {
+      await sendEmail({
+        to: profile.email,
+        subject: "Membresía de Coworking activada — INCADE",
+        html: `<p>Hola ${profile.nombre ?? ""},</p><p>Tu membresía de Coworking quedó activada.</p>`,
+      });
+    }
+  } else if (subscription.status === "cancelled" || subscription.status === "paused") {
+    await admin.from("memberships").update({ activa: false }).eq("id", membership.id);
   }
 
   return NextResponse.json({ received: true });

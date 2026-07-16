@@ -1240,4 +1240,106 @@ adelante, es un cambio aditivo a la vista.
 
 ---
 
+## 50. MembershipPlanCard / admin MembershipPlanModal
+
+Planes de membresía de Coworking (mensual/anual con créditos). Sprint 17-18.
+
+```
+MembershipPlanModal / MembershipPlanActiveToggle ("use client", admin) —
+/admin/coworking/membresias, mismo patrón exacto que LocationModal/
+LocationActiveToggle (§42): Dialog con form + server action
+(membershipPlanActions.ts), Table con nombre/tipo/precio/créditos/estado.
+
+MembershipPlanCard (server component) — /servicios/coworking/membresia,
+mismo patrón visual que SpaceCard (§43): tipo (Badge), nombre, créditos
+incluidos, precio, botón "Suscribirme" → /servicios/coworking/membresia/[planId]
+```
+
+---
+
+## 51. MembershipSubscribeForm / MembershipStatus
+
+Flujo de suscripción (pago recurrente MP) y estado de membresía. Sprint 17-18.
+**A diferencia de la reserva de espacios, este flujo requiere sesión** — la
+excepción de auto-registro de CLAUDE.md regla #2 es específica de CU-06
+(reserva), no aplica acá.
+
+```
+/servicios/coworking/membresia/[planId] — confirma el plan elegido,
+MembershipSubscribeForm ("use client", mismo patrón handleSubmit+error que
+el resto del repo, no bindea la server action directo al action= del form
+por el mismo motivo que ManualBookingModal: el tipo de retorno no es
+Promise<void>) → createMembershipAction: inserta memberships (activa=false,
+RLS nueva "memberships_self_insert") → createMembershipSubscription() (MP
+PreApproval) → redirect a initPoint (o a /membresia/estado/[id] si no hay
+MP_ACCESS_TOKEN, mismo criterio de degradación que BookingConfirmation)
+
+/servicios/coworking/membresia/estado/[membershipId] — mismo rol que
+BookingConfirmation (§45) pero para membresías: Badge Activa/Pendiente,
+créditos restantes + vencimiento si está activa, aviso si no hay MP
+configurada
+
+MembershipStatus (server component, en /dashboard) — mismo patrón que
+PointsHistory: créditos restantes + vencimiento, o link a ver planes si no
+hay membresía activa. Gateado por flags.coworking.
+```
+
+**Simplificación documentada:** este sprint solo activa la membresía y lleva
+el saldo de créditos — el canje de créditos por una reserva (pagar con
+créditos en vez de MercadoPago) queda para una pasada siguiente, no se tocó
+`bookingActions.ts`.
+
+---
+
+## 52. CheckInScannerModal → extensión: OccupancyDashboard sin cambios; Coordinador — reservas en lote
+
+Nuevo rol con UI propia (`coordinador`, antes sin ninguna ruta/UI — confirmado
+por exploración). Sprint 17-18.
+
+```
+/coordinador/reservas (dentro de (dashboard), gateado en middleware.ts igual
+que /admin y /docente) — lista de espacios activos, botón "Reservar en lote"
+
+/coordinador/reservas/[spaceId] — BatchBookingForm ("use client"): fecha +
+hora (hourSlots() de booking.ts) + duración + N semanas (2-12) →
+createBatchBookingAction: inserta N bookings (mismo día/hora, +7 días c/u),
+tipo_descuento='institucional', estado='confirmada' directo, **sin insertar
+en payments** (uso institucional, no es revenue real — decisión documentada,
+no aparece en coworking_revenue). Si una semana choca con el constraint
+no_overlap, se informa cuál falló y se dejan las demás confirmadas (sin
+rollback — mismo tipo de simplificación que otros multi-insert del repo).
+```
+
+---
+
+## 53. CancelMyBookingButton / Mis reservas
+
+Cierra un hueco real de Sprint 15-16: ningún usuario podía cancelar su propia
+reserva, solo el admin. Sprint 17-18.
+
+```
+CancelMyBookingButton ("use client", en BookingConfirmation §45, visible solo
+si estado es pendiente/confirmada) → cancelMyBookingAction: mismo patrón que
+cancelBookingAction del admin, pero notifica a los admins en vez de al
+usuario (RLS de users/notifications no deja leer otros perfiles ni insertar
+notificaciones ajenas para un no-admin, así que ese paso puntual usa el
+cliente service_role — mismo criterio ya usado en el registro inline de
+createBookingAction)
+
+/servicios/coworking/mis-reservas — listado de las reservas propias del
+usuario logueado, mismo Table primitive que el resto del repo. Cubre
+"Ver historial de reservas" tanto para coordinador como alumno/comunidad.
+```
+
+---
+
+## 54. /api/cron/coworking — recordatorios y no-show reales
+
+Sprint 17-18. Disparado por pg_cron + pg_net (migración 016) o a mano con
+curl mientras no haya deploy (pg_net no alcanza `localhost`). Lógica en
+TypeScript, reusa `notifyUsers`/`sendWhatsapp` tal cual — no se duplica en
+SQL. Protegido por `Authorization: Bearer CRON_SECRET`.
+
+---
+
 *INCADEducativa · Design System v2.1 — COMPONENTS v1.3 · Julio 2026*

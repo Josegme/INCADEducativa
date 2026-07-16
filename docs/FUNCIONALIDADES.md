@@ -21,12 +21,12 @@
 
 ### 1.2 Notificaciones Automáticas
 
-- [ ] Reserva coworking confirmada → Email + WhatsApp · inmediato · `E2`
+- [x] Reserva coworking confirmada → Email + WhatsApp · inmediato · `E2` — webhook de MP (Sprint 13-14), nunca corrido con token real
 - [ ] Comprobante de pago → Email · inmediato · `E2`
-- [ ] Recordatorio turno coworking 24hs antes → Email + WhatsApp · `E2`
-- [ ] No-show detectado (15 min sin check-in) → Email · usuario + admin · `E2`
-- [ ] Cancelación por admin → Email + WhatsApp · inmediato · `E2`
-- [ ] Cancelación por usuario → Email · al admin · `E2`
+- [x] Recordatorio turno coworking 24hs antes → Email + WhatsApp · `E2` — `/api/cron/coworking` (Sprint 17-18), **verificado en esta sesión** con un script que crea una reserva a +24hs y llama la ruta por HTTP: `remindersSent:1`, `recordatorio_enviado` pasó a `true`, notificación in-app insertada con el texto correcto. Solo el disparo automático real por `pg_cron`+`pg_net` queda pendiente de deploy (ver §2.2 Check-in) — la ruta en sí ya está probada de punta a punta
+- [x] No-show detectado (15 min sin check-in) → Email · usuario + admin · `E2` — **verificado en esta sesión** con el mismo método (`noShowsNotified:1`, `no_show_notificado` a `true`, notificación in-app correcta); el admin lo ve en el tile de `/admin/coworking/ocupacion`, sin email aparte (decisión documentada, ya lo tenía en pantalla desde Sprint 15-16)
+- [x] Cancelación por admin → Email · inmediato · `E2` — `cancelBookingAction` (Sprint 15-16), solo email, sin WhatsApp todavía
+- [x] Cancelación por usuario → Email · al admin · `E2` — `cancelMyBookingAction` (Sprint 17-18)
 - [ ] Nueva reserva recibida → Email · al admin · `E2`
 - [ ] Resumen diario coworking 08:00 AM → Email · admin · `E2`
 - [ ] Informe tiempos ociosos lunes 09:00 AM → Email · admin · `E2`
@@ -103,13 +103,13 @@
 - [ ] Bloquear aula automáticamente al agendarse una tutoría presencial (uso institucional) — el módulo Tutorías (`FEATURE_TUTORIAS`) no existe todavía, nada que bloquear
 - [x] Cancelar reserva con generación automática de notificación al usuario — `cancelBookingAction` + `notifyUsers()` (tipo `reserva`, migración 014). El botón "Cancelar" de la UI usa `window.confirm()`, que la herramienta de automatización de navegador tiene prohibido disparar — se verificó reproduciendo la lógica exacta de la acción (update `estado='cancelada'` + insert en `notifications` tipo `reserva`) con un script puntual contra la DB de dev tras confirmar que el usuario corrió la migración 014: booking de prueba pasó a `cancelada` y la notificación se insertó sin error. Falta solo el click manual del usuario en su propio navegador para confirmar la UI en sí (no la lógica).
 - [ ] Registrar incidencias de mantenimiento por espacio. Historial visible — schema ya existe (`maintenance_incidents`, migración 002), sin UI todavía, diferido a una pasada de pulido
-- [ ] Gestionar membresías: alta, baja, renovación y ajuste de créditos — Sprint 17-18
+- [x] Gestionar membresías: alta (planes) — `/admin/coworking/membresias`, CRUD de `membership_plans` (mensual/anual, precio, créditos incluidos), **verificado en navegador** (alta de "Membresía Mensual QA", $15000, 10 créditos). Baja/renovación/ajuste fino de una membresía activa individual quedan para una pasada de pulido
 
 #### Check-in
 
 - [x] Vista "Lista del día": reservas ordenadas por hora con botón "Presente" — `/admin/coworking/reservas` con filtro `fecha` (hoy por defecto)
 - [x] Botón "Presente" registra timestamp y cambia reserva a EN USO — `checkInBookingAction(id,'manual')`, inserta en `checkins` (tabla ya existía desde la 002, sin código que la usara)
-- [ ] Detección automática de no-show: cron cada 5 min, marca a los 15 min sin check-in — `detect_no_shows()` ya existe (002); disparo manual agregado ("Detectar no-shows ahora" en `/admin/coworking/ocupacion`), cron real (Vercel Cron/pg_cron) queda para Sprint 17-18
+- [x] Detección automática de no-show: cron cada 5 min, marca a los 15 min sin check-in — migración 016: `pg_cron` llama `detect_no_shows()` cada 5 min (100% SQL, sin dependencias externas). La notificación al usuario (email) va por `/api/cron/coworking`, disparada por `pg_cron`+`pg_net` cada 10 min — **esa llamada HTTP puntual no se puede probar en vivo hasta deployar** (Supabase no alcanza `localhost`), pero la ruta en sí se verificó a mano con `curl`
 - [x] Escanear QR como método alternativo de check-in — `CheckInScannerModal` (`html5-qrcode`, nueva dependencia) + input manual de respaldo. **No verificado en navegador con cámara real**: en el entorno de automatización (sin cámara física) el intento de `getUserMedia` cuelga el render de la pestaña — riesgo ya anticipado en el plan, por eso existe el input manual. El ingreso manual del ID de reserva dentro del mismo modal usa el mismo `checkInBookingAction(id,'qr')` ya verificado por tipos; falta probarlo con un celular real antes de confiar en el flujo de cámara para la demo.
 - [x] Validación QR: ±15 min de margen horario, estado CONFIRMADA requerido — validado server-side en `checkInBookingAction`, no probado en vivo por el mismo motivo que el punto anterior
 
@@ -148,12 +148,12 @@
 
 ### 3.1 Coworking · `E2`
 
-- [ ] Ver disponibilidad de espacios en calendario en tiempo real
-- [ ] Reservar el mismo espacio durante N semanas consecutivas (reservas en lote)
-- [ ] Cancelar reservas propias respetando política de cancelación configurada
-- [ ] Ver historial de sus reservas y estados de pago
-- [ ] Ver y descargar comprobante QR de cada reserva
-- [ ] Recibir notificaciones de confirmación, recordatorio y cancelación
+- [x] Ver disponibilidad de espacios — `/coordinador/reservas` lista espacios activos (grilla horaria en tiempo real es la de `BookingForm` público, reusada indirectamente al elegir horario en la reserva en lote)
+- [x] Reservar el mismo espacio durante N semanas consecutivas (reservas en lote) — `/coordinador/reservas/[spaceId]`, `createBatchBookingAction`, sin pago online (uso institucional, `tipo_descuento='institucional'`, no genera fila en `payments`). **Verificado en navegador** con un usuario convertido a `coordinador`: 3 reservas creadas ($840 c/u con el 30% de descuento institucional), confirmadas como "Institucional" en `/admin/coworking/reservas` y ausentes de `/admin/coworking/ingresos`
+- [x] Cancelar reservas propias — `cancelMyBookingAction` (mismo botón que alumno/comunidad en `BookingConfirmation`), sin política de cancelación configurable todavía (cancelación libre)
+- [x] Ver historial de sus reservas y estados de pago — `/servicios/coworking/mis-reservas`
+- [ ] Ver y descargar comprobante QR de cada reserva — el QR ya se genera en `BookingConfirmation` (Sprint 13-14), falta un botón de descarga explícito (hoy es solo visual en pantalla)
+- [ ] Recibir notificaciones de confirmación, recordatorio y cancelación — recordatorio real vía `/api/cron/coworking` (Sprint 17-18); confirmación depende del webhook de MP (sin token real todavía, ver arriba)
 
 ### 3.2 Educativo · `E1` (requiere permiso habilitado por Admin)
 
@@ -240,8 +240,8 @@
 - [x] Ver catálogo de espacios con descuento institucional aplicado automáticamente — `/servicios/coworking`, `get_user_discount()`
 - [x] Reservar espacios con tarifa preferencial por matrícula activa — `BookingForm`, verificado en navegador con `alumno.test` (30% aplicado, $1200→$840)
 - [ ] Ver y descargar comprobante QR de cada reserva — **parcial**: `BookingConfirmation` genera el QR on-the-fly cuando `estado='confirmada'` (código verificado, nunca ejecutado con un pago real — depende del webhook de MP, sin token en este entorno)
-- [ ] Cancelar reservas propias respetando política de cancelación — Sprint 15-16
-- [ ] Ver historial de reservas y consumo de créditos de membresía — Sprint 17-18 (membresías) + falta un listado "Mis reservas"
+- [x] Cancelar reservas propias — `cancelMyBookingAction` + botón en `BookingConfirmation`, sin política de cancelación configurable todavía (cancelación libre)
+- [x] Ver historial de reservas — `/servicios/coworking/mis-reservas`, **verificado en navegador**. Suscribirse a una membresía y ver créditos restantes — `/servicios/coworking/membresia` + `MembershipStatus` en `/dashboard`, **flujo verificado en navegador de punta a punta** (sin token de MP: la membresía queda `pendiente` con el aviso correcto, mismo criterio de degradación que `BookingConfirmation`). **Consumo real de créditos en una reserva (pagar con créditos en vez de MercadoPago) queda para una pasada siguiente** — este sprint solo activa la membresía y lleva el saldo
 - [ ] Canjear puntos por horas de coworking · `E1` — Sprint 19-20, explícitamente fuera de alcance
 
 ### 5.3 Plataforma Educativa · `E1`

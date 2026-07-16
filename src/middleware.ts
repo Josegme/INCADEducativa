@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/docente")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/docente") || pathname.startsWith("/coordinador")) {
     const { data: profile } = await supabase
       .from("users")
       .select("role, can_teach")
@@ -43,7 +43,9 @@ export async function middleware(request: NextRequest) {
     const role = profile?.role;
     const allowed = pathname.startsWith("/admin")
       ? role === "admin"
-      : role === "admin" || role === "docente" || profile?.can_teach === true;
+      : pathname.startsWith("/coordinador")
+        ? role === "admin" || role === "coordinador"
+        : role === "admin" || role === "docente" || profile?.can_teach === true;
 
     if (!allowed) {
       return NextResponse.redirect(new URL("/dashboard", request.url));

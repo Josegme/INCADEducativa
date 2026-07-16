@@ -3,12 +3,14 @@
 import { redirect } from "next/navigation";
 
 import { createBookingPreference } from "@/lib/mercadopago/preference";
+import { notifyUsers } from "@/lib/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { bookingFormSchema, computeBookingAmount, registerFieldsSchema } from "@/modules/coworking/booking";
 
 export interface BookingActionState {
   error?: string;
+  success?: boolean;
 }
 
 /**
@@ -155,4 +157,58 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
   }
 
   redirect(`/servicios/coworking/reservas/${booking.id}`);
+}
+
+/**
+ * Cancelación de la propia reserva — hueco real de Sprint 15-16 (solo el
+ * admin podía cancelar). RLS `bookings_own` ya permite el UPDATE porque
+ * `user_id = auth.uid()`; igual se chequea acá explícito antes de tocar
+ * nada, por claridad.
+ */
+export async function cancelMyBookingAction(bookingId: string): Promise<BookingActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Necesitás iniciar sesión" };
+  }
+
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("user_id, space_id, fecha_inicio")
+    .eq("id", bookingId)
+    .single();
+
+  if (!booking || booking.user_id !== user.id) {
+    return { error: "No encontramos esa reserva" };
+  }
+
+  const { error } = await supabase.from("bookings").update({ estado: "cancelada" }).eq("id", bookingId);
+  if (error) {
+    return { error: error.message };
+  }
+
+  // users_select/notifications_own de RLS solo dejan ver/insertar la fila
+  // propia (o admin) — un usuario no-admin no puede leer otros perfiles ni
+  // insertar una notificación para el admin, así que este paso puntual usa
+  // el cliente service_role, mismo criterio que el registro inline de
+  // createBookingAction.
+  const admin = createAdminClient();
+  const { data: space } = await admin.from("spaces").select("nombre").eq("id", booking.space_id).single();
+  const { data: admins } = await admin.from("users").select("id, email").eq("role", "admin");
+
+  if (admins && admins.length > 0) {
+    const fecha = new Date(booking.fecha_inicio).toLocaleString("es-AR");
+    await notifyUsers(admin, {
+      tipo: "reserva",
+      referenciaId: bookingId,
+      titulo: `Un usuario canceló su reserva de ${space?.nombre ?? "un espacio"}`,
+      cuerpo: `La reserva del ${fecha} fue cancelada por el propio usuario.`,
+      recipients: admins.map((a) => ({ userId: a.id, email: a.email as string })),
+    });
+  }
+
+  return { success: true };
 }

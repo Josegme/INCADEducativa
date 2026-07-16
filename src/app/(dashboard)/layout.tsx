@@ -4,6 +4,8 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
+  CalendarPlus,
+  CreditCard,
   DoorOpen,
   GraduationCap,
   LayoutDashboard,
@@ -43,6 +45,15 @@ function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] 
     });
   }
 
+  if (role === "coordinador" && flags.coworking) {
+    sections.push({
+      label: "Coordinador",
+      items: [
+        { label: "Reservas en lote", href: "/coordinador/reservas", icon: <CalendarPlus className={ICON_CLASS} aria-hidden /> },
+      ],
+    });
+  }
+
   if (role === "admin") {
     const adminItems: SidebarSection["items"] = [
       { label: "Usuarios", href: "/admin/usuarios", icon: <Users className={ICON_CLASS} aria-hidden /> },
@@ -56,7 +67,8 @@ function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] 
         { label: "Espacios Coworking", href: "/admin/coworking/espacios", icon: <DoorOpen className={ICON_CLASS} aria-hidden /> },
         { label: "Ocupación Coworking", href: "/admin/coworking/ocupacion", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
         { label: "Reservas Coworking", href: "/admin/coworking/reservas", icon: <CalendarDays className={ICON_CLASS} aria-hidden /> },
-        { label: "Ingresos Coworking", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> }
+        { label: "Ingresos Coworking", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> },
+        { label: "Membresías Coworking", href: "/admin/coworking/membresias", icon: <CreditCard className={ICON_CLASS} aria-hidden /> }
       );
     }
 
