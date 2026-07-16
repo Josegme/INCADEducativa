@@ -1,5 +1,17 @@
 import { redirect } from "next/navigation";
-import { Award, BookOpen, Building2, DoorOpen, GraduationCap, LayoutDashboard, Presentation, Users } from "lucide-react";
+import {
+  Award,
+  BookOpen,
+  Building2,
+  CalendarDays,
+  DoorOpen,
+  GraduationCap,
+  LayoutDashboard,
+  LayoutGrid,
+  Presentation,
+  Users,
+  Wallet,
+} from "lucide-react";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import type { SidebarSection } from "@/components/layout/Sidebar";
@@ -41,7 +53,10 @@ function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] 
     if (flags.coworking) {
       adminItems.push(
         { label: "Sedes Coworking", href: "/admin/coworking/sedes", icon: <Building2 className={ICON_CLASS} aria-hidden /> },
-        { label: "Espacios Coworking", href: "/admin/coworking/espacios", icon: <DoorOpen className={ICON_CLASS} aria-hidden /> }
+        { label: "Espacios Coworking", href: "/admin/coworking/espacios", icon: <DoorOpen className={ICON_CLASS} aria-hidden /> },
+        { label: "Ocupación Coworking", href: "/admin/coworking/ocupacion", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
+        { label: "Reservas Coworking", href: "/admin/coworking/reservas", icon: <CalendarDays className={ICON_CLASS} aria-hidden /> },
+        { label: "Ingresos Coworking", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> }
       );
     }
 

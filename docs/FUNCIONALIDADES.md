@@ -96,30 +96,30 @@
 - [x] CRUD completo de sedes físicas — `/admin/coworking/sedes`, `LocationModal`/`LocationActiveToggle`, verificado en navegador (alta/edición/activar/desactivar)
 - [x] CRUD completo de espacios por sede (hot desks, salas, aulas) — `/admin/coworking/espacios`, `SpaceModal`/`SpaceActiveToggle`, verificado en navegador
 - [x] Configurar precios públicos y % de descuento institucional por rol — precio/hora por espacio (`SpaceModal`) + descuento vía `get_user_discount()` (ya definida en la 002, 30% para alumno/docente/coordinador), aplicado en la landing pública
-- [ ] Configurar cupones de descuento y campañas de early bird
-- [ ] Ver disponibilidad de todos los espacios en tiempo real
-- [ ] Ver, modificar y cancelar cualquier reserva del sistema
-- [ ] Crear reservas manuales sin pago online (`tipo_descuento = manual`, acuerdos directos)
-- [ ] Bloquear aula automáticamente al agendarse una tutoría presencial (uso institucional)
-- [ ] Cancelar reserva con generación automática de notificación al usuario
-- [ ] Registrar incidencias de mantenimiento por espacio. Historial visible
-- [ ] Gestionar membresías: alta, baja, renovación y ajuste de créditos
+- [ ] Configurar cupones de descuento y campañas de early bird — `E2`, sin sprint asignado todavía
+- [x] Ver disponibilidad de todos los espacios en tiempo real — `/admin/coworking/ocupacion`, `OccupancyDashboard`, Realtime sobre `bookings` + polling 20s
+- [x] Ver, modificar y cancelar cualquier reserva del sistema — `/admin/coworking/reservas`, filtros estado/fecha/espacio/tipo (modificar = cancelar por ahora; reprogramar queda diferido)
+- [x] Crear reservas manuales sin pago online (`tipo_descuento = manual`, acuerdos directos) — `ManualBookingModal`, `createManualBookingAction`
+- [ ] Bloquear aula automáticamente al agendarse una tutoría presencial (uso institucional) — el módulo Tutorías (`FEATURE_TUTORIAS`) no existe todavía, nada que bloquear
+- [x] Cancelar reserva con generación automática de notificación al usuario — `cancelBookingAction` + `notifyUsers()` (tipo `reserva`, migración 014). El botón "Cancelar" de la UI usa `window.confirm()`, que la herramienta de automatización de navegador tiene prohibido disparar — se verificó reproduciendo la lógica exacta de la acción (update `estado='cancelada'` + insert en `notifications` tipo `reserva`) con un script puntual contra la DB de dev tras confirmar que el usuario corrió la migración 014: booking de prueba pasó a `cancelada` y la notificación se insertó sin error. Falta solo el click manual del usuario en su propio navegador para confirmar la UI en sí (no la lógica).
+- [ ] Registrar incidencias de mantenimiento por espacio. Historial visible — schema ya existe (`maintenance_incidents`, migración 002), sin UI todavía, diferido a una pasada de pulido
+- [ ] Gestionar membresías: alta, baja, renovación y ajuste de créditos — Sprint 17-18
 
 #### Check-in
 
-- [ ] Vista "Lista del día": reservas ordenadas por hora con botón "Presente"
-- [ ] Botón "Presente" registra timestamp y cambia reserva a EN USO
-- [ ] Detección automática de no-show: cron cada 5 min, marca a los 15 min sin check-in
-- [ ] Escanear QR como método alternativo de check-in
-- [ ] Validación QR: ±15 min de margen horario, estado CONFIRMADA requerido
+- [x] Vista "Lista del día": reservas ordenadas por hora con botón "Presente" — `/admin/coworking/reservas` con filtro `fecha` (hoy por defecto)
+- [x] Botón "Presente" registra timestamp y cambia reserva a EN USO — `checkInBookingAction(id,'manual')`, inserta en `checkins` (tabla ya existía desde la 002, sin código que la usara)
+- [ ] Detección automática de no-show: cron cada 5 min, marca a los 15 min sin check-in — `detect_no_shows()` ya existe (002); disparo manual agregado ("Detectar no-shows ahora" en `/admin/coworking/ocupacion`), cron real (Vercel Cron/pg_cron) queda para Sprint 17-18
+- [x] Escanear QR como método alternativo de check-in — `CheckInScannerModal` (`html5-qrcode`, nueva dependencia) + input manual de respaldo. **No verificado en navegador con cámara real**: en el entorno de automatización (sin cámara física) el intento de `getUserMedia` cuelga el render de la pestaña — riesgo ya anticipado en el plan, por eso existe el input manual. El ingreso manual del ID de reserva dentro del mismo modal usa el mismo `checkInBookingAction(id,'qr')` ya verificado por tipos; falta probarlo con un celular real antes de confiar en el flujo de cámara para la demo.
+- [x] Validación QR: ±15 min de margen horario, estado CONFIRMADA requerido — validado server-side en `checkInBookingAction`, no probado en vivo por el mismo motivo que el punto anterior
 
 #### Reportes Coworking
 
-- [ ] Dashboard con métricas en tiempo real: ocupación, ingresos, reservas activas
-- [ ] **Panel de ingresos independiente del módulo educativo** (vista `coworking_revenue`): por período, sede y tipo de usuario (institucional vs público)
-- [ ] Análisis de ocupación: gráficos de espacios más usados y horarios pico
-- [ ] Informe de tiempos ociosos con recomendaciones
-- [ ] Exportar reportes en PDF y Excel (reservas, ingresos, ocupación)
+- [x] Dashboard con métricas en tiempo real: ocupación, ingresos, reservas activas — `/admin/coworking/ocupacion` (ocupación/reservas) + `/admin/coworking/ingresos` (ingresos)
+- [x] **Panel de ingresos independiente del módulo educativo** (vista `coworking_revenue`): por período, sede y tipo de usuario (institucional vs público) — `/admin/coworking/ingresos`, período mensual (grano de la vista, ver `COMPONENTS.md` §49)
+- [ ] Análisis de ocupación: gráficos de espacios más usados y horarios pico — diferido, solo tasas numéricas por ahora
+- [ ] Informe de tiempos ociosos con recomendaciones — diferido
+- [ ] Exportar reportes en PDF y Excel (reservas, ingresos, ocupación) — solo CSV implementado (`RevenueExportButton`), PDF/Excel diferido
 
 ### 2.3 Módulo Educativo — Admin · `E1`
 

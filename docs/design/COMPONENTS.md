@@ -1156,4 +1156,88 @@ BookingConfirmation (server component)
 
 ---
 
+## 46. OccupancyDashboard (admin Coworking)
+
+Página `/admin/coworking/ocupacion`. Sprint 15-16, Addendum 03 §5.1.
+
+```
+OccupancyDashboard ("use client") — recibe spaceStatuses/todaysBookings/
+occupancy/noShowAlerts ya calculados server-side desde page.tsx
+├── 4 tiles: ocupación hoy/7 días/mes, alertas de no-show
+├── Botón "Detectar no-shows ahora" → runNoShowDetectionAction()
+│   (detect_no_shows() ya existe desde la 002; sin cron real todavía —
+│   Sprint 17-18, disparo manual por ahora)
+├── Mapa de espacios: card por espacio con Badge ocupado (error) / disponible
+│   (completed) / bloqueado (locked, = space.activo=false)
+└── Table "Reservas de hoy" (mismo primitive que el resto del admin)
+
+Realtime: canal sobre `bookings` (sin filtro, el admin ve todo vía RLS
+is_admin()) + polling 20s de respaldo — mismo patrón que BookingForm (§44).
+```
+
+---
+
+## 47. Reservas admin — BookingFilterBar / BookingRowActions / ManualBookingModal
+
+Página `/admin/coworking/reservas`. Sprint 15-16, Addendum 03 §5.2. "Lista del
+día": el filtro `fecha` es hoy por defecto (link "Ver todas las fechas" lo saca).
+
+```
+BookingFilterBar ("use client") — fecha/estado/espacio/tipo vía searchParams,
+mismo patrón que FilterBar (§ catálogo de cursos)
+
+BookingRowActions ("use client") — por fila: "Presente"
+(checkInBookingAction(id,'manual'), solo si estado=confirmada) + "Cancelar"
+(confirm + cancelBookingAction, dispara notifyUsers tipo 'reserva')
+
+ManualBookingModal ("use client") — Dialog, mismo patrón que LocationModal:
+buscador de usuario existente (filtro en memoria sobre la lista ya cargada,
+sin componente Select nuevo) + espacio/fecha/hora/duración + notas →
+createManualBookingAction (tipo_descuento='manual', estado='confirmada'
+directo, sin pasar por MercadoPago)
+```
+
+---
+
+## 48. CheckInScannerModal
+
+Modal de check-in por QR, botón "Escanear QR" en `/admin/coworking/reservas`.
+Sprint 15-16, Addendum 03 §5.2 (±15 min de margen, estado CONFIRMADA
+requerido — validado en `checkInBookingAction`, no en el cliente).
+
+```
+CheckInScannerModal ("use client") — nueva dependencia `html5-qrcode`
+(única lectora de QR del repo, no había ninguna)
+├── Cámara (facingMode "environment") decodificando el booking.id plano
+│   (mismo QR ya generado en BookingConfirmation, §45)
+└── Input de respaldo para pegar/tipear el ID a mano — la lectura por cámara
+    es difícil de verificar con la automatización de navegador (mismo
+    problema ya documentado con la subida de archivos en Sprint 7a); el
+    respaldo deja probable la lógica de negocio sin depender de la cámara
+```
+
+---
+
+## 49. RevenuePanel — RevenueFilterBar / RevenueExportButton
+
+Página `/admin/coworking/ingresos`. Sprint 15-16, Addendum 03 §5.4. Consume
+la vista `coworking_revenue` (ya existía desde la 002, nunca tenía UI).
+
+```
+RevenueFilterBar ("use client") — mes (input type=month, con "Ver todos los
+períodos") + sede + tipo, mismo patrón searchParams que BookingFilterBar
+
+RevenueExportButton ("use client") — arma el CSV en el browser con buildCsv()
+(src/modules/admin/bookings.ts, no hay librería de export en el repo) y
+descarga vía Blob — sin endpoint nuevo
+```
+
+**Simplificación documentada:** la vista `coworking_revenue` agrupa por mes
+(`date_trunc('month', ...)`, decisión de schema de la migración 002, no
+tocada en este sprint) — el filtro de período es por mes, no por día/semana
+como sugiere el Addendum en detalle; si se necesita ese grano más fino más
+adelante, es un cambio aditivo a la vista.
+
+---
+
 *INCADEducativa · Design System v2.1 — COMPONENTS v1.3 · Julio 2026*

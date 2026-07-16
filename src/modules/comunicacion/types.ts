@@ -6,7 +6,8 @@ export type NotificationType =
   | "certificado"
   | "puntos"
   | "pago"
-  | "sistema";
+  | "sistema"
+  | "reserva";
 
 export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   announcement: "Anuncio",
@@ -17,6 +18,7 @@ export const NOTIFICATION_TYPE_LABEL: Record<NotificationType, string> = {
   puntos: "Puntos",
   pago: "Pago",
   sistema: "Sistema",
+  reserva: "Reserva",
 };
 
 export interface NotificationRow {
