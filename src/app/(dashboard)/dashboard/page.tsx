@@ -2,6 +2,7 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { NotificationPrefsToggle } from "@/components/educativa/NotificationPrefsToggle";
 import { PointsHistory } from "@/components/educativa/PointsHistory";
 import { MembershipStatus } from "@/components/coworking/MembershipStatus";
+import { RedeemPointsCard } from "@/components/coworking/RedeemPointsCard";
 import type { NotificationPrefs } from "@/app/(dashboard)/actions/notificationActions";
 import { flags } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
@@ -13,7 +14,11 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   const { data: profile } = user
-    ? await supabase.from("users").select("nombre, role, puntos, notification_prefs").eq("id", user.id).single()
+    ? await supabase
+        .from("users")
+        .select("nombre, role, puntos, notification_prefs, coworking_creditos_canje")
+        .eq("id", user.id)
+        .single()
     : { data: null };
 
   const notificationPrefs = (profile?.notification_prefs as NotificationPrefs | undefined) ?? {
@@ -55,6 +60,9 @@ export default async function DashboardPage() {
           creditosRestantes={membership?.creditos_restantes ?? 0}
           fin={membership?.fin ?? null}
         />
+      ) : null}
+      {flags.coworking && user ? (
+        <RedeemPointsCard puntos={profile?.puntos ?? 0} creditosActuales={profile?.coworking_creditos_canje ?? 0} />
       ) : null}
       <NotificationPrefsToggle initialPrefs={notificationPrefs} />
       <LogoutButton />
