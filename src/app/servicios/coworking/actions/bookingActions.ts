@@ -107,6 +107,57 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
 
   const { data: location } = await supabase.from("locations").select("nombre").eq("id", space.location_id).single();
 
+  // Pago con crédito canjeado (Sprint 19-20) — rama separada del pago en
+  // efectivo, no toca la lógica de MercadoPago de más abajo. Sin fila en
+  // `payments` (no es revenue real, mismo criterio que las reservas
+  // institucionales de coordinador).
+  if (formData.get("pagarConCredito") === "true") {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("coworking_creditos_canje")
+      .eq("id", user.id)
+      .single();
+    const creditosDisponibles = profile?.coworking_creditos_canje ?? 0;
+
+    if (creditosDisponibles < duracionHoras) {
+      return { error: "No tenés créditos suficientes para esta duración" };
+    }
+
+    const fechaInicioCredito = new Date(`${fecha}T${String(horaInicio).padStart(2, "0")}:00:00`);
+    const fechaFinCredito = new Date(fechaInicioCredito.getTime() + duracionHoras * 60 * 60 * 1000);
+    const montoReferencia = Math.round(space.precio_hora * duracionHoras * 100) / 100;
+
+    const { data: booking, error: bookingError } = await supabase
+      .from("bookings")
+      .insert({
+        user_id: user.id,
+        space_id: spaceId,
+        fecha_inicio: fechaInicioCredito.toISOString(),
+        fecha_fin: fechaFinCredito.toISOString(),
+        estado: "confirmada",
+        monto: montoReferencia,
+        descuento_pct: 100,
+        tipo_descuento: "canje",
+        telefono_contacto: telefonoContacto || null,
+      })
+      .select("id")
+      .single();
+
+    if (bookingError || !booking) {
+      if (bookingError?.code === "23P01") {
+        return { error: "Ese horario ya no está disponible — elegí otro" };
+      }
+      return { error: "No se pudo crear la reserva — intentá de nuevo" };
+    }
+
+    await admin
+      .from("users")
+      .update({ coworking_creditos_canje: creditosDisponibles - duracionHoras })
+      .eq("id", user.id);
+
+    redirect(`/servicios/coworking/reservas/${booking.id}`);
+  }
+
   const { data: discountData } = await supabase.rpc("get_user_discount");
   const descuentoPct = typeof discountData === "number" ? discountData : 0;
 

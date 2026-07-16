@@ -25,9 +25,13 @@ export default async function ReservarSpacePage({ params }: { params: { spaceId:
   } = await supabase.auth.getUser();
 
   let discountPct = 0;
+  let coworkingCreditos = 0;
   if (user) {
     const { data } = await supabase.rpc("get_user_discount");
     discountPct = typeof data === "number" ? data : 0;
+
+    const { data: profile } = await supabase.from("users").select("coworking_creditos_canje").eq("id", user.id).single();
+    coworkingCreditos = profile?.coworking_creditos_canje ?? 0;
   }
 
   return (
@@ -44,7 +48,13 @@ export default async function ReservarSpacePage({ params }: { params: { spaceId:
         {space.descripcion ? <p className="mt-2 text-sm text-[--edu-text-muted]">{space.descripcion}</p> : null}
       </div>
 
-      <BookingForm spaceId={space.id} precioHora={space.precio_hora} discountPct={discountPct} isLoggedIn={Boolean(user)} />
+      <BookingForm
+        spaceId={space.id}
+        precioHora={space.precio_hora}
+        discountPct={discountPct}
+        isLoggedIn={Boolean(user)}
+        coworkingCreditos={coworkingCreditos}
+      />
     </div>
   );
 }

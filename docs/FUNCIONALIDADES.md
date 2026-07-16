@@ -241,8 +241,8 @@
 - [x] Reservar espacios con tarifa preferencial por matrícula activa — `BookingForm`, verificado en navegador con `alumno.test` (30% aplicado, $1200→$840)
 - [ ] Ver y descargar comprobante QR de cada reserva — **parcial**: `BookingConfirmation` genera el QR on-the-fly cuando `estado='confirmada'` (código verificado, nunca ejecutado con un pago real — depende del webhook de MP, sin token en este entorno)
 - [x] Cancelar reservas propias — `cancelMyBookingAction` + botón en `BookingConfirmation`, sin política de cancelación configurable todavía (cancelación libre)
-- [x] Ver historial de reservas — `/servicios/coworking/mis-reservas`, **verificado en navegador**. Suscribirse a una membresía y ver créditos restantes — `/servicios/coworking/membresia` + `MembershipStatus` en `/dashboard`, **flujo verificado en navegador de punta a punta** (sin token de MP: la membresía queda `pendiente` con el aviso correcto, mismo criterio de degradación que `BookingConfirmation`). **Consumo real de créditos en una reserva (pagar con créditos en vez de MercadoPago) queda para una pasada siguiente** — este sprint solo activa la membresía y lleva el saldo
-- [ ] Canjear puntos por horas de coworking · `E1` — Sprint 19-20, explícitamente fuera de alcance
+- [x] Ver historial de reservas — `/servicios/coworking/mis-reservas`, **verificado en navegador**. Suscribirse a una membresía y ver créditos restantes — `/servicios/coworking/membresia` + `MembershipStatus` en `/dashboard`, **flujo verificado en navegador de punta a punta** (sin token de MP: la membresía queda `pendiente` con el aviso correcto, mismo criterio de degradación que `BookingConfirmation`). **Consumo de créditos de *membresía* en una reserva sigue sin implementar** — lo que sí se implementó en Sprint 19-20 es el canje de *puntos* por créditos (ver abajo), un saldo distinto
+- [x] Canjear puntos por horas de coworking · `E1` — Sprint 19-20: `RedeemPointsCard` en `/dashboard` (50 puntos = 1 crédito, `redeemPointsForCreditAction`), consumo real al reservar (`BookingForm` + rama nueva en `createBookingAction`: `tipo_descuento='canje'`, sin pasar por MercadoPago, sin fila en `payments`)
 
 ### 5.3 Plataforma Educativa · `E1`
 
@@ -263,7 +263,7 @@
 - [ ] Ver mapa visual de carrera con nodos bloqueados/desbloqueados según progreso
 - [x] Acumular puntos por módulo completado y examen aprobado (taller es `E2`,
       sin producir puntos todavía)
-- [ ] Canjear puntos por beneficios en coworking · `E2`
+- [x] Canjear puntos por beneficios en coworking · `E2` — ver §5.2, `RedeemPointsCard`
 
 ### 5.4 Tutorías · `E2`
 

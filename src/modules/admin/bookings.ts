@@ -56,6 +56,7 @@ export const DISCOUNT_TYPE_LABEL: Record<DiscountType, string> = {
   institucional: "Institucional",
   publico: "Público",
   manual: "Manual",
+  canje: "Canje de puntos",
 };
 
 /** No hay librería de export CSV en el repo — string simple con comillas escapadas. */

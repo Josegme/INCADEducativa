@@ -1338,7 +1338,55 @@ usuario logueado, mismo Table primitive que el resto del repo. Cubre
 Sprint 17-18. Disparado por pg_cron + pg_net (migración 016) o a mano con
 curl mientras no haya deploy (pg_net no alcanza `localhost`). Lógica en
 TypeScript, reusa `notifyUsers`/`sendWhatsapp` tal cual — no se duplica en
-SQL. Protegido por `Authorization: Bearer CRON_SECRET`.
+SQL. Protegido por `Authorization: Bearer CRON_SECRET`. Sprint 19-20 le suma
+`detect_completed_bookings()` a la misma llamada (ver §56).
+
+---
+
+## 55. RedeemPointsCard — canje de puntos por créditos de Coworking
+
+Sprint 19-20. En `/dashboard`, mismo patrón visual que `PointsHistory`
+(§ dashboard). Créditos canjeados con puntos son un saldo **separado** de
+`memberships.creditos_restantes` (§51) — un usuario puede tener ambos, se
+consumen por caminos distintos.
+
+```
+RedeemPointsCard ("use client") — recibe puntos/creditosActuales
+├── Texto: "{POINTS_PER_COWORKING_CREDIT} puntos = 1 hora", saldo actual,
+│   cuánto más alcanza a canjear
+└── Botón "Canjear 1 hora de Coworking" → redeemPointsForCreditAction(1)
+    (src/app/(dashboard)/actions/coworkingCreditsActions.ts): gasta puntos
+    vía awardPoints() con monto negativo (ledger append-only, es un
+    movimiento nuevo — nunca se edita uno viejo) y suma
+    users.coworking_creditos_canje con el cliente de sesión normal (RLS
+    "users_update_own" ya permite id = auth.uid())
+```
+
+## 56. Pago con crédito canjeado en BookingForm
+
+Sprint 19-20. **Rama nueva y separada dentro de `createBookingAction`**, no
+toca el camino de pago en efectivo (MercadoPago) que ya estaba verificado.
+
+```
+BookingForm — si coworkingCreditos (prop nueva) >= duracionHoras, muestra
+un checkbox "Pagar con crédito canjeado" en el bloque de Resumen; al
+tildarlo cambia el resumen ($0, badge "Pagás con N crédito(s)") y el texto
+del botón
+
+createBookingAction — si formData.pagarConCredito === "true": valida
+créditos suficientes, inserta la reserva estado='confirmada' directo,
+tipo_descuento='canje' (nuevo valor del enum, migración 017),
+descuento_pct=100, **sin fila en payments** (no es revenue real, mismo
+criterio que las reservas institucionales de coordinador, §52) y descuenta
+duracionHoras créditos con el cliente admin ya creado en la función.
+Redirige directo a la confirmación, sin pasar por MercadoPago.
+```
+
+`detect_completed_bookings()` (migración 017, mismo patrón que
+`detect_no_shows()` de la 002) cierra el hueco real de que ninguna reserva
+pasaba a `estado='completada'` — la llama tanto `/api/cron/coworking` (§54)
+como el botón "Actualizar estados ahora" de `/admin/coworking/ocupacion`
+(antes "Detectar no-shows ahora", ahora hace las dos cosas en un click).
 
 ---
 

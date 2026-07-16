@@ -29,6 +29,7 @@ export interface BookingActionState {
   error?: string;
   success?: boolean;
   count?: number;
+  completedCount?: number;
 }
 
 const REVALIDATE_PATHS = [
@@ -205,15 +206,24 @@ export async function checkInBookingAction(
   return { success: true };
 }
 
+/**
+ * Dispara a mano las 2 detecciones automáticas de Coworking (mismas RPCs
+ * que llama /api/cron/coworking cada 5-10 min): no-shows y reservas
+ * terminadas que quedan en `completada`.
+ */
 export async function runNoShowDetectionAction(): Promise<BookingActionState> {
   const { supabase } = await requireAdmin();
 
   const { data, error } = await supabase.rpc("detect_no_shows");
-
   if (error) {
     return { error: error.message };
   }
 
+  const { data: completedData, error: completedError } = await supabase.rpc("detect_completed_bookings");
+  if (completedError) {
+    return { error: completedError.message };
+  }
+
   revalidatePath("/admin/coworking/ocupacion");
-  return { success: true, count: (data as number) ?? 0 };
+  return { success: true, count: (data as number) ?? 0, completedCount: (completedData as number) ?? 0 };
 }

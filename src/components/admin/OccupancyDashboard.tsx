@@ -86,7 +86,9 @@ export function OccupancyDashboard({ spaceStatuses, todaysBookings, occupancy, n
       setDetectResult(result.error);
       return;
     }
-    setDetectResult(`${result.count ?? 0} reserva(s) marcadas como no-show.`);
+    setDetectResult(
+      `${result.count ?? 0} reserva(s) marcadas como no-show, ${result.completedCount ?? 0} marcadas como completadas.`
+    );
     router.refresh();
   }
 
@@ -118,7 +120,7 @@ export function OccupancyDashboard({ spaceStatuses, todaysBookings, occupancy, n
 
       <div className="flex items-center gap-3">
         <Button variant="outline" size="sm" disabled={isDetecting} onClick={handleDetectNoShows}>
-          {isDetecting ? "Detectando…" : "Detectar no-shows ahora"}
+          {isDetecting ? "Actualizando…" : "Actualizar estados ahora"}
         </Button>
         {detectResult ? <span className="text-[12px] text-[--edu-text-muted]">{detectResult}</span> : null}
       </div>

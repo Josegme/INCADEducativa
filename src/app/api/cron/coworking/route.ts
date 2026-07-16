@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient();
 
   const { data: noShowCount } = await admin.rpc("detect_no_shows");
+  const { data: completedCount } = await admin.rpc("detect_completed_bookings");
 
   const now = new Date();
   const windowStart = new Date(now.getTime() + 23 * 60 * 60 * 1000);
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     noShowsDetected: (noShowCount as number) ?? 0,
+    bookingsCompleted: (completedCount as number) ?? 0,
     remindersSent,
     noShowsNotified,
   });

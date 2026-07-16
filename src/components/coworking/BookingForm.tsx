@@ -22,15 +22,17 @@ interface BookingFormProps {
   precioHora: number;
   discountPct: number;
   isLoggedIn: boolean;
+  coworkingCreditos: number;
 }
 
 const days = nextBookingDays();
 const slots = hourSlots();
 
-export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn }: BookingFormProps) {
+export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, coworkingCreditos }: BookingFormProps) {
   const [fecha, setFecha] = React.useState(days[0].iso);
   const [horaInicio, setHoraInicio] = React.useState<number | null>(null);
   const [duracionHoras, setDuracionHoras] = React.useState(1);
+  const [pagarConCredito, setPagarConCredito] = React.useState(false);
   const [occupied, setOccupied] = React.useState<Set<number>>(new Set());
   const [nombre, setNombre] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -97,6 +99,11 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn }: Bo
   }, [fecha]);
 
   const amount = computeBookingAmount(precioHora, duracionHoras, discountPct);
+  const canPayWithCredit = coworkingCreditos >= duracionHoras;
+
+  React.useEffect(() => {
+    if (!canPayWithCredit) setPagarConCredito(false);
+  }, [canPayWithCredit]);
 
   const rangeIsFree =
     horaInicio !== null &&
@@ -121,6 +128,7 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn }: Bo
     formData.set("fecha", fecha);
     formData.set("horaInicio", String(horaInicio));
     formData.set("duracionHoras", String(duracionHoras));
+    if (pagarConCredito) formData.set("pagarConCredito", "true");
     if (telefonoContacto) formData.set("telefonoContacto", telefonoContacto);
     if (!isLoggedIn) {
       formData.set("nombre", nombre);
@@ -210,7 +218,13 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn }: Bo
       <div className="rounded-[14px] border-[0.5px] border-[--edu-border] bg-[--edu-surface-alt] p-4">
         <p className="text-[13px] text-[--edu-text-muted]">Resumen</p>
         <div className="mt-1 flex items-baseline gap-2">
-          {discountPct > 0 ? (
+          {pagarConCredito ? (
+            <>
+              <span className="text-[14px] text-[--edu-text-faint] line-through">${amount.montoFinal}</span>
+              <span className="text-[22px] font-semibold text-[--edu-success-text]">$0</span>
+              <Badge state="completed">Pagás con {duracionHoras} crédito(s) canjeado(s)</Badge>
+            </>
+          ) : discountPct > 0 ? (
             <>
               <span className="text-[14px] text-[--edu-text-faint] line-through">${amount.montoOriginal}</span>
               <span className="text-[22px] font-semibold text-[--edu-success-text]">${amount.montoFinal}</span>
@@ -220,6 +234,18 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn }: Bo
             <span className="text-[22px] font-semibold text-white">${amount.montoFinal}</span>
           )}
         </div>
+
+        {isLoggedIn && canPayWithCredit ? (
+          <label className="mt-3 flex items-center gap-2 text-[13px] text-[--edu-text]">
+            <input
+              type="checkbox"
+              checked={pagarConCredito}
+              onChange={(e) => setPagarConCredito(e.target.checked)}
+              className="h-4 w-4 rounded-sm border-[--edu-border] accent-[--inc-violet]"
+            />
+            Pagar con crédito canjeado (tenés {coworkingCreditos})
+          </label>
+        ) : null}
       </div>
 
       {!isLoggedIn ? (
@@ -262,7 +288,7 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn }: Bo
       </div>
 
       <Button type="submit" size="lg" disabled={isSubmitting || horaInicio === null}>
-        {isSubmitting ? "Procesando…" : "Reservar y pagar"}
+        {isSubmitting ? "Procesando…" : pagarConCredito ? "Reservar con crédito" : "Reservar y pagar"}
       </Button>
     </form>
   );

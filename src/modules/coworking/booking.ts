@@ -23,7 +23,7 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   no_show: "No se presentó",
 };
 
-export type DiscountType = "institucional" | "publico" | "manual";
+export type DiscountType = "institucional" | "publico" | "manual" | "canje";
 
 export interface BookingRow {
   id: string;
