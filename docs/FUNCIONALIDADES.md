@@ -132,7 +132,7 @@
       `ReviewActions` (§29) en `/admin/cursos`, filas en `estado='revision'`
 - [x] Enviar feedback al docente sobre contenido rechazado — motivo obligatorio al rechazar,
       guardado en `courses.revision_comentario` y visible en `CourseEditor` (banner de rechazo)
-- [ ] Publicar cursos, talleres y programas (única entidad que puede publicar)
+- [x] Publicar cursos, talleres y programas (única entidad que puede publicar) — cursos vía `PublishToggle`/`ReviewActions` (§29), talleres vía `TallerPublishToggle` (`COMPONENTS.md` §58, Addendum 06). Carreras/programas no tienen concepto de "publicar", solo `activa`/`inactiva` (`CareerModal`)
 - [ ] Editar nombre en certificado emitido y regenerar PDF
 - [ ] Ver métricas académicas: progreso de alumnos, reportes de engagement
 
@@ -252,7 +252,7 @@
 - [x] Inscribirse a cursos gratuitos con un clic (incluye cursos fuera de su carrera, que quedan como "curso adicional" — CU-T01) — `enrollUserAction` real sobre `enrollments`
 - [ ] Inscribirse a cursos pagos (flujo MercadoPago + acceso tras webhook) · `E3`
 - [x] Acceder al contenido con desbloqueo progresivo (clase por clase)
-- [x] Rendir cuestionarios por módulo con feedback inmediato (ver §5.6)
+- [x] Rendir cuestionarios por módulo con feedback inmediato (ver §5.7)
 - [x] Rendir examen final con temporizador
 - [x] Ver score y estado aprobado/reprobado
 - [x] Reintentar examen reprobado pasadas 24hs (configurable, default 24hs)
@@ -274,12 +274,22 @@
 - [x] Recibir recordatorio 24hs y 1hs antes por Email + in-app (WhatsApp diferido, ver Addendum 05)
 - [x] Ver grabación de tutoría post-sesión
 
-### 5.5 Reserva de Coworking desde la Plataforma Educativa · `E2`
+### 5.5 Talleres · `E2` (alcance interno — ver Addendum 06)
+
+- [x] Ver talleres publicados y sus datos (fecha, duración, descripción) — `/talleres`, sección "Disponibles"
+- [x] Inscribirse a un taller (respeta capacidad si el Admin la seteó) — `inscribirseTallerAction`
+- [x] Ver el link virtual del taller una vez inscripto — sección "Mis talleres"
+- [x] Desinscribirse antes del evento — `desinscribirseTallerAction`
+- [x] Ver la grabación después del evento, cuando el Admin la carga — mismo taller, sin ruta aparte
+- [ ] Registro público de Lead/Comunidad al taller gratuito, nurturing post-taller — diferido a `E3` (`FEATURE_PUBLICA`), fuera de esta pasada a propósito (ADR-18)
+- [ ] Puntos por asistir a un taller — diferido, sin fecha (no otorga puntos todavía)
+
+### 5.6 Reserva de Coworking desde la Plataforma Educativa · `E2`
 
 - [x] Reservar escritorio o sala de estudio desde el panel educativo sin salir de la app — ítem "Coworking" en el sidebar de `(dashboard)` lleva a `/servicios/coworking` (mismo dominio/sesión, no un widget embebido en el dashboard)
 - [x] Descuento institucional aplicado automáticamente al reservar
 
-### 5.6 Evaluaciones y Entregas · `E1`
+### 5.7 Evaluaciones y Entregas · `E1`
 
 > Estados del intento: BLOQUEADA → DISPONIBLE → EN CURSO → PENDIENTE CORRECCIÓN → APROBADA / DESAPROBADA / CORREGIDA.
 
@@ -298,7 +308,7 @@
 - [x] Ver nota final (auto + manual) y devolución del docente
 - [x] Reintentar evaluación desaprobada según intentos y espera configurados
 
-### 5.7 Centro de Notificaciones · `E1`
+### 5.8 Centro de Notificaciones · `E1`
 
 - [x] Campana en topbar con badge de no leídas (Supabase Realtime)
 - [x] Panel desplegable con preview de las últimas notificaciones

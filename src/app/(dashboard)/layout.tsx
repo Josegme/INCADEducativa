@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   Presentation,
   Users,
+  Video,
   Wallet,
 } from "lucide-react";
 
@@ -34,6 +35,10 @@ function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] 
   // Coworking es un ítem de primer nivel, no un submódulo educativo — Addendum 03 §2.2.
   if (flags.coworking) {
     platformItems.push({ label: "Coworking", href: "/servicios/coworking", icon: <DoorOpen className={ICON_CLASS} aria-hidden /> });
+  }
+
+  if (flags.talleres) {
+    platformItems.push({ label: "Talleres", href: "/talleres", icon: <Video className={ICON_CLASS} aria-hidden /> });
   }
 
   const sections: SidebarSection[] = [{ label: "Plataforma", items: platformItems }];
@@ -70,6 +75,10 @@ function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] 
         { label: "Ingresos Coworking", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> },
         { label: "Membresías Coworking", href: "/admin/coworking/membresias", icon: <CreditCard className={ICON_CLASS} aria-hidden /> }
       );
+    }
+
+    if (flags.talleres) {
+      adminItems.push({ label: "Talleres", href: "/admin/talleres", icon: <Video className={ICON_CLASS} aria-hidden /> });
     }
 
     sections.push({ label: "Administración", items: adminItems });

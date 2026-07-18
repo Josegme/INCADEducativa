@@ -7,7 +7,7 @@
 | Campo | Detalle |
 |---|---|
 | **Proyecto** | INCADEducativa — Plataforma Educativa + Módulos de Servicio |
-| **Versión** | 3.5 — Módulo Tutorías (Addendum 05) |
+| **Versión** | 3.6 — Módulo Talleres (Addendum 06) |
 | **Autores** | Escobar, José Gustavo · Schwegler, Alan |
 | **Fecha** | Junio 2026 |
 | **Metodología** | Spec-Driven Development (SDD) · Clean Architecture |
@@ -322,6 +322,18 @@ El sistema define 6 perfiles con permisos y vistas específicas implementados me
 | **Postcondición** | Tutoría visible en `/cursos/[slug]` para los alumnos inscriptos, con su aula/link y (luego de la sesión) su grabación |
 | **Criterio de éxito** | El docente programa una tutoría en menos de 3 clics. Cero doble asignación de aula. *(ver Addendum 05)* |
 
+#### CU-08: Alumno se inscribe y asiste a un taller — Etapa 2 (alcance interno)
+
+| Campo | Detalle |
+|---|---|
+| **Actor** | Alumno INCADE logueado (o cualquier usuario autenticado — sin restricción de rol, mismo criterio que la inscripción a cursos gratuitos) |
+| **Precondición** | `FEATURE_TALLERES=true`. Taller en estado `publicado` |
+| **Trigger** | Alumno entra a `/talleres` |
+| **Flujo principal** | 1. Ve los talleres publicados en "Disponibles" → 2. Click "Inscribirme" → 3. Sistema valida capacidad (si está seteada) → 4. Queda inscripto, aparece en "Mis talleres" con el link virtual → 5. Después del evento, el Admin carga el link de grabación editando el mismo taller → 6. El alumno lo ve en la misma sección |
+| **Alternativas** | A1: capacidad llena → botón deshabilitado. A2: el alumno se desinscribe antes del evento |
+| **Postcondición** | Fila en `taller_inscripciones`. Sin registro de asistencia real ni recordatorios automáticos (ningún documento original los pide para Talleres, a diferencia de Tutorías) |
+| **Criterio de éxito** | Admin publica un taller en menos de 3 clics. Alumno se inscribe en 1 clic. *(ver Addendum 06)* |
+
 ---
 
 ### 5.2 Casos de uso de transición — conversión de roles
@@ -418,6 +430,21 @@ flujo de pago: es un beneficio incluido para el alumno ya inscripto. *(ver Adden
 - [ ] Recordatorio automático 24hs y 1hs antes por Email + in-app, a alumno y docente (WhatsApp diferido — falta un campo de teléfono de perfil, ver Addendum 05)
 - [ ] Auto-completado: cron pasa la tutoría a `realizada` cuando termina
 - [ ] Docente registra asistencia por alumno y carga el link de grabación post-sesión
+
+### 6.5 Módulo Talleres
+
+Contenido en vivo bajo el feature flag `FEATURE_TALLERES` (Etapa 2, **alcance interno**).
+A diferencia de cursos y tutorías, es **100% autorado por Admin** — sin rol Docente
+involucrado (ADR-18). Sin flujo de pago ni puntos en esta pasada. El flujo de Lead/
+Comunidad (registro público, taller gratuito como imán de marketing) queda diferido a
+Etapa 3, cuando se active `FEATURE_PUBLICA`. *(ver Addendum 06)*
+
+- [ ] Admin crea, edita y publica/despublica/cancela talleres (título, descripción, fecha,
+      duración, link virtual, capacidad opcional)
+- [ ] Alumno INCADE logueado ve los talleres publicados y se inscribe (respeta capacidad)
+- [ ] Alumno ve el link virtual el día del taller y se puede desinscribir antes
+- [ ] Admin carga el link de grabación editando el mismo taller después del evento
+- [ ] Alumno ve la grabación en "Mis talleres"
 
 ---
 
@@ -541,6 +568,13 @@ La arquitectura de módulos con feature flags permite agregar nuevos servicios s
 | `tutorias` | `id, curso_id, docente_id, modalidad, fecha_inicio, fecha_fin, link_virtual, space_id, booking_id, grabacion_url, estado, recordatorio_24h_enviado, recordatorio_1h_enviado` | `modalidad`: virtual / presencial. `estado`: programada / realizada / cancelada. `space_id`/`booking_id` solo si es presencial *(Addendum 05)* |
 | `tutoria_asistencias` | `id, tutoria_id, alumno_id, presente, registrado_at` | `unique(tutoria_id, alumno_id)` |
 
+### 10.4 Entidades principales — Talleres (Etapa 2, alcance interno)
+
+| Tabla | Campos clave | Notas |
+|---|---|---|
+| `talleres` | `id, titulo, descripcion, fecha_inicio, duracion_minutos, link_virtual, grabacion_url, capacidad, estado, created_at` | `estado`: borrador / publicado / cancelado *(Addendum 06)* |
+| `taller_inscripciones` | `id, taller_id, user_id, inscrito_at` | `unique(taller_id, user_id)` |
+
 ---
 
 ## 11. Flujos críticos del sistema
@@ -636,6 +670,7 @@ Empleador o tercero escanea el QR del certificado
 | **Conversión de roles** | Toda conversión preserva el 100% del historial (cursos, certificados, puntos, pagos). Cada cambio queda registrado en `role_history` con autor y timestamp, y dispara notificación in-app + email. Las carreras solo se asignan al convertir a `alumno` por el Admin (ningún flujo automático). |
 | **Módulo Coworking (E2)** | Un usuario externo reserva desde cero en menos de 5 pasos. El descuento institucional se aplica sin código. Cero errores de doble asignación de espacio. Confirmación de reserva en menos de 3 segundos post-pago. El panel de ingresos del período mensual carga en menos de 2 segundos. |
 | **Módulo Tutorías (E2)** | El docente programa una tutoría en menos de 3 clics. Cero doble asignación de aula. Los recordatorios 24hs/1hs se envían una sola vez por tutoría. El auto-completado corre cada 5 min vía cron. |
+| **Módulo Talleres (E2, interno)** | Admin publica un taller en menos de 3 clics. Alumno se inscribe en 1 clic, respetando capacidad. |
 
 ---
 
@@ -660,6 +695,7 @@ Empleador o tercero escanea el QR del certificado
 | **ADR-15** | Carreras exclusivas para `alumno`, no comprables online | Las carreras son el activo institucional más valioso de INCADE; su validez depende del proceso de admisión presencial. La plataforma las muestra como vitrina, pero deriva a admisiones (la conversión a `alumno` y la asignación de carrera las hace solo el Admin). La plataforma actúa como canal de captación para el Instituto *(Addendum 04)*. |
 | **ADR-16** | Conversiones de rol aditivas + `role_history` + rol dual `can_teach` | Las transiciones nunca borran historial (solo suman beneficios); un email = un perfil. Cada cambio se audita en `role_history`. El rol docente para alumnos es un permiso granular por curso (`can_teach` + `courses.docente_id` vía `can_teach_course()`), no un rol global, evitando duplicar cuentas *(Addendum 04)*. |
 | **ADR-17** | Tutorías como sesión grupal ligada a curso, no cita 1:1 | El docente programa la tutoría para todo el curso (alumnos inscriptos), reusando la infraestructura de Coworking para el bloqueo de aula presencial. El modelo de cita 1:1 queda reservado para un módulo futuro y no relacionado (`FEATURE_MENTORIA`), evitando mezclar ambos dominios en el mismo schema *(Addendum 05)*. |
+| **ADR-18** | Talleres como contenido 100% autorado por Admin, alcance interno E2 | Ningún documento original le asigna un rol a Docente en Talleres — solo Admin publica. No aplica el flujo de curación de ADR-06 porque no hay autor previo que curar. El flag es E2 pero el consumo real documentado (Lead gratuito, Comunidad paga) estaba etiquetado E3 en el spec original; este ADR resuelve la ambigüedad acotando el alcance a consumo interno (Alumno INCADE ya logueado) hasta que se active `FEATURE_PUBLICA` *(Addendum 06)*. |
 
 ---
 

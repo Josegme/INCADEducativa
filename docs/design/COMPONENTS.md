@@ -1432,6 +1432,48 @@ docente la cargó)
 mismo patrón que `/api/cron/coworking`, §54) van por Email + in-app — sin
 WhatsApp por ahora, `users` no tiene ningún campo de teléfono de perfil.
 
+## 58. Módulo Talleres — TallerModal / TallerPublishToggle / TallerCard
+
+Addendum 06. A diferencia de Tutorías, Talleres es 100% autorado por Admin —
+sin rol Docente (ADR-18). Sin cron, sin asistencia, sin puntos en esta
+pasada (ningún documento original los pide para Talleres).
+
+```
+TallerModal ("use client") — src/components/admin/TallerModal.tsx
+└── Mismo patrón que CareerModal (§?, admin/CareerModal.tsx): crear/editar,
+    createTallerAction/updateTallerAction (src/app/(dashboard)/admin/
+    actions/tallerActions.ts) — incluye el campo grabacionUrl editable
+    directamente, no hace falta una acción separada tipo la de Tutorías
+    (acá no hay "detalle post-evento", el Admin edita el mismo taller)
+
+TallerPublishToggle ("use client") — src/components/admin/
+TallerPublishToggle.tsx — 3 estados (borrador/publicado/cancelado, más
+simple que course_status: sin revision/archivado, no hay flujo docente→admin)
+→ setTallerEstadoAction
+
+TallerCard ("use client") — src/components/educativa/TallerCard.tsx
+├── Un solo componente para "Disponibles" y "Mis talleres" (prop
+│   `inscripto`), no dos componentes separados
+├── Botón Inscribirme/Desinscribirme → inscribirseTallerAction/
+│   desinscribirseTallerAction (src/app/(dashboard)/actions/
+│   tallerInscripcionActions.ts) — sin restricción de rol, mismo criterio
+│   que enrollments de cursos
+├── "Cupo lleno" si `capacidad` está seteada y ya se alcanzó — el conteo
+│   real usa get_taller_inscripcion_count() (función security definer,
+│   migración 019) porque la RLS de taller_inscripciones solo deja ver la
+│   fila propia, mismo problema y misma solución que get_occupied_slots()
+│   de Coworking (§44)
+└── Link "Unirse" (antes del evento) o "Ver grabación" (después, según
+    `fecha_inicio + duracion_minutos` comparado con la hora actual — no hay
+    un estado "finalizado" guardado en DB, se calcula en el render)
+```
+
+Rutas nuevas: `/admin/talleres` (lista + modal + toggle), `/talleres`
+(alumno, secciones "Mis talleres"/"Disponibles"). Sidebar:
+`(dashboard)/layout.tsx`, mismo bloque `flags.coworking` → ítem "Talleres"
+en Plataforma (todo rol) y en Administración (solo admin), gateados por
+`flags.talleres`.
+
 ---
 
-*INCADEducativa · Design System v2.1 — COMPONENTS v1.4 · Julio 2026*
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.5 · Julio 2026*
