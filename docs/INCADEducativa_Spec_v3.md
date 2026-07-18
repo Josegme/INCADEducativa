@@ -7,7 +7,7 @@
 | Campo | Detalle |
 |---|---|
 | **Proyecto** | INCADEducativa — Plataforma Educativa + Módulos de Servicio |
-| **Versión** | 3.4 — Conversión de Roles y Casos de Uso de Transición |
+| **Versión** | 3.5 — Módulo Tutorías (Addendum 05) |
 | **Autores** | Escobar, José Gustavo · Schwegler, Alan |
 | **Fecha** | Junio 2026 |
 | **Metodología** | Spec-Driven Development (SDD) · Clean Architecture |
@@ -310,6 +310,18 @@ El sistema define 6 perfiles con permisos y vistas específicas implementados me
 | **Postcondición** | Reserva `CONFIRMADA` con `tipo_descuento` (`publico`/`institucional`/`manual`). Ingreso registrado en el panel de ingresos del Coworking (separado del educativo). |
 | **Criterio de éxito** | El usuario externo reserva en menos de 5 pasos. La confirmación post-webhook ocurre en menos de 3 segundos. Cero doble asignación de espacio. *(ver Addendum 03)* |
 
+#### CU-07: Docente programa una tutoría para su curso — Etapa 2
+
+| Campo | Detalle |
+|---|---|
+| **Actor** | Docente (dueño del curso o `can_teach_course()`) |
+| **Precondición** | `FEATURE_TUTORIAS=true`. La modalidad presencial requiere además `FEATURE_COWORKING=true` |
+| **Trigger** | Docente entra a "Tutorías" dentro del panel de su curso |
+| **Flujo principal** | 1. Elige modalidad (virtual con link Meet/Zoom pegado a mano, o presencial con aula) → 2. Si es presencial, elige aula y horario en la grilla de disponibilidad (mismo componente que Coworking) → 3. Confirma → 4. Si es presencial, el sistema crea automáticamente una reserva `institucional` en Coworking (sin pago) → 5. Notifica a los alumnos inscriptos (in-app + email) |
+| **Alternativas** | A1: aula ya ocupada en ese horario → el `exclude constraint no_overlap` rechaza el insert, no queda una tutoría sin aula real. A2: recordatorios automáticos 24hs y 1hs antes por Email + in-app a alumno y docente (WhatsApp diferido, ver Addendum 05). A3: tutoría pasada → cron la marca `realizada` automáticamente y el docente registra asistencia y carga el link de grabación |
+| **Postcondición** | Tutoría visible en `/cursos/[slug]` para los alumnos inscriptos, con su aula/link y (luego de la sesión) su grabación |
+| **Criterio de éxito** | El docente programa una tutoría en menos de 3 clics. Cero doble asignación de aula. *(ver Addendum 05)* |
+
 ---
 
 ### 5.2 Casos de uso de transición — conversión de roles
@@ -388,10 +400,24 @@ Aunque es independiente, mantiene los siguientes puntos de contacto mínimos:
 | Auth compartida | Un solo login y un solo perfil para ambos módulos |
 | Descuento por rol | El sistema detecta `alumno`/`docente`/`coordinador` activo y aplica el descuento automáticamente |
 | Canje de puntos | Los puntos por completar cursos se canjean como crédito para reservas (config del admin) |
-| Reserva de aula para tutorías | El docente agenda una tutoría presencial → el Coworking bloquea el aula automáticamente |
+| Reserva de aula para tutorías | El docente agenda una tutoría presencial → el Coworking bloquea el aula automáticamente, reserva `institucional` sin fila en `payments` *(Addendum 05)* |
 | Historial unificado | El perfil muestra historial de cursos y de reservas de Coworking en el mismo lugar |
 
 > Los ingresos del Coworking y los ingresos por cursos/suscripciones se reportan **por separado**. El Coworking es un revenue stream propio (ADR-13).
+
+### 6.4 Módulo Tutorías
+
+Submódulo del área educativa, bajo el feature flag `FEATURE_TUTORIAS` (Etapa 2). Es una
+**sesión grupal ligada a un curso** — el docente la programa para los alumnos inscriptos, no es
+una cita 1:1 (ese modelo queda reservado para el módulo futuro `FEATURE_MENTORIA`, §7). Sin
+flujo de pago: es un beneficio incluido para el alumno ya inscripto. *(ver Addendum 05)*
+
+- [ ] Docente programa tutorías virtuales (link Meet/Zoom pegado a mano) para sus cursos
+- [ ] Docente programa tutorías presenciales — bloquea automáticamente un aula de Coworking (requiere `FEATURE_COWORKING=true`), sin flujo de pago
+- [ ] Alumno inscripto ve el calendario de tutorías de sus cursos y se une (link o aula)
+- [ ] Recordatorio automático 24hs y 1hs antes por Email + in-app, a alumno y docente (WhatsApp diferido — falta un campo de teléfono de perfil, ver Addendum 05)
+- [ ] Auto-completado: cron pasa la tutoría a `realizada` cuando termina
+- [ ] Docente registra asistencia por alumno y carga el link de grabación post-sesión
 
 ---
 
@@ -508,6 +534,13 @@ La arquitectura de módulos con feature flags permite agregar nuevos servicios s
 | `memberships` | `id, user_id, tipo, inicio, fin, creditos_restantes, activa` | Planes mensuales y anuales |
 | `checkins` | `id, booking_id, timestamp, metodo` | `metodo`: qr / manual. Log de check-ins para reportes |
 
+### 10.3 Entidades principales — Tutorías (Etapa 2)
+
+| Tabla | Campos clave | Notas |
+|---|---|---|
+| `tutorias` | `id, curso_id, docente_id, modalidad, fecha_inicio, fecha_fin, link_virtual, space_id, booking_id, grabacion_url, estado, recordatorio_24h_enviado, recordatorio_1h_enviado` | `modalidad`: virtual / presencial. `estado`: programada / realizada / cancelada. `space_id`/`booking_id` solo si es presencial *(Addendum 05)* |
+| `tutoria_asistencias` | `id, tutoria_id, alumno_id, presente, registrado_at` | `unique(tutoria_id, alumno_id)` |
+
 ---
 
 ## 11. Flujos críticos del sistema
@@ -602,6 +635,7 @@ Empleador o tercero escanea el QR del certificado
 | **Panel Admin** | El Admin puede aprobar o rechazar contenido docente sin entrar al editor del curso. El dashboard carga en menos de 2 segundos. |
 | **Conversión de roles** | Toda conversión preserva el 100% del historial (cursos, certificados, puntos, pagos). Cada cambio queda registrado en `role_history` con autor y timestamp, y dispara notificación in-app + email. Las carreras solo se asignan al convertir a `alumno` por el Admin (ningún flujo automático). |
 | **Módulo Coworking (E2)** | Un usuario externo reserva desde cero en menos de 5 pasos. El descuento institucional se aplica sin código. Cero errores de doble asignación de espacio. Confirmación de reserva en menos de 3 segundos post-pago. El panel de ingresos del período mensual carga en menos de 2 segundos. |
+| **Módulo Tutorías (E2)** | El docente programa una tutoría en menos de 3 clics. Cero doble asignación de aula. Los recordatorios 24hs/1hs se envían una sola vez por tutoría. El auto-completado corre cada 5 min vía cron. |
 
 ---
 
@@ -625,6 +659,7 @@ Empleador o tercero escanea el QR del certificado
 | **ADR-14** | Tabla `notifications` única como backbone de comunicación | Anuncios docentes, correcciones de TP y eventos de sistema se modelan en una sola tabla `notifications` con campo `tipo` y `canal`. Supabase Realtime entrega el badge in-app. Define la tabla que la Spec referenciaba sin especificar *(Addendum 02)*. |
 | **ADR-15** | Carreras exclusivas para `alumno`, no comprables online | Las carreras son el activo institucional más valioso de INCADE; su validez depende del proceso de admisión presencial. La plataforma las muestra como vitrina, pero deriva a admisiones (la conversión a `alumno` y la asignación de carrera las hace solo el Admin). La plataforma actúa como canal de captación para el Instituto *(Addendum 04)*. |
 | **ADR-16** | Conversiones de rol aditivas + `role_history` + rol dual `can_teach` | Las transiciones nunca borran historial (solo suman beneficios); un email = un perfil. Cada cambio se audita en `role_history`. El rol docente para alumnos es un permiso granular por curso (`can_teach` + `courses.docente_id` vía `can_teach_course()`), no un rol global, evitando duplicar cuentas *(Addendum 04)*. |
+| **ADR-17** | Tutorías como sesión grupal ligada a curso, no cita 1:1 | El docente programa la tutoría para todo el curso (alumnos inscriptos), reusando la infraestructura de Coworking para el bloqueo de aula presencial. El modelo de cita 1:1 queda reservado para un módulo futuro y no relacionado (`FEATURE_MENTORIA`), evitando mezclar ambos dominios en el mismo schema *(Addendum 05)*. |
 
 ---
 

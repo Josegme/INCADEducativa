@@ -1388,6 +1388,50 @@ pasaba a `estado='completada'` — la llama tanto `/api/cron/coworking` (§54)
 como el botón "Actualizar estados ahora" de `/admin/coworking/ocupacion`
 (antes "Detectar no-shows ahora", ahora hace las dos cosas en un click).
 
+## 57. Módulo Tutorías — TutoriaModal / TutoriaList / AsistenciaPanel / TutoriaAlumnoList
+
+Addendum 05. Sesión grupal ligada a un curso (no cita 1:1). La modalidad
+presencial reusa la infraestructura de Coworking (§43-49) para bloquear un
+aula — misma reserva `institucional` sin fila en `payments` que las de
+Coordinador (§52).
+
+```
+TutoriaModal ("use client") — src/components/docente/TutoriaModal.tsx
+├── Chips de modalidad (virtual/presencial, deshabilitado si no hay
+│   FEATURE_COWORKING o no hay aulas activas)
+├── Virtual: input de link (Meet/Zoom pegado a mano)
+├── Presencial: select de aula + grilla de día/horario (mismos
+│   nextBookingDays()/hourSlots()/get_occupied_slots() de BookingForm, §44)
+└── Submit → createTutoriaAction (src/app/(dashboard)/docente/actions/
+    tutoriaActions.ts): si presencial, inserta primero en bookings
+    (tipo_descuento='institucional', sin payments); si el aula ya está
+    ocupada (23P01) no llega a crear la tutoría. Notifica a los inscriptos
+    (notifyUsers, tipo='tutoria' — ya existía en el enum desde la 003, sin
+    productor real hasta ahora)
+
+TutoriaList ("use client") — src/components/docente/TutoriaList.tsx
+└── Lista de tutorías del curso con badge de estado, botón "Cancelar"
+    (solo programada → cancelTutoriaAction, cancela también la reserva de
+    aula asociada) y link a la página de detalle
+
+AsistenciaPanel ("use client") — src/components/docente/AsistenciaPanel.tsx
+├── Checklist de alumnos inscriptos → registrarAsistenciaAction (upsert en
+│   tutoria_asistencias)
+├── Input de link de grabación → cargarGrabacionAction (solo URL, sin
+│   upload real de archivo — simplificación documentada en Addendum 05)
+└── Solo habilitado cuando la tutoría ya no está "programada"
+    (detect_completed_tutorias(), migración 018, la pasa a "realizada")
+
+TutoriaAlumnoList (server component) — src/components/educativa/
+TutoriaAlumnoList.tsx — sección "Tutorías" en /cursos/[slug] (mismo lugar
+que "Anuncios"), próximas (con link/aula) y pasadas (con grabación si el
+docente la cargó)
+```
+
+**Simplificación documentada:** recordatorios 24h/1h (`/api/cron/tutorias`,
+mismo patrón que `/api/cron/coworking`, §54) van por Email + in-app — sin
+WhatsApp por ahora, `users` no tiene ningún campo de teléfono de perfil.
+
 ---
 
-*INCADEducativa · Design System v2.1 — COMPONENTS v1.3 · Julio 2026*
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.4 · Julio 2026*

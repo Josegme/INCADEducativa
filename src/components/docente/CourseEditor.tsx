@@ -298,9 +298,15 @@ interface CourseEditorProps {
   course: EditableCourse;
   modules: EditableModule[];
   evaluations: EvaluationSummary[];
+  tutoriasHabilitado?: boolean;
 }
 
-export function CourseEditor({ course, modules: initialModules, evaluations: initialEvaluations }: CourseEditorProps) {
+export function CourseEditor({
+  course,
+  modules: initialModules,
+  evaluations: initialEvaluations,
+  tutoriasHabilitado,
+}: CourseEditorProps) {
   const router = useRouter();
   const [modules, setModules] = React.useState(initialModules);
   const [evaluations, setEvaluations] = React.useState(initialEvaluations);
@@ -369,6 +375,13 @@ export function CourseEditor({ course, modules: initialModules, evaluations: ini
               Anuncios
             </Button>
           </Link>
+          {tutoriasHabilitado ? (
+            <Link href={`/docente/cursos/${course.id}/tutorias`}>
+              <Button variant="outline" size="sm">
+                Tutorías
+              </Button>
+            </Link>
+          ) : null}
           {course.estado === "borrador" ? (
             <Button variant="primary" size="sm" disabled={isSubmitting} onClick={handleSubmitForReview}>
               {isSubmitting ? "Enviando…" : "Enviar a revisión"}

@@ -5,6 +5,8 @@ import { Check, ClipboardList, Clock, Lock, UploadCloud } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EnrollButton } from "@/components/educativa/EnrollButton";
 import { AnnouncementList } from "@/components/educativa/AnnouncementList";
+import { TutoriaAlumnoList, type AlumnoTutoriaRow } from "@/components/educativa/TutoriaAlumnoList";
+import { flags } from "@/lib/flags";
 import { LEVEL_LABEL, type CourseLevel } from "@/modules/educativa/catalog";
 import type { LessonRow, ModuleWithLessons } from "@/modules/educativa/lessons";
 import type { AnnouncementRow } from "@/modules/comunicacion/types";
@@ -235,6 +237,25 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
 
   const readAnnouncementIds = (readRows ?? []).map((r) => r.announcement_id as string);
 
+  const { data: tutoriaRows } =
+    isEnrolled && flags.tutorias
+      ? await supabase
+          .from("tutorias")
+          .select("id, modalidad, fecha_inicio, estado, link_virtual, grabacion_url, space:spaces(nombre)")
+          .eq("curso_id", course.id)
+          .order("fecha_inicio", { ascending: false })
+      : { data: [] as Record<string, unknown>[] };
+
+  const tutorias: AlumnoTutoriaRow[] = (tutoriaRows ?? []).map((row) => ({
+    id: row.id as string,
+    modalidad: row.modalidad as AlumnoTutoriaRow["modalidad"],
+    fecha_inicio: row.fecha_inicio as string,
+    estado: row.estado as AlumnoTutoriaRow["estado"],
+    link_virtual: row.link_virtual as string | null,
+    grabacion_url: row.grabacion_url as string | null,
+    aula_nombre: (row.space as unknown as { nombre: string } | null)?.nombre ?? null,
+  }));
+
   const carrera = course.carrera as unknown as { nombre: string } | null;
   const nivel = course.nivel as CourseLevel;
 
@@ -391,6 +412,13 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                 );
               })}
           </div>
+        </div>
+      ) : null}
+
+      {isEnrolled && flags.tutorias ? (
+        <div>
+          <h2 className="mb-2 text-[13px] font-semibold text-[--edu-text]">Tutorías</h2>
+          <TutoriaAlumnoList tutorias={tutorias} />
         </div>
       ) : null}
 

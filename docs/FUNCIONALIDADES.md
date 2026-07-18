@@ -31,7 +31,7 @@
 - [ ] Resumen diario coworking 08:00 AM → Email · admin · `E2`
 - [ ] Informe tiempos ociosos lunes 09:00 AM → Email · admin · `E2`
 - [ ] Inscripción a curso confirmada → Email · inmediato · `E1`
-- [ ] Recordatorio tutoría virtual 24hs y 1hs → Email + WhatsApp · alumno + docente · `E2`
+- [x] Recordatorio tutoría 24hs y 1hs → Email + in-app · alumno + docente · `E2` — `/api/cron/tutorias`, mismo patrón que `/api/cron/coworking`. WhatsApp diferido (ver Addendum 05 — `users` no tiene campo de teléfono de perfil todavía)
 - [ ] Contenido enviado a revisión → Email · al admin · `E1`
 - [x] Contenido aprobado o rechazado → Email · al docente · `E1`
 - [x] Anuncio del docente al grupo (`ANNOUNCEMENT`) → In-app (Realtime) + Email · alumnos inscriptos · `E1`
@@ -100,7 +100,7 @@
 - [x] Ver disponibilidad de todos los espacios en tiempo real — `/admin/coworking/ocupacion`, `OccupancyDashboard`, Realtime sobre `bookings` + polling 20s
 - [x] Ver, modificar y cancelar cualquier reserva del sistema — `/admin/coworking/reservas`, filtros estado/fecha/espacio/tipo (modificar = cancelar por ahora; reprogramar queda diferido)
 - [x] Crear reservas manuales sin pago online (`tipo_descuento = manual`, acuerdos directos) — `ManualBookingModal`, `createManualBookingAction`
-- [ ] Bloquear aula automáticamente al agendarse una tutoría presencial (uso institucional) — el módulo Tutorías (`FEATURE_TUTORIAS`) no existe todavía, nada que bloquear
+- [x] Bloquear aula automáticamente al agendarse una tutoría presencial (uso institucional) — `createTutoriaAction` inserta una reserva `institucional` en `bookings` (sin fila en `payments`, mismo criterio que las reservas en lote de Coordinador), ver Addendum 05
 - [x] Cancelar reserva con generación automática de notificación al usuario — `cancelBookingAction` + `notifyUsers()` (tipo `reserva`, migración 014). El botón "Cancelar" de la UI usa `window.confirm()`, que la herramienta de automatización de navegador tiene prohibido disparar — se verificó reproduciendo la lógica exacta de la acción (update `estado='cancelada'` + insert en `notifications` tipo `reserva`) con un script puntual contra la DB de dev tras confirmar que el usuario corrió la migración 014: booking de prueba pasó a `cancelada` y la notificación se insertó sin error. Falta solo el click manual del usuario en su propio navegador para confirmar la UI en sí (no la lógica).
 - [ ] Registrar incidencias de mantenimiento por espacio. Historial visible — schema ya existe (`maintenance_incidents`, migración 002), sin UI todavía, diferido a una pasada de pulido
 - [x] Gestionar membresías: alta (planes) — `/admin/coworking/membresias`, CRUD de `membership_plans` (mensual/anual, precio, créditos incluidos), **verificado en navegador** (alta de "Membresía Mensual QA", $15000, 10 créditos). Baja/renovación/ajuste fino de una membresía activa individual quedan para una pasada de pulido
@@ -112,6 +112,7 @@
 - [x] Detección automática de no-show: cron cada 5 min, marca a los 15 min sin check-in — migración 016: `pg_cron` llama `detect_no_shows()` cada 5 min (100% SQL, sin dependencias externas). La notificación al usuario (email) va por `/api/cron/coworking`, disparada por `pg_cron`+`pg_net` cada 10 min — **esa llamada HTTP puntual no se puede probar en vivo hasta deployar** (Supabase no alcanza `localhost`), pero la ruta en sí se verificó a mano con `curl`
 - [x] Escanear QR como método alternativo de check-in — `CheckInScannerModal` (`html5-qrcode`, nueva dependencia) + input manual de respaldo. **No verificado en navegador con cámara real**: en el entorno de automatización (sin cámara física) el intento de `getUserMedia` cuelga el render de la pestaña — riesgo ya anticipado en el plan, por eso existe el input manual. El ingreso manual del ID de reserva dentro del mismo modal usa el mismo `checkInBookingAction(id,'qr')` ya verificado por tipos; falta probarlo con un celular real antes de confiar en el flujo de cámara para la demo.
 - [x] Validación QR: ±15 min de margen horario, estado CONFIRMADA requerido — validado server-side en `checkInBookingAction`, no probado en vivo por el mismo motivo que el punto anterior
+- [x] Auto-completar reservas: `detect_completed_bookings()` (migración 017) pasa a `completada` toda reserva `en_uso` cuya `fecha_fin` ya pasó — enchufada en `/api/cron/coworking` y en el botón "Actualizar estados ahora" de `/admin/coworking/ocupacion`. Verificado con un script puntual (booking de prueba `en_uso` con `fecha_fin` en el pasado → la función devuelve `1` afectado y el estado pasa a `completada`), booking borrado al terminar
 
 #### Reportes Coworking
 
@@ -185,10 +186,10 @@
 
 - [ ] Ver progreso y asistencia de sus alumnos
 - [ ] Ver reportes básicos de engagement de sus cursos
-- [ ] Planificar tutorías virtuales (Meet/Zoom) en sus cursos · `E2`
-- [ ] Planificar tutorías presenciales en sede (reserva de aula automática) · `E2`
-- [ ] Registrar asistencia a tutorías en vivo · `E2`
-- [ ] Cargar grabación de tutoría post-sesión · `E2`
+- [x] Planificar tutorías virtuales (Meet/Zoom) en sus cursos · `E2` — `TutoriaModal`, link pegado a mano (Addendum 05)
+- [x] Planificar tutorías presenciales en sede (reserva de aula automática) · `E2` — `createTutoriaAction`, bloquea aula vía Coworking, rechaza si hay superposición (`no_overlap`)
+- [x] Registrar asistencia a tutorías en vivo · `E2` — `AsistenciaPanel`, `registrarAsistenciaAction`
+- [x] Cargar grabación de tutoría post-sesión · `E2` — `AsistenciaPanel`, solo URL (sin upload real, simplificación documentada)
 
 ### 4.3 Motor de Evaluaciones · `E1`
 
@@ -267,11 +268,11 @@
 
 ### 5.4 Tutorías · `E2`
 
-- [ ] Ver calendario de tutorías de sus cursos
-- [ ] Unirse a tutorías virtuales (link de Meet/Zoom generado automáticamente)
-- [ ] Unirse a tutorías presenciales (aula reservada automáticamente)
-- [ ] Recibir recordatorio 24hs y 1hs antes por Email + WhatsApp
-- [ ] Ver grabación de tutoría post-sesión
+- [x] Ver calendario de tutorías de sus cursos — `TutoriaAlumnoList` en `/cursos/[slug]`, lista ordenada por fecha (no vista de calendario mensual — simplificación documentada, Addendum 05)
+- [x] Unirse a tutorías virtuales (link de Meet/Zoom pegado por el docente, no generado automáticamente vía API — simplificación documentada, Addendum 05)
+- [x] Unirse a tutorías presenciales (aula reservada automáticamente)
+- [x] Recibir recordatorio 24hs y 1hs antes por Email + in-app (WhatsApp diferido, ver Addendum 05)
+- [x] Ver grabación de tutoría post-sesión
 
 ### 5.5 Reserva de Coworking desde la Plataforma Educativa · `E2`
 
@@ -302,7 +303,8 @@
 - [x] Campana en topbar con badge de no leídas (Supabase Realtime)
 - [x] Panel desplegable con preview de las últimas notificaciones
 - [x] Click en notificación → navega al recurso (resuelto para `announcement` y revisión de
-      curso, únicos tipos con productor hoy — ver `COMPONENTS.md` §32)
+      curso — ver `COMPONENTS.md` §32; `tutoria`/`reserva` también tienen productor real hoy
+      pero sin navegación al recurso específico todavía, solo el mensaje)
 - [x] Marcar como leída individual y "marcar todas como leídas"
 - [x] Distinción visual entre leídas y no leídas
 - [x] Preferencias por canal: email y WhatsApp activables (in-app siempre activo)
@@ -385,7 +387,7 @@
 - [ ] Acumulación automática al aprobar talleres · `E2`
 - [x] Acumulación automática al aprobar examen final (+25 — cubierto de forma
       genérica para cualquier evaluación aprobada, no solo examen final)
-- [ ] Canje de puntos por horas de coworking · `E2`
+- [x] Canje de puntos por horas de coworking · `E2` — Sprint 19-20, ver §5.2/§2.2 (`RedeemPointsCard`, `redeemPointsForCreditAction`)
 - [x] Historial de puntos visible para el alumno (`PointsHistory` en `/dashboard`)
 - [x] Ledger append-only: los puntos nunca se editan, solo se registran movimientos
       (triggers de la 001, `award_points()` de la 005 — sin cambios en esta sesión,
@@ -420,7 +422,7 @@
 - [ ] Descuento coworking aplicado automáticamente al detectar matrícula activa
 - [ ] Coworking muestra cursos disponibles en INCADEducativa (promoción cruzada)
 - [ ] INCADEducativa destaca espacios coworking disponibles para estudiar
-- [ ] Puntos canjeables entre módulo educativo y módulo coworking
+- [x] Puntos canjeables entre módulo educativo y módulo coworking — Sprint 19-20, ver §5.2/§2.2 (`coworking_creditos_canje`, independiente de créditos de membresía)
 
 ---
 
