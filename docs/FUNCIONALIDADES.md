@@ -440,9 +440,9 @@
 
 ### 9.1 Tests
 
-- [ ] E2E Etapa 1 (Playwright): inscripción → progreso → examen → certificado
+- [x] E2E Etapa 1 (Playwright): inscripción → progreso → examen → certificado — `tests/e2e/critical-path.spec.ts`, QA Etapa 1 (2026-07-19). Fixture propio (curso/módulo/lección/examen, se crea y se borra en cada corrida), cuenta QA fija reutilizable (ledger de puntos es append-only, no se puede borrar). Encontró y corrigió un bug real: `startAttemptAction` bloqueaba con error la revisión de una evaluación ya aprobada en vez de mostrarla en modo lectura.
 - [ ] E2E Etapa 2 (Playwright): reserva coworking → pago → lista del día → check-in manual → no-show
-- [ ] Unit tests (Vitest): lógica de negocio crítica
+- [x] Unit tests (Vitest): lógica de negocio crítica — `tests/unit/gradeAttempt.test.ts` (corrección automática de los 5 tipos de pregunta), QA Etapa 1 (2026-07-19)
 
 ### 9.2 Infraestructura
 

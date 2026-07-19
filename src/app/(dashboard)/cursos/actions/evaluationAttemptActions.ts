@@ -50,8 +50,12 @@ export async function startAttemptAction(evaluationId: string): Promise<AttemptA
     // `aprobado` decide si ya se puede reintentar, no `estado` — un intento
     // 'corregida' puede haber quedado desaprobado (nota < nota_minima tras la
     // corrección manual) y en ese caso sigue habilitado para un nuevo intento.
+    // Si ya aprobó no hay reintento posible (nunca), pero eso no es motivo
+    // para bloquear la vista del resultado — mismo criterio que el caso
+    // pendiente_correccion de arriba: devolver el intento existente en vez
+    // de un error, para que la página lo muestre en modo lectura.
     if (lastAttempt.aprobado === true) {
-      return { error: "Ya aprobaste esta evaluación" };
+      return { success: true, attemptId: lastAttempt.id };
     }
 
     const config = evaluation.config as { intentos_permitidos: number; espera_horas: number };
