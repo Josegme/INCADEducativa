@@ -1,5 +1,5 @@
 # Design System — INCADEducativa
-**Versión 2.1 · Julio 2026**
+**Versión 2.2 · Julio 2026**
 Preparado por: JosegmeDev + Alan Schwegler
 Ecosistema Digital INCADE — Posadas, Misiones
 
@@ -55,7 +55,7 @@ Extraído directamente del sitio incade.edu.ar. Este es el violeta real de la ma
 | `--inc-violet-subtle` | `rgba(155, 48, 255, 0.15)` | Fondos de íconos, backgrounds sutiles, hover de nav |
 | `--inc-violet-border` | `rgba(155, 48, 255, 0.25)` | Bordes de cards, separadores |
 | `--inc-violet-border-strong` | `rgba(155, 48, 255, 0.50)` | Bordes de focus, cards en hover |
-| `--inc-violet-text` | `#A855F7` | Texto de acento sobre fondos `-subtle` violeta — badge "activo", ítem de nav activo, role badge admin |
+| `--inc-violet-text` | `#B46DF8` | Texto de acento sobre fondos `-subtle` violeta — badge "activo", ítem de nav activo, role badge admin. **Nunca usar `--inc-violet` como color de texto** — está pensado para fondos/CTA, no pasa WCAG AA sobre superficies oscuras (v2.2) |
 
 ### 2.2 Magenta — acento secundario institucional
 
@@ -93,7 +93,7 @@ Fondos con matiz azul-violeta profundo, no negro puro. El sitio institucional us
 |---|---|---|
 | `--edu-text` | `#FFFFFF` | Texto principal |
 | `--edu-text-muted` | `rgba(255, 255, 255, 0.55)` | Labels, descripciones, subtítulos |
-| `--edu-text-faint` | `rgba(255, 255, 255, 0.30)` | Placeholders, texto deshabilitado, ícono inactivo |
+| `--edu-text-faint` | `rgba(255, 255, 255, 0.48)` | Placeholders, texto deshabilitado, ícono inactivo. Subido de 0.30 a 0.48 en v2.2 — a 0.30 no pasaba WCAG AA (4.5:1) en ningún fondo del DS |
 
 ### 2.6 Bordes
 
@@ -210,7 +210,7 @@ INCADEducativa define su propia geometría, coherente con el sitio institucional
   --inc-violet-subtle:       rgba(155, 48, 255, 0.15);
   --inc-violet-border:       rgba(155, 48, 255, 0.25);
   --inc-violet-border-strong:rgba(155, 48, 255, 0.50);
-  --inc-violet-text:         #A855F7;
+  --inc-violet-text:         #B46DF8;
   --inc-magenta:             #C026D3;
   --inc-magenta-subtle:      rgba(192, 38, 211, 0.12);
   --inc-magenta-text:        #e879f9;
@@ -226,7 +226,7 @@ INCADEducativa define su propia geometría, coherente con el sitio institucional
   /* Texto */
   --edu-text:                #FFFFFF;
   --edu-text-muted:          rgba(255, 255, 255, 0.55);
-  --edu-text-faint:          rgba(255, 255, 255, 0.30);
+  --edu-text-faint:          rgba(255, 255, 255, 0.48);
 
   /* Bordes */
   --edu-border:              rgba(155, 48, 255, 0.20);
@@ -362,4 +362,14 @@ INCADEducativa es el hub central del ecosistema — no hereda layout ni componen
 
 *INCADEducativa · incadeducativa.com*
 *INCADE Escuela de Negocios — Posadas, Misiones*
-*Design System v2.1 — Julio 2026*
+*Design System v2.2 — Julio 2026*
+
+## 8. Changelog
+
+- **v2.2 (2026-07-22):** Auditoría de accesibilidad (Lighthouse) sobre QA Etapa 1 encontró que
+  dos tokens no pasaban WCAG AA (4.5:1) en uso real: `--edu-text-faint` (0.30 → 0.48 de opacidad)
+  y `--inc-violet-text` (`#A855F7` → `#B46DF8`, fallaba contra el fondo de badge/chip violeta).
+  Aclarado explícitamente que `--inc-violet` no debe usarse como color de texto (ver §2.1) — varios
+  componentes lo hacían por error, corregido en el código en la misma sesión.
+- v2.1 (Sprint 0): tokens `--inc-violet-text`, `--inc-magenta-text`, `--edu-success-text`,
+  `--edu-warning-text`, `--edu-danger-text` agregados para reemplazar hex hardcodeados.

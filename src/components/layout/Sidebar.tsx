@@ -38,7 +38,7 @@ export function Sidebar({ sections }: SidebarProps) {
       {sections.map((section, sectionIndex) => (
         <div key={section.label ?? sectionIndex} className="flex flex-col gap-0.5">
           {section.label ? (
-            <span className="px-[6px] pb-[3px] pt-2 text-[11px] font-semibold uppercase tracking-[1.2px] text-white/[0.22]">
+            <span className="px-[6px] pb-[3px] pt-2 text-[11px] font-semibold uppercase tracking-[1.2px] text-[--edu-text-faint]">
               {section.label}
             </span>
           ) : null}

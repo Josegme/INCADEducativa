@@ -57,12 +57,21 @@ export function NotificationBell({ userId }: NotificationBellProps) {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        aria-label={unreadCount > 0 ? `Notificaciones — ${unreadCount} sin leer` : "Notificaciones"}
+        aria-label={
+          unreadCount > 9
+            ? "Notificaciones — 9+ sin leer"
+            : unreadCount > 0
+              ? `Notificaciones — ${unreadCount} sin leer`
+              : "Notificaciones"
+        }
         className="relative flex h-7 w-7 items-center justify-center rounded-md text-[--edu-text-muted] transition-colors hover:bg-white/5 hover:text-[--edu-text]"
       >
         <Bell className="h-[18px] w-[18px]" aria-hidden />
         {unreadCount > 0 ? (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-[--inc-magenta] px-1 text-[10px] font-semibold text-white">
+          <span
+            aria-hidden
+            className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-pill bg-[--inc-magenta] px-1 text-[10px] font-semibold text-white"
+          >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         ) : null}

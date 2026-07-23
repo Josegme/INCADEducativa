@@ -42,7 +42,7 @@ export function CareerMap({ career, courses }: CareerMapProps) {
                     className={cn(
                       "flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border-[1.5px]",
                       state === "completado" && "border-[--edu-success] bg-[--edu-success-subtle] text-[--edu-success]",
-                      state === "activo" && "border-[--inc-violet] bg-[--inc-violet-subtle] text-[--inc-violet]",
+                      state === "activo" && "border-[--inc-violet] bg-[--inc-violet-subtle] text-[--inc-violet-text]",
                       state === "bloqueado" && "border-white/[0.15] text-[--edu-text-faint]"
                     )}
                   >

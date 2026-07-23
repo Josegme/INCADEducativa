@@ -19,7 +19,7 @@ export default async function CoworkingLayout({ children }: { children: React.Re
         </Link>
         <Link
           href={user ? "/dashboard" : "/login"}
-          className="rounded-md border-[0.5px] border-[--inc-violet-border-strong] px-3 py-1.5 text-[13px] font-semibold text-[--inc-violet] hover:bg-[--inc-violet-subtle]"
+          className="rounded-md border-[0.5px] border-[--inc-violet-border-strong] px-3 py-1.5 text-[13px] font-semibold text-[--inc-violet-text] hover:bg-[--inc-violet-subtle]"
         >
           {user ? "Ir a mi panel" : "Ingresar"}
         </Link>

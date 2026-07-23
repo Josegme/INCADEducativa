@@ -7,7 +7,7 @@
   --inc-violet-subtle:       rgba(155, 48, 255, 0.15);
   --inc-violet-border:       rgba(155, 48, 255, 0.25);
   --inc-violet-border-strong:rgba(155, 48, 255, 0.50);
-  --inc-violet-text:         #A855F7;
+  --inc-violet-text:         #B46DF8;
   --inc-magenta:             #C026D3;
   --inc-magenta-subtle:      rgba(192, 38, 211, 0.12);
   --inc-magenta-text:        #e879f9;
@@ -23,7 +23,7 @@
   /* Texto */
   --edu-text:                #FFFFFF;
   --edu-text-muted:          rgba(255, 255, 255, 0.55);
-  --edu-text-faint:          rgba(255, 255, 255, 0.30);
+  --edu-text-faint:          rgba(255, 255, 255, 0.48);
 
   /* Bordes */
   --edu-border:              rgba(155, 48, 255, 0.20);

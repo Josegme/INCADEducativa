@@ -26,10 +26,11 @@ export interface ProgressProps
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   ProgressProps
->(({ className, value, variant, ...props }, ref) => (
+>(({ className, value, variant, "aria-label": ariaLabel, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
     value={value}
+    aria-label={ariaLabel ?? `Progreso: ${value ?? 0}%`}
     className={cn("relative h-1 w-full overflow-hidden rounded-pill bg-white/[0.08]", className)}
     {...props}
   >

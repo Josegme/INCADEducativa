@@ -454,6 +454,22 @@
 - [ ] Jobs cron: detección no-show cada 5 min, recordatorios 24hs, resumen diario
 - [ ] PWA instalable en mobile (iOS y Android)
 
+### 9.3 Accesibilidad (Lighthouse)
+
+- [x] Auditoría Lighthouse (accessibility + best-practices) sobre 8 páginas representativas — públicas sin sesión (`/`, `/login`, `/design-preview`, `/servicios/coworking`, `/verificar/[uuid]`) y autenticadas (`/dashboard`, `/cursos`, `/cursos/[slug]`), QA Etapa 1 (2026-07-22). Resultado final: `accessibility=1.0` y `best-practices=1.0` en las 8. Bugs reales de contraste/accesibilidad encontrados y corregidos (no solo documentados):
+  - **`--edu-text-faint` (rgba blanco 30%) fallaba WCAG AA (ratio ~2.5-2.7, mínimo 4.5:1)** — token usado en decenas de lugares (texto de sidebar inactivo, badges, timestamps). Subido a 48% de opacidad (`src/app/globals.css`), pasa ≥4.5:1 contra todas las superficies del DS.
+  - **`--inc-violet-text` (#A855F7) fallaba contra el fondo de badge/chip violeta (`--inc-violet-subtle` sobre superficie oscura, ratio 4.02)** — subido a `#B46DF8` (ratio ≥4.5:1 en todos los fondos reales del DS, incluido el chip).
+  - **Uso incorrecto de `--inc-violet` (pensado para fondos/CTA) como color de texto** en vez de `--inc-violet-text` (el token que ya existía para esto) — corregido en `Button` (variant `outline`) y 15 usos puntuales de texto/links en componentes (íconos decorativos `aria-hidden` no se tocaron, ya pasaban el mínimo de contraste no-textual).
+  - Sidebar: label de sección con opacidad hardcodeada (`text-white/[0.22]`, ratio 1.87) en vez del token del DS — reemplazado por `--edu-text-faint`.
+  - `Progress` (Radix) sin nombre accesible (`aria-progressbar-name`) — agregado `aria-label` por defecto con el `%` actual, sobreescribible.
+  - `NotificationBell`: el badge visible ("9+") no coincidía con el `aria-label` que mostraba el conteo exacto (`label-content-name-mismatch`) — el aria-label ahora también muestra "9+" cuando corresponde.
+  - `FilterBar` (`/cursos`): `<select>` de nivel sin nombre accesible (`select-name`) — agregado `aria-label`.
+  - `/servicios/coworking`: salto de nivel de heading (`h1`→`h3` directo) — agregado `h2` "Espacios disponibles".
+  - `/verificar/[uuid]`: página sin landmark `<main>` (`landmark-one-main`) — el contenedor raíz ahora es `<main>`.
+  - `MembershipStatus`: link "Ver planes" embebido en un párrafo dependía solo del color (`link-in-text-block`, subrayado solo en `:hover`) — ahora subrayado siempre.
+  - Ruido descartado, no accionable: `valid-source-maps` (falta de source maps) aparece en las 8 páginas pero es un artefacto de auditar contra `next dev`, no contra un build de producción — no afecta el score y no es representativo de producción.
+  - `npx tsc --noEmit` y `npm run build` en verde después de todos los fixes.
+
 ---
 
 *Última actualización: Spec v3.4 (Conversión de Roles y Casos de Transición) · Design System v2.0 · INCADEducativa — INCADE Escuela de Negocios, Posadas, Misiones*

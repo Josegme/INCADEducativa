@@ -46,7 +46,7 @@ export function LoginForm() {
         {isPending ? "Ingresando..." : "Ingresar"}
       </Button>
 
-      <Link href="/recuperar" className="text-center text-[13px] text-[--inc-violet] hover:underline">
+      <Link href="/recuperar" className="text-center text-[13px] text-[--inc-violet-text] hover:underline">
         ¿Olvidaste tu contraseña?
       </Link>
     </form>

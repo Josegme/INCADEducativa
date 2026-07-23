@@ -58,7 +58,7 @@ export function TutoriaAlumnoList({ tutorias }: { tutorias: AlumnoTutoriaRow[] }
               href={tutoria.link_virtual}
               target="_blank"
               rel="noreferrer"
-              className="text-[13px] font-medium text-[--inc-violet] hover:underline"
+              className="text-[13px] font-medium text-[--inc-violet-text] hover:underline"
             >
               Unirse
             </a>
@@ -69,7 +69,7 @@ export function TutoriaAlumnoList({ tutorias }: { tutorias: AlumnoTutoriaRow[] }
               href={tutoria.grabacion_url}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1 text-[13px] font-medium text-[--inc-violet] hover:underline"
+              className="flex items-center gap-1 text-[13px] font-medium text-[--inc-violet-text] hover:underline"
             >
               <PlayCircle className="h-4 w-4" aria-hidden />
               Ver grabación

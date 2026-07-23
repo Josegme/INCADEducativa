@@ -18,7 +18,7 @@ export default async function VerifyCertificatePage({ params }: { params: { uuid
   const certificate = (data as VerifyCertificateRow[] | null)?.[0];
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-edu-bg px-4">
+    <main className="flex min-h-screen w-full items-center justify-center bg-edu-bg px-4">
       <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-[20px] border-[0.5px] border-[--edu-border] bg-[--edu-surface-alt] p-8 text-center">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[--inc-violet] text-[11px] font-semibold text-white">
           IN
@@ -60,6 +60,6 @@ export default async function VerifyCertificatePage({ params }: { params: { uuid
           </>
         )}
       </div>
-    </div>
+    </main>
   );
 }

@@ -25,7 +25,7 @@ export function CertificateCard({ cursoTitulo, emitidoAt, estado, downloadUrl }:
           href={downloadUrl}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-1 rounded-md border-[0.5px] border-[--inc-violet-border-strong] px-3 py-1.5 text-[13px] text-[--inc-violet] hover:bg-[--inc-violet-subtle]"
+          className="flex items-center gap-1 rounded-md border-[0.5px] border-[--inc-violet-border-strong] px-3 py-1.5 text-[13px] text-[--inc-violet-text] hover:bg-[--inc-violet-subtle]"
         >
           <Download className="h-3.5 w-3.5" aria-hidden />
           Descargar

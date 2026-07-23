@@ -62,6 +62,7 @@ export function FilterBar({ careers }: FilterBarProps) {
       <select
         value={activeNivel}
         onChange={(e) => setParam("nivel", e.target.value)}
+        aria-label="Filtrar por nivel"
         className="h-9 rounded-md border-[0.5px] border-[--edu-border] bg-white/[0.06] px-3 text-[13px] text-[--edu-text] focus-visible:border-[--edu-border-strong] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--inc-violet-border-strong]"
       >
         <option value="todos" className="bg-[--edu-surface-raised]">

@@ -263,7 +263,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
     <div className="flex max-w-2xl flex-col gap-5">
       <div className="flex flex-col gap-2">
         {carrera ? (
-          <span className="text-[12px] font-semibold uppercase tracking-[0.7px] text-[--inc-violet]">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.7px] text-[--inc-violet-text]">
             {carrera.nombre}
           </span>
         ) : null}

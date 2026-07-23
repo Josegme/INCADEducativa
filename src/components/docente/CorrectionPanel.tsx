@@ -70,7 +70,7 @@ function CorrectionRow({ attempt }: { attempt: PendingAttempt }) {
                 href={answer.link}
                 target="_blank"
                 rel="noreferrer"
-                className="flex w-fit items-center gap-1 text-[13px] text-[--inc-violet] hover:underline"
+                className="flex w-fit items-center gap-1 text-[13px] text-[--inc-violet-text] hover:underline"
               >
                 <Paperclip className="h-3.5 w-3.5" aria-hidden />
                 Ver entrega

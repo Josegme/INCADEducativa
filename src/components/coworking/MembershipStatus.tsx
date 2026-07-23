@@ -23,7 +23,7 @@ export function MembershipStatus({ activa, creditosRestantes, fin }: MembershipS
       ) : (
         <p className="text-[13px] text-[--edu-text-muted]">
           No tenés una membresía activa.{" "}
-          <Link href="/servicios/coworking/membresia" className="text-[--inc-violet-text] hover:underline">
+          <Link href="/servicios/coworking/membresia" className="text-[--inc-violet-text] underline">
             Ver planes
           </Link>
           .

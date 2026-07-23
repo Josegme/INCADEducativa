@@ -39,7 +39,7 @@ export function LessonSidebar({ courseSlug, modules, lessonStateById, activeLess
                   className={cn(
                     "flex h-6 w-6 shrink-0 items-center justify-center rounded-pill border-[1.5px]",
                     isCompleted && "border-[--edu-success] bg-[--edu-success-subtle] text-[--edu-success]",
-                    isActive && !isCompleted && "border-[--inc-violet] bg-[--inc-violet-subtle] text-[--inc-violet]",
+                    isActive && !isCompleted && "border-[--inc-violet] bg-[--inc-violet-subtle] text-[--inc-violet-text]",
                     isLocked && "border-white/[0.15] text-[--edu-text-faint]",
                     !isActive && !isCompleted && !isLocked && "border-[--edu-border-neutral] text-[--edu-text-muted]"
                   )}

@@ -18,7 +18,7 @@ export function CourseCard({ course }: CourseCardProps) {
         <BookOpen className="h-6 w-6 text-[--inc-violet]" aria-hidden />
       </div>
       <div className="flex flex-col gap-1 px-[10px] py-2">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.7px] text-[--inc-violet]">
+        <span className="text-[12px] font-semibold uppercase tracking-[0.7px] text-[--inc-violet-text]">
           {course.carrera ? `${course.carrera.nombre} · ` : ""}
           {LEVEL_LABEL[course.nivel]}
         </span>

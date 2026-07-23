@@ -28,7 +28,7 @@ export function RequestResetForm() {
         <NotificationBanner type="success">
           Si el email existe en la plataforma, te enviamos un link para restablecer tu contraseña.
         </NotificationBanner>
-        <Link href="/login" className="text-center text-[13px] text-[--inc-violet] hover:underline">
+        <Link href="/login" className="text-center text-[13px] text-[--inc-violet-text] hover:underline">
           Volver a iniciar sesión
         </Link>
       </div>
@@ -57,7 +57,7 @@ export function RequestResetForm() {
         {isPending ? "Enviando..." : "Enviar link"}
       </Button>
 
-      <Link href="/login" className="text-center text-[13px] text-[--inc-violet] hover:underline">
+      <Link href="/login" className="text-center text-[13px] text-[--inc-violet-text] hover:underline">
         Volver a iniciar sesión
       </Link>
     </form>

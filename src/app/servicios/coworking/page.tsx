@@ -95,20 +95,23 @@ export default async function CoworkingLandingPage({
           {spaces.length === 0 ? (
             <p className="text-sm text-[--edu-text-muted]">Esta sede todavía no tiene espacios publicados.</p>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {spaces.map((space) => (
-                <SpaceCard
-                  key={space.id}
-                  id={space.id}
-                  nombre={space.nombre}
-                  tipo={space.tipo}
-                  capacidad={space.capacidad}
-                  precioHora={space.precio_hora}
-                  descripcion={space.descripcion}
-                  imagenUrl={space.imagen_url}
-                  precioConDescuento={descuentoPct > 0 ? Math.round(space.precio_hora * (1 - descuentoPct / 100)) : null}
-                />
-              ))}
+            <div className="flex flex-col gap-3">
+              <h2 className="text-[16px] font-semibold text-white">Espacios disponibles</h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {spaces.map((space) => (
+                  <SpaceCard
+                    key={space.id}
+                    id={space.id}
+                    nombre={space.nombre}
+                    tipo={space.tipo}
+                    capacidad={space.capacidad}
+                    precioHora={space.precio_hora}
+                    descripcion={space.descripcion}
+                    imagenUrl={space.imagen_url}
+                    precioConDescuento={descuentoPct > 0 ? Math.round(space.precio_hora * (1 - descuentoPct / 100)) : null}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </>
