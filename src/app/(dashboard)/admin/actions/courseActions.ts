@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { courseFormSchema, type CourseStatusValue } from "@/modules/admin/courses";
 
 async function requireAdmin() {
@@ -21,7 +22,7 @@ async function requireAdmin() {
     throw new Error("Solo el administrador puede gestionar cursos");
   }
 
-  return { supabase };
+  return { supabase, adminId: user.id };
 }
 
 export interface CourseFormState {
@@ -45,7 +46,7 @@ function parseCourseFormData(formData: FormData) {
 }
 
 export async function createCourseAction(formData: FormData): Promise<CourseFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseCourseFormData(formData);
   if (!parsed.success) {
@@ -54,28 +55,40 @@ export async function createCourseAction(formData: FormData): Promise<CourseForm
 
   const { titulo, slug, descripcion, carreraId, docenteId, nivel, duracionHs, esGratuito, precio } = parsed.data;
 
-  const { error } = await supabase.from("courses").insert({
-    titulo,
-    slug,
-    descripcion: descripcion || null,
-    carrera_id: carreraId || null,
-    docente_id: docenteId || null,
-    nivel,
-    duracion_hs: duracionHs ?? null,
-    es_gratuito: esGratuito,
-    precio: esGratuito ? 0 : precio,
-  });
+  const { data: created, error } = await supabase
+    .from("courses")
+    .insert({
+      titulo,
+      slug,
+      descripcion: descripcion || null,
+      carrera_id: carreraId || null,
+      docente_id: docenteId || null,
+      nivel,
+      duracion_hs: duracionHs ?? null,
+      es_gratuito: esGratuito,
+      precio: esGratuito ? 0 : precio,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.code === "23505" ? "Ya existe un curso con ese slug" : error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "curso.crear",
+    entidad: "courses",
+    entidadId: created?.id ?? null,
+    detalle: { titulo, slug, docenteId: docenteId || null },
+  });
 
   revalidatePath("/admin/cursos");
   return { success: true };
 }
 
 export async function updateCourseAction(formData: FormData): Promise<CourseFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseCourseFormData(formData);
   if (!parsed.success) {
@@ -106,6 +119,14 @@ export async function updateCourseAction(formData: FormData): Promise<CourseForm
     return { error: error.code === "23505" ? "Ya existe un curso con ese slug" : error.message };
   }
 
+  await logAudit({
+    actorId: adminId,
+    accion: "curso.editar",
+    entidad: "courses",
+    entidadId: id,
+    detalle: { titulo, slug, docenteId: docenteId || null },
+  });
+
   revalidatePath("/admin/cursos");
   return { success: true };
 }
@@ -119,13 +140,21 @@ export async function setCourseEstadoAction(
   courseId: string,
   estado: CourseStatusValue
 ): Promise<SetCourseEstadoState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const { error } = await supabase.from("courses").update({ estado }).eq("id", courseId);
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "curso.cambiar_estado",
+    entidad: "courses",
+    entidadId: courseId,
+    detalle: { estado },
+  });
 
   revalidatePath("/admin/cursos");
   return { success: true };

@@ -1,0 +1,16 @@
+
+> incadeducativa@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 13.2s
+ ○ Compiling /src/middleware ...
+ ✓ Compiled /src/middleware in 6.3s (185 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 26.2s (527 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 56.9s (530 modules)

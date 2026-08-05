@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { convertRoleSchema } from "@/modules/admin/convertRole";
 
 async function requireAdmin() {
@@ -21,7 +22,7 @@ async function requireAdmin() {
     throw new Error("Solo el administrador puede convertir roles");
   }
 
-  return { supabase };
+  return { supabase, adminId: user.id };
 }
 
 export interface ConvertRoleState {
@@ -30,7 +31,7 @@ export interface ConvertRoleState {
 }
 
 export async function convertUserRoleAction(formData: FormData): Promise<ConvertRoleState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = convertRoleSchema.safeParse({
     userId: formData.get("userId"),
@@ -56,6 +57,14 @@ export async function convertUserRoleAction(formData: FormData): Promise<Convert
     return { error: error.message };
   }
 
+  await logAudit({
+    actorId: adminId,
+    accion: "usuario.convertir_rol",
+    entidad: "users",
+    entidadId: userId,
+    detalle: { newRole, carreraId: carreraId || null },
+  });
+
   revalidatePath("/admin/usuarios");
   return { success: true };
 }
@@ -66,13 +75,20 @@ export interface SetCanTeachState {
 }
 
 export async function setCanTeachAction(userId: string, canTeach: boolean): Promise<SetCanTeachState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const { error } = await supabase.from("users").update({ can_teach: canTeach }).eq("id", userId);
 
   if (error) {
     return { error: "No se pudo actualizar el permiso" };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: canTeach ? "usuario.habilitar_docente" : "usuario.quitar_docente",
+    entidad: "users",
+    entidadId: userId,
+  });
 
   revalidatePath("/admin/usuarios");
   return { success: true };

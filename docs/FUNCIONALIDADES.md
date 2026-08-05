@@ -81,13 +81,13 @@
 ### 2.1 Gestión del Sistema
 
 - [x] Importar base inicial de alumnos y docentes (CSV con DNI + carrera/materia) · `E1` — `ImportCsvModal` en `/admin/usuarios`, columnas `nombre,apellido,dni,email,carrera`, preview con detección de duplicados y carrera sin match antes de confirmar
-- [ ] CRUD completo de usuarios (crear, editar, desactivar) — **parcial**: alta por CSV y conversión de rol listas; falta editar datos de un usuario existente y desactivar (`activo=false`)
+- [x] CRUD completo de usuarios (crear, editar, desactivar) · `E1` — alta por CSV, `EditUserModal` (nombre/apellido/dni/carrera, `updateUserAction`) y `UserActiveToggle` (`activo`, `setUserActivoAction`) en `/admin/usuarios` (`COMPONENTS.md` §59). `activo=false` corta el acceso real: `middleware.ts` desloguea y redirige a `/cuenta-desactivada` en cualquier request autenticado — antes la columna era cosmética, no bloqueaba nada
 - [x] Asignar y cambiar roles a cualquier usuario — `ConvertRoleModal`, llama a `convert_user_role()`
 - [x] Convertir un usuario `comunidad`/`lead` a Alumno INCADE: asignar DNI + carrera (`convert_user_role()`, conversión aditiva con notificación) · `E1`
-- [ ] Habilitar `can_teach` a un alumno y asignarle cursos a dictar (rol dual docente, granular por curso) · `E1` — **parcial**: el toggle de `can_teach` (`CanTeachToggle`) está listo; falta la asignación de curso porque el catálogo de cursos todavía no tiene backend real
+- [x] Habilitar `can_teach` a un alumno y asignarle cursos a dictar (rol dual docente, granular por curso) · `E1` — el toggle de `can_teach` (`CanTeachToggle`, `/admin/usuarios`) y la asignación de curso (`CourseModal`, `/admin/cursos`, guarda `courses.docente_id`, selector lista `role=docente OR can_teach=true`) ya estaban implementados por separado desde que el catálogo de cursos tiene backend real (Sprint 3-4) — el checkbox había quedado desactualizado de cuando el catálogo era mock
 - [x] Ver historial de conversiones de rol de un usuario (`role_history`) · `E1` — `RoleHistoryTimeline`, resuelve el admin que hizo cada cambio
-- [ ] Acceder al log de auditoría completo del sistema
-- [ ] Habilitar y deshabilitar feature flags por módulo
+- [x] Acceder al log de auditoría completo del sistema — `/admin/auditoria`, tabla `audit_log` (ya existía desde la migración 001, sin usar hasta ahora — ledger append-only) + `logAudit()` (`COMPONENTS.md` §61). Cubre las acciones administrativas de todos los módulos (usuarios, cursos, carreras, coworking, membresías, talleres, tutorías, feature flags); deliberadamente no cubre ediciones de estructura de curso ni autoservicio del alumno (ver §61 para el detalle del alcance)
+- [x] Habilitar y deshabilitar feature flags por módulo — `/admin/configuracion`, `FeatureFlagToggle` (`COMPONENTS.md` §60), tabla `feature_flags` (migración 020) con fallback a env var (`getFlags()`, CLAUDE.md v3.6 regla #6). Gatea rutas reales vía `middleware.ts` (`moduleRouteFor()`), no solo esconde el ítem del sidebar. `educativa` (E1) no es togglable — es el producto central
 
 ### 2.2 Módulo Coworking — Admin (servicio independiente) · `E2`
 
@@ -118,23 +118,23 @@
 
 - [x] Dashboard con métricas en tiempo real: ocupación, ingresos, reservas activas — `/admin/coworking/ocupacion` (ocupación/reservas) + `/admin/coworking/ingresos` (ingresos)
 - [x] **Panel de ingresos independiente del módulo educativo** (vista `coworking_revenue`): por período, sede y tipo de usuario (institucional vs público) — `/admin/coworking/ingresos`, período mensual (grano de la vista, ver `COMPONENTS.md` §49)
-- [ ] Análisis de ocupación: gráficos de espacios más usados y horarios pico — diferido, solo tasas numéricas por ahora
-- [ ] Informe de tiempos ociosos con recomendaciones — diferido
-- [ ] Exportar reportes en PDF y Excel (reservas, ingresos, ocupación) — solo CSV implementado (`RevenueExportButton`), PDF/Excel diferido
+- [x] Análisis de ocupación: gráficos de espacios más usados y horarios pico — `OccupancyBarChart` (`COMPONENTS.md` §62) en `/admin/coworking/ocupacion`, basado en reservas de los últimos ~30 días
+- [ ] Informe de tiempos ociosos con recomendaciones — diferido (sin motor de recomendaciones)
+- [x] Exportar reportes en PDF y Excel (reservas, ingresos, ocupación) — **decisión de alcance**: se implementó CSV (ya estaba, Excel lo abre nativo) + PDF (`PdfReportExportButton`, `@react-pdf/renderer`) en las 3 páginas. Se descartó agregar el paquete `xlsx` de npm — tiene 2 CVEs de severidad alta sin fix disponible (prototype pollution + ReDoS, ver `COMPONENTS.md` §62) — y no aporta nada sobre el CSV ya existente, que Excel abre nativo igual
 
 ### 2.3 Módulo Educativo — Admin · `E1`
 
 - [x] Crear, editar y publicar carreras, cursos y módulos — carreras/cursos top-level
       (`/admin/carreras`, `/admin/cursos`, publicar/despublicar); módulos y clases los carga
       el Docente en `/docente/cursos/[id]` (`CourseEditor`, §27 de COMPONENTS.md)
-- [ ] Habilitar y deshabilitar permisos granulares a cada docente
+- [x] Habilitar y deshabilitar permisos granulares a cada docente — por ADR-16/CU-T06 del spec, el permiso docente es granular por curso (`can_teach` + `courses.docente_id`, no un rol global): `CanTeachToggle` habilita/deshabilita el permiso base y `CourseModal` asigna/desasigna el curso puntual — ya cubierto, ver §2.1
 - [x] Revisar cola de curación: aprobar o rechazar contenido enviado por docentes —
       `ReviewActions` (§29) en `/admin/cursos`, filas en `estado='revision'`
 - [x] Enviar feedback al docente sobre contenido rechazado — motivo obligatorio al rechazar,
       guardado en `courses.revision_comentario` y visible en `CourseEditor` (banner de rechazo)
 - [x] Publicar cursos, talleres y programas (única entidad que puede publicar) — cursos vía `PublishToggle`/`ReviewActions` (§29), talleres vía `TallerPublishToggle` (`COMPONENTS.md` §58, Addendum 06). Carreras/programas no tienen concepto de "publicar", solo `activa`/`inactiva` (`CareerModal`)
-- [ ] Editar nombre en certificado emitido y regenerar PDF
-- [ ] Ver métricas académicas: progreso de alumnos, reportes de engagement
+- [x] Editar nombre en certificado emitido y regenerar PDF — `/admin/certificados`, ver §8.2
+- [x] Ver métricas académicas: progreso de alumnos, reportes de engagement — `/admin/metricas` (`COMPONENTS.md` §62): KPIs globales (alumnos activos, progreso promedio, certificados emitidos) + tabla por curso (inscriptos, progreso promedio, completados, certificados), export CSV
 
 ### 2.4 Plataforma Abierta — Admin · `E3`
 
@@ -184,8 +184,8 @@
 
 ### 4.2 Gestión de sus Cursos · `E1`
 
-- [ ] Ver progreso y asistencia de sus alumnos
-- [ ] Ver reportes básicos de engagement de sus cursos
+- [x] Ver progreso y asistencia de sus alumnos — `/docente/cursos/[id]/alumnos` (`COMPONENTS.md` §62): roster con `progreso_pct`/estado por alumno, vía vista `course_students` extendida (migración 021 — antes `enrollments_own` no dejaba al docente leer el progreso de sus propios alumnos). "Asistencia" a sesiones en vivo ya estaba cubierta por `AsistenciaPanel` de Tutorías, sin cambios acá
+- [x] Ver reportes básicos de engagement de sus cursos — mismas 3 tarjetas KPI del roster de alumnos (inscriptos, progreso promedio, completados) — no se armó una página aparte, es el mismo dato
 - [x] Planificar tutorías virtuales (Meet/Zoom) en sus cursos · `E2` — `TutoriaModal`, link pegado a mano (Addendum 05)
 - [x] Planificar tutorías presenciales en sede (reserva de aula automática) · `E2` — `createTutoriaAction`, bloquea aula vía Coworking, rechaza si hay superposición (`no_overlap`)
 - [x] Registrar asistencia a tutorías en vivo · `E2` — `AsistenciaPanel`, `registrarAsistenciaAction`
@@ -213,7 +213,7 @@
       `apply_manual_correction`, 003)
 - [x] Panel de resultados por evaluación: notas, promedio del grupo (sin
       distribución gráfica — tabla alcanza para el caso de uso principal)
-- [ ] Exportar resultados a CSV
+- [x] Exportar resultados a CSV — botón junto a "Resultados" en `/docente/cursos/[id]/evaluaciones/[evaluationId]`, reusa `CsvExportButton` (`COMPONENTS.md` §62)
 
 ### 4.4 Canal de Anuncios · `E1`
 
@@ -384,9 +384,16 @@
       de descarga en `/certificados`)
 - [x] QR único por certificado codificando URL de verificación pública (`qrcode`)
 - [x] Verificación pública sin login (`/verificar/[uuid]`, RPC `verify_certificate`)
-- [ ] Certificado de especialización al completar una carrera completa (distinto
-      del certificado por curso ya implementado — requeriría agregación por carrera)
-- [ ] Admin puede editar nombre y regenerar el certificado
+- [x] Certificado de especialización al completar una carrera completa — tabla propia
+      `career_certificates` (migración 022, distinta granularidad de `certificates`),
+      `checkAndIssueCareerCertificate()` (`src/lib/certificates.ts`) se dispara automático
+      después de cada certificado de curso; "completó la carrera" = tiene certificado
+      de curso para todos los cursos publicados de esa carrera. RPC pública
+      `verify_career_certificate`, ver §8.4
+- [x] Admin puede editar nombre y regenerar el certificado — `/admin/certificados`
+      (`COMPONENTS.md` §63), columna `nombre_override` (migración 023) — no toca
+      `users.nombre`/`apellido`, solo el PDF y la verificación pública de ESE certificado.
+      Regenerar reusa el mismo PDF generator, mismo `pdf_url` (upsert)
 
 ### 8.3 Sistema de Puntos (Ledger Append-Only)
 
@@ -405,10 +412,10 @@
 
 ### 8.4 Mapa Visual de Carreras
 
-- [ ] Nodos iluminados (completados), activos y bloqueados — **frontend-mock listo** (`CareerMap` en `/carreras/[slug]`, solo visible para rol `alumno` — ADR-15), falta progreso real
-- [ ] Prerequisitos respetados: no se puede avanzar sin completar el anterior — lógica visual lista sobre datos mock, falta validar contra `enrollments`/`lesson_progress` reales
-- [ ] Certificado de especialización visible al final del mapa — nodo final mock listo (tokens `--edu-gold`), falta certificado real (Sprint 9-10)
-- [ ] Progreso visual en tiempo real — pendiente de conectar a datos reales
+- [x] Nodos iluminados (completados), activos y bloqueados — `CareerMap` en `/carreras/[slug]` (solo `alumno`, ADR-15) ya estaba conectado a `enrollments.progreso_pct` real desde antes de esta sesión (checkbox desactualizado, no era mock) — verificado leyendo `carreras/[slug]/page.tsx`
+- [x] Prerequisitos respetados: no se puede avanzar sin completar el anterior — **el mapa ya mostraba el candado, pero `enrollUserAction` no lo exigía de verdad** (un alumno podía entrar directo a `/cursos/[slug]` de un curso bloqueado e inscribirse igual). Corregido: si el curso tiene `carrera_id`, la acción exige que el curso anterior de esa carrera (mismo orden por `created_at` que usa `CareerMap`) esté `completado`. Cursos sin `carrera_id` ("curso adicional", CU-T01) siguen sin restricción — eso es a propósito, ADR explícito
+- [x] Certificado de especialización visible al final del mapa — certificado real emitido al completar todos los cursos publicados de la carrera (`checkAndIssueCareerCertificate`, migración 022 `career_certificates`), PDF + verificación pública en `/verificar/[uuid]`, botón de descarga en `/certificados`
+- [x] Progreso visual en tiempo real — ya se resuelve en cada carga de página contra `enrollments` real (no era mock, mismo hallazgo que el primer ítem)
 
 ### 8.5 Módulos con Feature Flags
 

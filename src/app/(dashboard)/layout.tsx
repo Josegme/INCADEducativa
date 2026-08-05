@@ -5,12 +5,14 @@ import {
   Building2,
   CalendarDays,
   CalendarPlus,
+  ClipboardList,
   CreditCard,
   DoorOpen,
   GraduationCap,
   LayoutDashboard,
   LayoutGrid,
   Presentation,
+  Settings,
   Users,
   Video,
   Wallet,
@@ -19,12 +21,16 @@ import {
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import type { SidebarSection } from "@/components/layout/Sidebar";
 import type { TopbarRole } from "@/components/layout/Topbar";
-import { flags } from "@/lib/flags";
+import { getFlags, type FeatureFlag } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
 
 const ICON_CLASS = "h-[18px] w-[18px]";
 
-function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] {
+function sectionsForRole(
+  role: TopbarRole,
+  canTeach: boolean,
+  flags: Record<FeatureFlag, boolean>
+): SidebarSection[] {
   const platformItems: SidebarSection["items"] = [
     { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className={ICON_CLASS} aria-hidden /> },
     { label: "Cursos", href: "/cursos", icon: <BookOpen className={ICON_CLASS} aria-hidden /> },
@@ -64,6 +70,8 @@ function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] 
       { label: "Usuarios", href: "/admin/usuarios", icon: <Users className={ICON_CLASS} aria-hidden /> },
       { label: "Cursos", href: "/admin/cursos", icon: <BookOpen className={ICON_CLASS} aria-hidden /> },
       { label: "Carreras", href: "/admin/carreras", icon: <GraduationCap className={ICON_CLASS} aria-hidden /> },
+      { label: "Métricas", href: "/admin/metricas", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
+      { label: "Certificados", href: "/admin/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
     ];
 
     if (flags.coworking) {
@@ -80,6 +88,11 @@ function sectionsForRole(role: TopbarRole, canTeach: boolean): SidebarSection[] 
     if (flags.talleres) {
       adminItems.push({ label: "Talleres", href: "/admin/talleres", icon: <Video className={ICON_CLASS} aria-hidden /> });
     }
+
+    adminItems.push(
+      { label: "Auditoría", href: "/admin/auditoria", icon: <ClipboardList className={ICON_CLASS} aria-hidden /> },
+      { label: "Configuración", href: "/admin/configuracion", icon: <Settings className={ICON_CLASS} aria-hidden /> }
+    );
 
     sections.push({ label: "Administración", items: adminItems });
   }
@@ -108,17 +121,16 @@ export default async function DashboardGroupLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("nombre, apellido, role, can_teach")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, flags] = await Promise.all([
+    supabase.from("users").select("nombre, apellido, role, can_teach").eq("id", user.id).single(),
+    getFlags(),
+  ]);
 
   const role = (profile?.role ?? "alumno") as TopbarRole;
 
   return (
     <DashboardLayout
-      sidebarSections={sectionsForRole(role, profile?.can_teach ?? false)}
+      sidebarSections={sectionsForRole(role, profile?.can_teach ?? false, flags)}
       userInitials={initialsFor(profile?.nombre, profile?.apellido, user.email)}
       role={role}
       userId={user.id}

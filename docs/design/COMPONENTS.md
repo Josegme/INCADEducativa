@@ -1476,4 +1476,256 @@ en Plataforma (todo rol) y en Administración (solo admin), gateados por
 
 ---
 
-*INCADEducativa · Design System v2.1 — COMPONENTS v1.5 · Julio 2026*
+## 59. CRUD completo de usuarios — EditUserModal / UserActiveToggle
+
+Deuda funcional E1 (`FUNCIONALIDADES.md` §2.1): hasta ahora `/admin/usuarios`
+solo tenía alta por CSV y conversión de rol — faltaba editar datos de un
+usuario existente y desactivarlo.
+
+```
+EditUserModal ("use client") — src/components/admin/EditUserModal.tsx
+└── Mismo patrón que CareerModal (§16): Dialog + form controlado,
+    updateUserAction (src/app/(dashboard)/admin/actions/userActions.ts).
+    Solo edita nombre/apellido/dni/carrera — NO email (identidad ligada a
+    auth.users, cambiarlo requeriría reautenticación) ni role/can_teach
+    (esos van por convert_user_role()/setCanTeachAction ya existentes,
+    ADR-16 — un edit crudo de role rompería la regla de conversión aditiva)
+
+UserActiveToggle ("use client") — src/components/admin/UserActiveToggle.tsx
+└── Mismo patrón que LocationActiveToggle (§42)/CanTeachToggle → botón
+    Activar/Desactivar, setUserActivoAction. A diferencia de
+    locations/spaces (donde `activa=false` solo oculta del catálogo
+    público), acá "desactivar" tiene que cortar el acceso real: se agregó
+    el chequeo en `middleware.ts` — con `activo=false` cualquier request
+    autenticado se desloguea y redirige a `/cuenta-desactivada` (ruta
+    pública nueva, mensaje simple + contacto). Antes de este cambio la
+    columna `users.activo` no bloqueaba nada, era puramente cosmética.
+```
+
+Sin migración nueva — `users.activo`/`users.dni`/`users.carrera_id` ya
+existían desde la 001; la policy `users_update_own` (`id = auth.uid() or
+is_admin()`) ya permite el UPDATE del admin sobre cualquier fila.
+
+---
+
+## 60. Feature flags editables — FeatureFlagToggle / /admin/configuracion
+
+Deuda funcional E1 (`FUNCIONALIDADES.md` §2.1). CLAUDE.md bumpeado a v3.6
+(regla #6): los flags pasan a resolverse desde la tabla `feature_flags`
+(migración 020), con fallback a la env var `FEATURE_*` cuando no hay fila —
+ver `src/lib/flags.ts` (`getFlags()`, reemplaza al objeto síncrono `flags`
+que tenían los 5 Server Components que lo consumían).
+
+```
+FeatureFlagToggle ("use client") — src/components/admin/FeatureFlagToggle.tsx
+└── Mismo patrón que LocationActiveToggle (§42): botón Activar/Desactivar,
+    setFeatureFlagAction (src/app/(dashboard)/admin/actions/
+    featureFlagActions.ts, upsert sobre feature_flags)
+
+/admin/configuracion (página nueva, admin) — lista TOGGLEABLE_FLAGS
+(src/modules/admin/featureFlags.ts): coworking, tutorías, talleres,
+comunidad, catálogo público. `educativa` (E1) NO aparece acá — es el
+producto central, sin UI de apagado (CLAUDE.md v3.6).
+```
+
+**El toggle no es solo cosmético (nav):** `middleware.ts` gatea de verdad
+las rutas del módulo (`moduleRouteFor()`) — `/servicios/coworking*`,
+`/admin/coworking*`, `/coordinador*` → `coworking`; `/talleres`,
+`/admin/talleres` → `talleres`; `/docente/cursos/*/tutorias` → `tutorias`.
+Con el flag apagado, cualquier request a esas rutas redirige (`/dashboard`
+si hay sesión, `/` si no) — antes de este cambio los flags solo escondían
+ítems del sidebar sin bloquear nada a nivel de ruta. La query a
+`feature_flags` en el middleware solo corre cuando la ruta matchea uno de
+esos prefijos (evita una consulta extra en cada request, incluidos los
+webhooks de `/api/*`).
+
+Sin toggle de ruta para `comunidad`/`publica` en el middleware — son
+flags de Etapa 3, todavía no gatean ninguna ruta real en el código (no
+existe `/comunidad` ni un catálogo público aparte), el toggle en
+`/admin/configuracion` queda listo para cuando se implementen.
+
+---
+
+## 61. Log de auditoría — /admin/auditoria
+
+Deuda funcional E1 (`FUNCIONALIDADES.md` §2.1 "log de auditoría completo").
+**Sin migración nueva — la tabla `audit_log` ya existía desde la 001**
+(columnas `user_id`, `accion`, `entidad`, `entidad_id`, `detalle` jsonb,
+`created_at`), con RLS `audit_admin` (`for all using (is_admin())`) y su
+índice `idx_audit_user`, pero nunca se había conectado a ningún código —
+0 lecturas/escrituras reales en todo el proyecto hasta esta pasada. **Bug
+real encontrado y corregido en esta misma sesión** (no en producción,
+antes de commitear): la primera versión de `src/lib/audit.ts` asumía una
+tabla nueva con columna `actor_id` e insertaba con el cliente de sesión
+normal — habría fallado dos veces: `create table` sobre una tabla ya
+existente, e insert rechazado por RLS para cualquier no-admin (ej. un
+docente creando una tutoría). Corregido antes de que el usuario llegara a
+correr nada.
+
+```
+src/lib/audit.ts — logAudit({ actorId, accion, entidad, entidadId?,
+detalle? }). Usa createAdminClient() (service_role) para el insert, mismo
+patrón que awardPoints() (src/lib/points.ts) y checkAndIssueCertificate()
+(src/lib/certificates.ts) — la policy audit_admin solo permite escribir a
+is_admin(), pero varias acciones auditadas las dispara un docente sin ese
+rol. Best-effort, nunca tira la acción del llamador si el insert falla
+(mismo criterio que notifyUsers()).
+
+/admin/auditoria (página, admin) — tabla de las últimas 200 acciones +
+filtro por entidad (form GET, sin JS). Resuelve nombre del actor con una
+query aparte a `users` (mismo patrón que RoleHistoryTimeline, §?)
+```
+
+**Acciones instrumentadas en esta pasada** (server actions existentes, un
+`logAudit()` agregado después de cada mutación exitosa — no se tocó la
+lógica de negocio): conversión de rol y `can_teach` (`convertRoleActions.ts`),
+edición/activación de usuario (`userActions.ts`), importación CSV
+(`importUsersActions.ts`, una fila por lote, no por usuario), CRUD +
+publicar de carreras y cursos (`careerActions.ts`, `courseActions.ts`),
+aprobar/rechazar curso (`reviewActions.ts`), CRUD + activar de sedes y
+espacios de Coworking (`coworkingActions.ts`), reserva manual/cancelación/
+check-in (`bookingAdminActions.ts`), CRUD de planes de membresía
+(`membershipPlanActions.ts`), CRUD + publicar de talleres (`tallerActions.ts`),
+toggle de feature flags (`featureFlagActions.ts`), crear/cancelar tutoría
+(docente, `tutoriaActions.ts`).
+
+**Deliberadamente fuera de esta pasada** (mismo criterio que otras
+"simplificaciones documentadas" del proyecto — no hay pedido explícito de
+ningún documento para este nivel de detalle): ediciones de estructura de
+curso (módulos/clases/evaluaciones — son de alta frecuencia y ya tienen su
+propio historial de revisión vía `courses.revision_comentario`), acciones
+de autoservicio del alumno/comunidad (cancelar la propia reserva, canjear
+puntos — no son acciones *administrativas*), y el re-disparo manual de
+`runNoShowDetectionAction` (una utilidad de debug, no una mutación de
+negocio).
+
+---
+
+## 62. Bloque B deuda funcional E1/E2 — reportes, métricas y exportación
+
+Deuda funcional (`FUNCIONALIDADES.md` §2.2/§2.3/§4.2/§4.3): progreso/engagement
+de alumnos (admin + docente), gráficos de ocupación de Coworking, export CSV
+de evaluaciones, export PDF de reportes de Coworking.
+
+```
+Migración 021_course_students_progress.sql — extiende la vista
+`course_students` (005) con progreso_pct/estado/fechas de `enrollments`.
+Antes de esto la RLS `enrollments_own` (001) solo dejaba ver la fila propia
+o a admin — un docente no podía leer el progreso de sus propios alumnos.
+Mismo criterio que get_occupied_slots()/get_taller_inscripcion_count(): se
+extiende una vista ya restringida por can_teach_course()/is_admin() en vez
+de abrir la RLS de la tabla base.
+
+/docente/cursos/[id]/alumnos (página nueva, docente) — roster con barra de
+progreso + 3 KPI (inscriptos/progreso promedio/completados), export CSV.
+Link "Alumnos" agregado al header de CourseEditor (§27), mismo lugar que
+"Anuncios"/"Tutorías".
+
+/admin/metricas (página nueva, admin) — mismo patrón cross-curso: KPIs
+globales (alumnos activos, progreso promedio, certificados emitidos) + tabla
+por curso, export CSV. Ítem nuevo "Métricas" en el sidebar de Administración.
+
+CsvExportButton ("use client") — src/components/admin/CsvExportButton.tsx
+└── Renombre de RevenueExportButton (§49) a un nombre genérico — la lógica
+    ya era genérica (headers/rows/filename), solo la usaba Ingresos.
+    Reutilizado ahora en Reservas, Ocupación, roster de alumnos, métricas y
+    resultados de evaluaciones (docente).
+
+PdfReportExportButton ("use client") — src/components/admin/
+PdfReportExportButton.tsx — mismo patrón que certificatePdf.tsx (fondo
+claro, excepción documentada al dark mode exclusivo — es un documento
+imprimible), pero renderizado 100% client-side con `pdf(...).toBlob()` de
+@react-pdf/renderer (ya era dependencia del proyecto) en vez de subir a
+Storage — no hace falta persistir un reporte de export. Reusable con
+headers/rows genéricos, igual que CsvExportButton. Wireado en Ingresos,
+Reservas y Ocupación de Coworking.
+
+OccupancyBarChart (server component, sin "use client") —
+src/components/admin/OccupancyBarChart.tsx — barra horizontal de una sola
+serie (gradiente --inc-violet→--inc-magenta, mismo que Progress), sin
+librería de gráficos. Usado en /admin/coworking/ocupacion para "Espacios
+más usados" y "Horarios pico" (agregado de `bookings` de los últimos ~30
+días, ya fetcheados en la página — sin query nueva). Simplificación
+documentada frente a la skill de dataviz: al ser una sola serie con label +
+valor siempre visible en texto, no hace falta legend ni tooltip custom con
+crosshair (el `title` nativo alcanza) ni paleta categórica a validar.
+```
+
+**Decisión de alcance — Excel descartado, PDF sí:** el checklist pedía
+"exportar en PDF y Excel". Se evaluó agregar el paquete `xlsx` (SheetJS) de
+npm para generar `.xlsx` real — `npm audit` marcó 2 CVEs de severidad alta
+sin fix disponible (`GHSA-4r6h-8v6p-xvw6` prototype pollution,
+`GHSA-5pgg-2g8v-p4x9` ReDoS; SheetJS dejó de publicar parches al paquete de
+npm, solo a su propio CDN). Se descartó la dependencia — el CSV ya
+existente lo abre Excel nativo sin problema, así que agregar `xlsx` no
+sumaba nada real más que el riesgo de la CVE. Se implementó PDF en su
+lugar (formato genuinamente distinto del CSV: reporte imprimible, no
+editable) con `@react-pdf/renderer`, ya instalado.
+
+---
+
+## 63. Bloque C deuda funcional E1 — certificado de especialización + prerequisitos de carrera
+
+Deuda funcional (`FUNCIONALIDADES.md` §2.3/§8.2/§8.4). Auditoría previa
+encontró que 3 de los 4 ítems de §8.4 ya estaban resueltos (`CareerMap` en
+`/carreras/[slug]` ya leía `enrollments.progreso_pct` real, no era mock) —
+checkboxes corregidos sin código nuevo. Lo que sí faltaba de verdad:
+
+```
+Migración 021_course_students_progress.sql — ver §62 (ya documentada,
+sin cambios).
+
+Migración 022_career_certificates.sql — tabla nueva career_certificates
+(distinta granularidad de certificates: por carrera, no por curso), mismo
+patrón de RLS (own + is_admin()) y verificación pública
+(verify_career_certificate, security definer) que certificates/
+verify_certificate (001).
+
+Migración 023_certificate_name_override.sql — columna nombre_override en
+certificates + verify_certificate() actualizada para reflejarla en la
+verificación pública, no solo en el PDF.
+
+enrollUserAction (src/app/(dashboard)/cursos/actions/enrollActions.ts) —
+BUG REAL encontrado y corregido: CareerMap ya mostraba el candado de
+"bloqueado" en cursos fuera de secuencia, pero la acción de inscripción
+nunca lo exigía — un alumno podía entrar directo a /cursos/[slug] de un
+curso posterior e inscribirse igual, sin haber completado el anterior.
+Ahora valida contra el curso previo de la misma carrera (mismo orden por
+created_at que ya usaba CareerMap) — cursos sin carrera_id ("curso
+adicional", CU-T01) siguen libres, es a propósito.
+
+checkAndIssueCareerCertificate() (src/lib/certificates.ts) — se dispara
+automático al final de checkAndIssueCertificate() cuando el curso recién
+certificado tenía carrera_id. "Completó la carrera" = tiene un
+certificate (de curso) por cada curso publicado de esa carrera — reusa la
+validación de evaluaciones ya hecha a nivel de curso en vez de
+reimplementarla. +300 puntos (vs +100 de un certificado de curso).
+
+generateCareerCertificatePdf() (src/lib/certificatePdf.tsx) — mismo
+CertificateDocument que el certificado de curso, generalizado con
+título/logroLabel/logroTitulo en vez de hardcodear "curso".
+
+/certificados (alumno) — ahora lista certificados de carrera primero
+(más "grandes"), reusa CertificateCard tal cual sin cambios (label
+"Especialización — {carrera}").
+
+/verificar/[uuid] — intenta verify_certificate() y, si no hay resultado,
+verify_career_certificate().
+
+/admin/certificados (página nueva, admin) — EditCertificateNameModal
+(edita nombre_override, regenera el PDF automático al guardar) +
+RegenerateCertificateButton (re-renderiza sin cambiar el nombre — para
+cuando se corrige algo del lado del template/QR). Certificados de carrera
+NO tienen esta UI en esta pasada — el checklist solo pedía "certificado
+emitido" en general y course-level es el caso de uso real (correcciones
+de nombre por typo en DNI/importación CSV).
+```
+
+**Bug real encontrado durante esta pasada, corregido antes de que llegara
+a producción:** la primera versión de `src/lib/audit.ts` (§61) asumía una
+tabla `audit_log` nueva con columna `actor_id` — la tabla ya existía desde
+la 001 con columna `user_id` y RLS admin-only. Ver §61, corregido.
+
+---
+
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.9 · Agosto 2026*

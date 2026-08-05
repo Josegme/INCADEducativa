@@ -31,25 +31,27 @@ const styles = StyleSheet.create({
 });
 
 interface CertificateDocumentProps {
+  titulo: string;
   alumnoNombre: string;
-  cursoTitulo: string;
+  logroLabel: string;
+  logroTitulo: string;
   fechaEmision: string;
   qrDataUrl: string;
   verificacionUrl: string;
 }
 
-function CertificateDocument({ alumnoNombre, cursoTitulo, fechaEmision, qrDataUrl, verificacionUrl }: CertificateDocumentProps) {
+function CertificateDocument({ titulo, alumnoNombre, logroLabel, logroTitulo, fechaEmision, qrDataUrl, verificacionUrl }: CertificateDocumentProps) {
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
         <View style={styles.border}>
           <Text style={styles.marca}>INCADEDUCATIVA</Text>
-          <Text style={styles.titulo}>Certificado de Finalización</Text>
+          <Text style={styles.titulo}>{titulo}</Text>
           <Text style={styles.subtitulo}>INCADE Escuela de Negocios — Posadas, Misiones</Text>
           <Text style={styles.texto}>Se certifica que</Text>
           <Text style={styles.nombre}>{alumnoNombre}</Text>
-          <Text style={styles.texto}>completó satisfactoriamente el curso</Text>
-          <Text style={styles.curso}>{cursoTitulo}</Text>
+          <Text style={styles.texto}>{logroLabel}</Text>
+          <Text style={styles.curso}>{logroTitulo}</Text>
           <Text style={styles.fecha}>Emitido el {fechaEmision}</Text>
           <Image src={qrDataUrl} style={styles.qr} />
           <Text style={styles.verificacion}>Verificá este certificado en {verificacionUrl}</Text>
@@ -66,5 +68,35 @@ export async function generateCertificatePdf(input: {
   verificacionUrl: string;
 }): Promise<Buffer> {
   const qrDataUrl = await QRCode.toDataURL(input.verificacionUrl, { margin: 1 });
-  return renderToBuffer(<CertificateDocument {...input} qrDataUrl={qrDataUrl} />);
+  return renderToBuffer(
+    <CertificateDocument
+      titulo="Certificado de Finalización"
+      alumnoNombre={input.alumnoNombre}
+      logroLabel="completó satisfactoriamente el curso"
+      logroTitulo={input.cursoTitulo}
+      fechaEmision={input.fechaEmision}
+      qrDataUrl={qrDataUrl}
+      verificacionUrl={input.verificacionUrl}
+    />
+  );
+}
+
+export async function generateCareerCertificatePdf(input: {
+  alumnoNombre: string;
+  carreraNombre: string;
+  fechaEmision: string;
+  verificacionUrl: string;
+}): Promise<Buffer> {
+  const qrDataUrl = await QRCode.toDataURL(input.verificacionUrl, { margin: 1 });
+  return renderToBuffer(
+    <CertificateDocument
+      titulo="Certificado de Especialización"
+      alumnoNombre={input.alumnoNombre}
+      logroLabel="completó satisfactoriamente la carrera completa de"
+      logroTitulo={input.carreraNombre}
+      fechaEmision={input.fechaEmision}
+      qrDataUrl={qrDataUrl}
+      verificacionUrl={input.verificacionUrl}
+    />
+  );
 }

@@ -4,6 +4,8 @@ import { ImportCsvModal } from "@/components/admin/ImportCsvModal";
 import { ConvertRoleModal } from "@/components/admin/ConvertRoleModal";
 import { RoleHistoryTimeline } from "@/components/admin/RoleHistoryTimeline";
 import { CanTeachToggle } from "@/components/admin/CanTeachToggle";
+import { EditUserModal } from "@/components/admin/EditUserModal";
+import { UserActiveToggle } from "@/components/admin/UserActiveToggle";
 import { createClient } from "@/lib/supabase/server";
 import type { RoleHistoryEntry, UserRoleValue } from "@/modules/admin/convertRole";
 
@@ -90,6 +92,14 @@ export default async function AdminUsuariosPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1.5">
+                    <EditUserModal
+                      userId={user.id}
+                      nombre={user.nombre}
+                      apellido={user.apellido}
+                      dni={user.dni}
+                      carreraId={user.carrera_id}
+                      careers={careerOptions}
+                    />
                     <ConvertRoleModal
                       userId={user.id}
                       userName={userName}
@@ -99,6 +109,7 @@ export default async function AdminUsuariosPage() {
                     {role === "alumno" ? (
                       <CanTeachToggle userId={user.id} canTeach={Boolean(user.can_teach)} />
                     ) : null}
+                    <UserActiveToggle userId={user.id} activo={Boolean(user.activo)} />
                     <RoleHistoryTimeline
                       userName={userName}
                       entries={(user.role_history ?? []) as RoleHistoryEntry[]}

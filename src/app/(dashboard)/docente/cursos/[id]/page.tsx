@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { CourseEditor } from "@/components/docente/CourseEditor";
 import type { EditableLesson, EditableModule } from "@/modules/docente/courseEditor";
 import type { EvaluationSummary } from "@/modules/docente/evaluationEditor";
-import { flags } from "@/lib/flags";
+import { getFlags } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DocenteCourseEditorPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
+  const flags = await getFlags();
 
   const { data: course } = await supabase
     .from("courses")

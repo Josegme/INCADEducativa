@@ -4,6 +4,8 @@ import { BookingFilterBar } from "@/components/admin/BookingFilterBar";
 import { BookingRowActions } from "@/components/admin/BookingRowActions";
 import { ManualBookingModal } from "@/components/admin/ManualBookingModal";
 import { CheckInScannerModal } from "@/components/admin/CheckInScannerModal";
+import { CsvExportButton } from "@/components/admin/CsvExportButton";
+import { PdfReportExportButton } from "@/components/admin/PdfReportExportButton";
 import { createClient } from "@/lib/supabase/server";
 import { BOOKING_STATUS_LABEL, type BookingStatus, type DiscountType } from "@/modules/coworking/booking";
 import { DISCOUNT_TYPE_LABEL, type BookingAdminRow } from "@/modules/admin/bookings";
@@ -83,6 +85,17 @@ export default async function AdminCoworkingReservasPage({ searchParams }: PageP
     };
   });
 
+  const exportRows = rows.map((r) => [
+    r.espacioNombre,
+    r.sedeNombre,
+    r.usuarioNombre,
+    new Date(r.fecha_inicio).toLocaleString("es-AR"),
+    r.monto,
+    DISCOUNT_TYPE_LABEL[r.tipo_descuento],
+    BOOKING_STATUS_LABEL[r.estado],
+  ]);
+  const exportHeaders = ["Espacio", "Sede", "Usuario", "Horario", "Monto", "Tipo", "Estado"];
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -93,6 +106,14 @@ export default async function AdminCoworkingReservasPage({ searchParams }: PageP
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <CsvExportButton headers={exportHeaders} rows={exportRows} filename={`coworking-reservas-${fecha ?? "todas"}.csv`} />
+          <PdfReportExportButton
+            title="Reservas de Coworking"
+            subtitle={fecha ? `Reservas del ${fecha}` : "Todas las reservas"}
+            headers={exportHeaders}
+            rows={exportRows}
+            filename={`coworking-reservas-${fecha ?? "todas"}.pdf`}
+          />
           <CheckInScannerModal />
           <ManualBookingModal locations={locationRows} spaces={spaceRows} users={users ?? []} />
         </div>

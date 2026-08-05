@@ -7,6 +7,9 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { OccupancyBarChart, type BarChartRow } from "@/components/admin/OccupancyBarChart";
+import { CsvExportButton } from "@/components/admin/CsvExportButton";
+import { PdfReportExportButton } from "@/components/admin/PdfReportExportButton";
 import { createClient } from "@/lib/supabase/client";
 import { BOOKING_STATUS_LABEL, type BookingStatus } from "@/modules/coworking/booking";
 import { runNoShowDetectionAction } from "@/app/(dashboard)/admin/actions/bookingAdminActions";
@@ -33,6 +36,8 @@ interface OccupancyDashboardProps {
   todaysBookings: TodayBookingRow[];
   occupancy: { dia: number; semana: number; mes: number };
   noShowAlerts: number;
+  topSpaces: BarChartRow[];
+  peakHours: BarChartRow[];
 }
 
 const SPACE_BADGE_STATE: Record<SpaceStatus["estado"], BadgeProps["state"]> = {
@@ -56,7 +61,14 @@ const STATUS_BADGE_STATE: Record<BookingStatus, BadgeProps["state"]> = {
   no_show: "locked",
 };
 
-export function OccupancyDashboard({ spaceStatuses, todaysBookings, occupancy, noShowAlerts }: OccupancyDashboardProps) {
+export function OccupancyDashboard({
+  spaceStatuses,
+  todaysBookings,
+  occupancy,
+  noShowAlerts,
+  topSpaces,
+  peakHours,
+}: OccupancyDashboardProps) {
   const router = useRouter();
   const [isDetecting, setIsDetecting] = React.useState(false);
   const [detectResult, setDetectResult] = React.useState<string | null>(null);
@@ -92,11 +104,32 @@ export function OccupancyDashboard({ spaceStatuses, todaysBookings, occupancy, n
     router.refresh();
   }
 
+  const todaysExportHeaders = ["Horario", "Espacio", "Usuario", "Monto", "Estado"];
+  const todaysExportRows = todaysBookings.map((b) => [
+    `${new Date(b.fechaInicio).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}–${new Date(b.fechaFin).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}`,
+    b.espacioNombre,
+    b.usuarioNombre,
+    b.monto,
+    BOOKING_STATUS_LABEL[b.estado],
+  ]);
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-[20px] font-semibold text-white">Ocupación de Coworking</h1>
-        <p className="text-sm text-[--edu-text-muted]">Mapa de espacios en tiempo real y reservas del día.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-semibold text-white">Ocupación de Coworking</h1>
+          <p className="text-sm text-[--edu-text-muted]">Mapa de espacios en tiempo real y reservas del día.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <CsvExportButton headers={todaysExportHeaders} rows={todaysExportRows} filename="coworking-ocupacion-hoy.csv" />
+          <PdfReportExportButton
+            title="Ocupación de Coworking — reservas de hoy"
+            subtitle={`Ocupación hoy: ${occupancy.dia}% — últimos 7 días: ${occupancy.semana}% — este mes: ${occupancy.mes}%`}
+            headers={todaysExportHeaders}
+            rows={todaysExportRows}
+            filename="coworking-ocupacion-hoy.pdf"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -142,6 +175,19 @@ export function OccupancyDashboard({ spaceStatuses, todaysBookings, occupancy, n
             <NotificationBanner type="info">Todavía no hay espacios cargados.</NotificationBanner>
           ) : null}
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <OccupancyBarChart
+          title="Espacios más usados"
+          subtitle="Cantidad de reservas — últimos ~30 días"
+          rows={topSpaces}
+        />
+        <OccupancyBarChart
+          title="Horarios pico"
+          subtitle="Reservas por hora de inicio — últimos ~30 días"
+          rows={peakHours}
+        />
       </div>
 
       <div>

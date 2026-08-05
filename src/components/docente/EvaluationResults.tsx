@@ -23,7 +23,7 @@ export interface ResultRow {
 /** `corregida` no dice si aprobó o no (el trigger apply_manual_correction, 003,
  * fija ese estado tanto si `aprobado` queda true como false) — para mostrar el
  * badge correcto hay que mirar `aprobado`, no solo `estado`. */
-function displayState(row: ResultRow): AttemptState {
+export function displayState(row: ResultRow): AttemptState {
   if (row.estado === "corregida" && row.aprobado === false) return "desaprobada";
   return row.estado;
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { notifyUsers } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 import { manualBookingFormSchema } from "@/modules/admin/bookings";
 
 async function requireAdmin() {
@@ -43,7 +44,7 @@ function revalidateBookingPaths() {
 }
 
 export async function createManualBookingAction(formData: FormData): Promise<BookingActionState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const parsed = manualBookingFormSchema.safeParse({
     userId: formData.get("userId"),
@@ -110,12 +111,20 @@ export async function createManualBookingAction(formData: FormData): Promise<Boo
     return { error: paymentError.message };
   }
 
+  await logAudit({
+    actorId: user.id,
+    accion: "coworking.reserva.crear_manual",
+    entidad: "bookings",
+    entidadId: booking.id,
+    detalle: { userId, spaceId, monto },
+  });
+
   revalidateBookingPaths();
   return { success: true };
 }
 
 export async function cancelBookingAction(bookingId: string): Promise<BookingActionState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const { data: booking } = await supabase
     .from("bookings")
@@ -132,6 +141,13 @@ export async function cancelBookingAction(bookingId: string): Promise<BookingAct
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: user.id,
+    accion: "coworking.reserva.cancelar",
+    entidad: "bookings",
+    entidadId: bookingId,
+  });
 
   const [{ data: profile }, { data: space }] = await Promise.all([
     supabase.from("users").select("email, nombre").eq("id", booking.user_id).single(),
@@ -201,6 +217,14 @@ export async function checkInBookingAction(
   if (updateError) {
     return { error: updateError.message };
   }
+
+  await logAudit({
+    actorId: user.id,
+    accion: "coworking.reserva.checkin",
+    entidad: "bookings",
+    entidadId: bookingId,
+    detalle: { metodo },
+  });
 
   revalidateBookingPaths();
   return { success: true };

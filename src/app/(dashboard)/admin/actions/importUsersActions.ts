@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 import { csvRowSchema, type ImportPreviewRow } from "@/modules/admin/importUsers";
 
 async function requireAdmin() {
@@ -117,7 +118,7 @@ export interface ConfirmImportResult {
 }
 
 export async function confirmImportAction(rows: ImportPreviewRow[]): Promise<ConfirmImportResult> {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const candidates = rows.filter((r) => r.status === "nuevo" && r.carreraId);
   if (candidates.length === 0) {
@@ -161,6 +162,15 @@ export async function confirmImportAction(rows: ImportPreviewRow[]): Promise<Con
     }
 
     imported++;
+  }
+
+  if (imported > 0) {
+    await logAudit({
+      actorId: user.id,
+      accion: "usuario.importar_csv",
+      entidad: "users",
+      detalle: { imported, failed: failed.length },
+    });
   }
 
   revalidatePath("/admin/usuarios");

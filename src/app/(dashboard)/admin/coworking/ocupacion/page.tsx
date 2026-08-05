@@ -109,12 +109,32 @@ export default async function AdminCoworkingOcupacionPage() {
 
   const noShowAlerts = bookingRows.filter((b) => b.estado === "confirmada" && new Date(b.fecha_inicio).getTime() < nowMs - 15 * 60 * 1000).length;
 
+  const countBySpace = new Map<string, number>();
+  for (const b of bookingRows) {
+    countBySpace.set(b.space_id, (countBySpace.get(b.space_id) ?? 0) + 1);
+  }
+  const topSpaces = Array.from(countBySpace.entries())
+    .map(([spaceId, count]) => ({ label: spaceRows.find((s) => s.id === spaceId)?.nombre ?? "—", value: count }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6);
+
+  const countByHour = new Map<number, number>();
+  for (const b of bookingRows) {
+    const hour = new Date(b.fecha_inicio).getHours();
+    countByHour.set(hour, (countByHour.get(hour) ?? 0) + 1);
+  }
+  const peakHours = Array.from({ length: BOOKING_CLOSE_HOUR - BOOKING_OPEN_HOUR }, (_, i) => BOOKING_OPEN_HOUR + i)
+    .map((hour) => ({ label: `${String(hour).padStart(2, "0")}:00`, value: countByHour.get(hour) ?? 0 }))
+    .filter((row) => row.value > 0);
+
   return (
     <OccupancyDashboard
       spaceStatuses={spaceStatuses}
       todaysBookings={todaysBookings}
       occupancy={occupancy}
       noShowAlerts={noShowAlerts}
+      topSpaces={topSpaces}
+      peakHours={peakHours}
     />
   );
 }

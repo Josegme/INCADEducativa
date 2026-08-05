@@ -20,7 +20,11 @@ export async function enrollUserAction(courseId: string, courseSlug: string): Pr
     return { error: "No autenticado" };
   }
 
-  const { data: course } = await supabase.from("courses").select("es_gratuito").eq("id", courseId).single();
+  const { data: course } = await supabase
+    .from("courses")
+    .select("es_gratuito, carrera_id")
+    .eq("id", courseId)
+    .single();
 
   if (!course) {
     return { error: "El curso no existe" };
@@ -28,6 +32,35 @@ export async function enrollUserAction(courseId: string, courseSlug: string): Pr
 
   if (!course.es_gratuito) {
     return { error: "Los cursos pagos estarán disponibles en Etapa 3" };
+  }
+
+  // Prerequisito de carrera: mismo orden (created_at) que muestra CareerMap
+  // (`/carreras/[slug]`). Cursos sin carrera_id ("curso adicional", CU-T01)
+  // no tienen prerequisito — se pueden tomar libremente, es a propósito.
+  if (course.carrera_id) {
+    const { data: careerCourses } = await supabase
+      .from("courses")
+      .select("id")
+      .eq("carrera_id", course.carrera_id)
+      .eq("estado", "publicado")
+      .order("created_at", { ascending: true });
+
+    const ordered = careerCourses ?? [];
+    const index = ordered.findIndex((c) => c.id === courseId);
+    const previous = index > 0 ? ordered[index - 1] : null;
+
+    if (previous) {
+      const { data: previousEnrollment } = await supabase
+        .from("enrollments")
+        .select("estado")
+        .eq("user_id", user.id)
+        .eq("course_id", previous.id)
+        .maybeSingle();
+
+      if (previousEnrollment?.estado !== "completado") {
+        return { error: "Completá el curso anterior de la carrera antes de avanzar a este" };
+      }
+    }
   }
 
   const { error } = await supabase.from("enrollments").insert({ user_id: user.id, course_id: courseId });

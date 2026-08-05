@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { membershipPlanFormSchema } from "@/modules/admin/membershipPlans";
 
 async function requireAdmin() {
@@ -21,7 +22,7 @@ async function requireAdmin() {
     throw new Error("Solo el administrador puede gestionar planes de membresía");
   }
 
-  return { supabase };
+  return { supabase, adminId: user.id };
 }
 
 export interface MembershipPlanFormState {
@@ -41,7 +42,7 @@ function parseMembershipPlanFormData(formData: FormData) {
 }
 
 export async function createMembershipPlanAction(formData: FormData): Promise<MembershipPlanFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseMembershipPlanFormData(formData);
   if (!parsed.success) {
@@ -50,21 +51,33 @@ export async function createMembershipPlanAction(formData: FormData): Promise<Me
 
   const { creditosIncluidos, ...rest } = parsed.data;
 
-  const { error } = await supabase.from("membership_plans").insert({
-    ...rest,
-    creditos_incluidos: creditosIncluidos,
-  });
+  const { data: created, error } = await supabase
+    .from("membership_plans")
+    .insert({
+      ...rest,
+      creditos_incluidos: creditosIncluidos,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "membresia.plan.crear",
+    entidad: "membership_plans",
+    entidadId: created?.id ?? null,
+    detalle: { nombre: rest.nombre, precio: rest.precio },
+  });
 
   revalidatePath("/admin/coworking/membresias");
   return { success: true };
 }
 
 export async function updateMembershipPlanAction(formData: FormData): Promise<MembershipPlanFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseMembershipPlanFormData(formData);
   if (!parsed.success) {
@@ -85,6 +98,14 @@ export async function updateMembershipPlanAction(formData: FormData): Promise<Me
     return { error: error.message };
   }
 
+  await logAudit({
+    actorId: adminId,
+    accion: "membresia.plan.editar",
+    entidad: "membership_plans",
+    entidadId: id,
+    detalle: { nombre: rest.nombre, precio: rest.precio },
+  });
+
   revalidatePath("/admin/coworking/membresias");
   return { success: true };
 }
@@ -93,13 +114,20 @@ export async function toggleMembershipPlanActiveAction(
   planId: string,
   activo: boolean
 ): Promise<MembershipPlanFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const { error } = await supabase.from("membership_plans").update({ activo }).eq("id", planId);
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: activo ? "membresia.plan.activar" : "membresia.plan.desactivar",
+    entidad: "membership_plans",
+    entidadId: planId,
+  });
 
   revalidatePath("/admin/coworking/membresias");
   return { success: true };

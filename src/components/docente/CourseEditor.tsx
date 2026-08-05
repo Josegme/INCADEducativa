@@ -370,6 +370,11 @@ export function CourseEditor({
         </div>
 
         <div className="flex items-center gap-2">
+          <Link href={`/docente/cursos/${course.id}/alumnos`}>
+            <Button variant="outline" size="sm">
+              Alumnos
+            </Button>
+          </Link>
           <Link href={`/docente/cursos/${course.id}/anuncios`}>
             <Button variant="outline" size="sm">
               Anuncios

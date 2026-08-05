@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { tallerFormSchema, type TallerEstado } from "@/modules/talleres/talleres";
 
 async function requireAdmin() {
@@ -21,7 +22,7 @@ async function requireAdmin() {
     throw new Error("Solo el administrador puede gestionar talleres");
   }
 
-  return { supabase };
+  return { supabase, adminId: user.id };
 }
 
 export interface TallerFormState {
@@ -44,7 +45,7 @@ function parseTallerFormData(formData: FormData) {
 }
 
 export async function createTallerAction(formData: FormData): Promise<TallerFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseTallerFormData(formData);
   if (!parsed.success) {
@@ -54,26 +55,38 @@ export async function createTallerAction(formData: FormData): Promise<TallerForm
   const { titulo, descripcion, fecha, hora, duracionMinutos, linkVirtual, grabacionUrl, capacidad } = parsed.data;
   const fechaInicio = new Date(`${fecha}T${String(hora).padStart(2, "0")}:00:00`);
 
-  const { error } = await supabase.from("talleres").insert({
-    titulo,
-    descripcion: descripcion || null,
-    fecha_inicio: fechaInicio.toISOString(),
-    duracion_minutos: duracionMinutos,
-    link_virtual: linkVirtual || null,
-    grabacion_url: grabacionUrl || null,
-    capacidad: capacidad || null,
-  });
+  const { data: created, error } = await supabase
+    .from("talleres")
+    .insert({
+      titulo,
+      descripcion: descripcion || null,
+      fecha_inicio: fechaInicio.toISOString(),
+      duracion_minutos: duracionMinutos,
+      link_virtual: linkVirtual || null,
+      grabacion_url: grabacionUrl || null,
+      capacidad: capacidad || null,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "taller.crear",
+    entidad: "talleres",
+    entidadId: created?.id ?? null,
+    detalle: { titulo },
+  });
 
   revalidatePath("/admin/talleres");
   return { success: true };
 }
 
 export async function updateTallerAction(formData: FormData): Promise<TallerFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseTallerFormData(formData);
   if (!parsed.success) {
@@ -103,19 +116,35 @@ export async function updateTallerAction(formData: FormData): Promise<TallerForm
     return { error: error.message };
   }
 
+  await logAudit({
+    actorId: adminId,
+    accion: "taller.editar",
+    entidad: "talleres",
+    entidadId: id,
+    detalle: { titulo },
+  });
+
   revalidatePath("/admin/talleres");
   revalidatePath("/talleres");
   return { success: true };
 }
 
 export async function setTallerEstadoAction(tallerId: string, estado: TallerEstado): Promise<TallerFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const { error } = await supabase.from("talleres").update({ estado }).eq("id", tallerId);
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "taller.cambiar_estado",
+    entidad: "talleres",
+    entidadId: tallerId,
+    detalle: { estado },
+  });
 
   revalidatePath("/admin/talleres");
   revalidatePath("/talleres");

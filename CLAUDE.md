@@ -1,6 +1,6 @@
 # CLAUDE.md — INCADEducativa
 > Fuente de verdad para Cursor + Claude Code CLI. Leer antes de escribir cualquier línea de código.
-> Versión: 3.5 — excepción de auto-registro acotada a Coworking (regla #2, Sprint 13-14)
+> Versión: 3.6 — feature flags editables desde /admin (DB con fallback a env var, regla #6, Sprint deuda funcional E1/E2)
 
 ## Proyecto
 INCADEducativa — Plataforma Educativa Digital · incadeducativa.com
@@ -54,13 +54,18 @@ para la comunidad interna y externa de Posadas.
 | comunidad/foro          | FEATURE_COMUNIDAD   | E3    | false          |
 | publica/catalogo        | FEATURE_PUBLICA     | E3    | false          |
 
-## Feature flags (.env)
+## Feature flags (.env — valor por defecto / fallback)
 FEATURE_EDUCATIVA=true     # E1 — producto central
 FEATURE_COWORKING=false    # E2 — módulo de servicio
 FEATURE_TUTORIAS=false     # E2
 FEATURE_TALLERES=false     # E2
 FEATURE_COMUNIDAD=false    # E3
 FEATURE_PUBLICA=false      # E3
+
+> Estos valores son el fallback cuando no hay fila en `feature_flags` (DB).
+> Desde Sprint deuda funcional E1/E2, el Admin togglea coworking/tutorías/
+> talleres/comunidad/publica en runtime desde `/admin/configuracion` sin
+> tocar `.env` ni redeployar — ver regla #6.
 
 ## Roles: admin | docente | alumno | coordinador | comunidad | lead
 - admin: control total — usuarios, contenido, flags, reportes, curación
@@ -88,7 +93,11 @@ FEATURE_PUBLICA=false      # E3
    (causa recursión infinita)
 5. Verificación pública de certificados via RPC verify_certificate(uuid)
    — nunca SELECT directo (la página /verificar/[uuid] no tiene sesión)
-6. Feature flags via env vars — nunca hardcodear módulos desactivados
+6. Feature flags se resuelven desde la tabla `feature_flags` (Admin los
+   togglea en `/admin/configuracion`), con fallback a la env var `FEATURE_*`
+   cuando no hay fila para ese flag — nunca hardcodear un módulo desactivado
+   en el código. `educativa` (E1, producto central) no tiene UI de apagado.
+   Ver `src/lib/flags.ts` (`getFlags()`)
 7. Sistema de puntos es ledger APPEND-ONLY: nunca UPDATE ni DELETE en points_log
 8. Design System v2.1 obligatorio — solo tokens --edu-* e --inc-* documentados.
    Fuente: Inter (Google Fonts). Íconos: Lucide React exclusivamente.

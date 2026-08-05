@@ -3,13 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { buildCsv } from "@/modules/admin/bookings";
 
-interface RevenueExportButtonProps {
+interface CsvExportButtonProps {
   headers: string[];
   rows: (string | number)[][];
   filename: string;
 }
 
-export function RevenueExportButton({ headers, rows, filename }: RevenueExportButtonProps) {
+export function CsvExportButton({ headers, rows, filename }: CsvExportButtonProps) {
   function handleExport() {
     const csv = buildCsv(headers, rows);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

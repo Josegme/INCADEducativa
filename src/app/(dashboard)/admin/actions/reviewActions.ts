@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { notifyUsers } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -48,6 +49,13 @@ export async function approveCourseAction(courseId: string): Promise<ReviewActio
     return { error: error.message };
   }
 
+  await logAudit({
+    actorId: user.id,
+    accion: "curso.aprobar",
+    entidad: "courses",
+    entidadId: courseId,
+  });
+
   await notifyCourseReview(supabase, courseId, course, {
     tipo: "contenido_publicado",
     titulo: `Tu curso "${course?.titulo}" fue aprobado`,
@@ -81,6 +89,14 @@ export async function rejectCourseAction(courseId: string, comentario: string): 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: user.id,
+    accion: "curso.rechazar",
+    entidad: "courses",
+    entidadId: courseId,
+    detalle: { comentario: comentario.trim() },
+  });
 
   await notifyCourseReview(supabase, courseId, course, {
     tipo: "sistema",

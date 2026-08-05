@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { notifyUsers } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 import { tutoriaFormSchema } from "@/modules/tutorias/tutorias";
 
 export interface TutoriaActionState {
@@ -112,6 +113,14 @@ export async function createTutoriaAction(input: unknown): Promise<TutoriaAction
     return { error: tutoriaError?.message ?? "No se pudo crear la tutoría" };
   }
 
+  await logAudit({
+    actorId: user.id,
+    accion: "tutoria.crear",
+    entidad: "tutorias",
+    entidadId: tutoria.id,
+    detalle: { cursoId, modalidad },
+  });
+
   const { data: enrollments } = await supabase.from("enrollments").select("user_id").eq("course_id", cursoId);
   const userIds = (enrollments ?? []).map((e) => e.user_id as string);
 
@@ -164,6 +173,13 @@ export async function cancelTutoriaAction(tutoriaId: string, cursoId: string): P
   if (tutoria.booking_id) {
     await supabase.from("bookings").update({ estado: "cancelada" }).eq("id", tutoria.booking_id);
   }
+
+  await logAudit({
+    actorId: user.id,
+    accion: "tutoria.cancelar",
+    entidad: "tutorias",
+    entidadId: tutoriaId,
+  });
 
   const { data: enrollments } = await supabase.from("enrollments").select("user_id").eq("course_id", cursoId);
   const userIds = (enrollments ?? []).map((e) => e.user_id as string);

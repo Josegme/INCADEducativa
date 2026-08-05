@@ -4,14 +4,17 @@ import { PointsHistory } from "@/components/educativa/PointsHistory";
 import { MembershipStatus } from "@/components/coworking/MembershipStatus";
 import { RedeemPointsCard } from "@/components/coworking/RedeemPointsCard";
 import type { NotificationPrefs } from "@/app/(dashboard)/actions/notificationActions";
-import { flags } from "@/lib/flags";
+import { getFlags } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    {
+      data: { user },
+    },
+    flags,
+  ] = await Promise.all([supabase.auth.getUser(), getFlags()]);
 
   const { data: profile } = user
     ? await supabase

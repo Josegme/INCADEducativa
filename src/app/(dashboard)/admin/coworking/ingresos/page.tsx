@@ -1,5 +1,6 @@
 import { RevenueFilterBar } from "@/components/admin/RevenueFilterBar";
-import { RevenueExportButton } from "@/components/admin/RevenueExportButton";
+import { CsvExportButton } from "@/components/admin/CsvExportButton";
+import { PdfReportExportButton } from "@/components/admin/PdfReportExportButton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
 import { DISCOUNT_TYPE_LABEL, type RevenueRow } from "@/modules/admin/bookings";
@@ -69,11 +70,20 @@ export default async function AdminCoworkingIngresosPage({ searchParams }: PageP
             Panel financiero independiente del módulo educativo (`coworking_revenue`).
           </p>
         </div>
-        <RevenueExportButton
-          headers={["Período", "Sede", "Tipo", "Reservas pagadas", "Ingresos"]}
-          rows={csvRows}
-          filename={`coworking-ingresos-${mes ?? "todos"}.csv`}
-        />
+        <div className="flex items-center gap-2">
+          <CsvExportButton
+            headers={["Período", "Sede", "Tipo", "Reservas pagadas", "Ingresos"]}
+            rows={csvRows}
+            filename={`coworking-ingresos-${mes ?? "todos"}.csv`}
+          />
+          <PdfReportExportButton
+            title="Ingresos de Coworking"
+            subtitle={`Total: $${totalIngresos.toLocaleString("es-AR")} — ${totalReservas} reservas pagadas`}
+            headers={["Período", "Sede", "Tipo", "Reservas", "Ingresos"]}
+            rows={csvRows}
+            filename={`coworking-ingresos-${mes ?? "todos"}.pdf`}
+          />
+        </div>
       </div>
 
       <RevenueFilterBar locations={locationRows} mes={mes} />

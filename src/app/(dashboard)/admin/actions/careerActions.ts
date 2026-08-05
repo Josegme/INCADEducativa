@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { careerFormSchema } from "@/modules/admin/careers";
 
 async function requireAdmin() {
@@ -21,7 +22,7 @@ async function requireAdmin() {
     throw new Error("Solo el administrador puede gestionar carreras");
   }
 
-  return { supabase };
+  return { supabase, adminId: user.id };
 }
 
 export interface CareerFormState {
@@ -41,7 +42,7 @@ function parseCareerFormData(formData: FormData) {
 }
 
 export async function createCareerAction(formData: FormData): Promise<CareerFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseCareerFormData(formData);
   if (!parsed.success) {
@@ -50,24 +51,36 @@ export async function createCareerAction(formData: FormData): Promise<CareerForm
 
   const { nombre, slug, descripcion, imagenUrl, activa } = parsed.data;
 
-  const { error } = await supabase.from("careers").insert({
-    nombre,
-    slug,
-    descripcion: descripcion || null,
-    imagen_url: imagenUrl || null,
-    activa,
-  });
+  const { data: created, error } = await supabase
+    .from("careers")
+    .insert({
+      nombre,
+      slug,
+      descripcion: descripcion || null,
+      imagen_url: imagenUrl || null,
+      activa,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.code === "23505" ? "Ya existe una carrera con ese slug" : error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "carrera.crear",
+    entidad: "careers",
+    entidadId: created?.id ?? null,
+    detalle: { nombre, slug },
+  });
 
   revalidatePath("/admin/carreras");
   return { success: true };
 }
 
 export async function updateCareerAction(formData: FormData): Promise<CareerFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseCareerFormData(formData);
   if (!parsed.success) {
@@ -93,6 +106,14 @@ export async function updateCareerAction(formData: FormData): Promise<CareerForm
   if (error) {
     return { error: error.code === "23505" ? "Ya existe una carrera con ese slug" : error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "carrera.editar",
+    entidad: "careers",
+    entidadId: id,
+    detalle: { nombre, slug, activa },
+  });
 
   revalidatePath("/admin/carreras");
   return { success: true };

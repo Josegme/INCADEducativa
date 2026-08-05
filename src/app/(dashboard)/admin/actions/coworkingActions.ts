@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 import { locationFormSchema, spaceFormSchema } from "@/modules/admin/coworking";
 
 async function requireAdmin() {
@@ -21,7 +22,7 @@ async function requireAdmin() {
     throw new Error("Solo el administrador puede gestionar el Coworking");
   }
 
-  return { supabase };
+  return { supabase, adminId: user.id };
 }
 
 export interface CoworkingFormState {
@@ -39,25 +40,33 @@ function parseLocationFormData(formData: FormData) {
 }
 
 export async function createLocationAction(formData: FormData): Promise<CoworkingFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseLocationFormData(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
-  const { error } = await supabase.from("locations").insert(parsed.data);
+  const { data: created, error } = await supabase.from("locations").insert(parsed.data).select("id").single();
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "coworking.sede.crear",
+    entidad: "locations",
+    entidadId: created?.id ?? null,
+    detalle: { nombre: parsed.data.nombre },
+  });
 
   revalidatePath("/admin/coworking/sedes");
   return { success: true };
 }
 
 export async function updateLocationAction(formData: FormData): Promise<CoworkingFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseLocationFormData(formData);
   if (!parsed.success) {
@@ -75,18 +84,33 @@ export async function updateLocationAction(formData: FormData): Promise<Coworkin
     return { error: error.message };
   }
 
+  await logAudit({
+    actorId: adminId,
+    accion: "coworking.sede.editar",
+    entidad: "locations",
+    entidadId: id,
+    detalle: { nombre: rest.nombre },
+  });
+
   revalidatePath("/admin/coworking/sedes");
   return { success: true };
 }
 
 export async function toggleLocationActiveAction(locationId: string, activa: boolean): Promise<CoworkingFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const { error } = await supabase.from("locations").update({ activa }).eq("id", locationId);
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: activa ? "coworking.sede.activar" : "coworking.sede.desactivar",
+    entidad: "locations",
+    entidadId: locationId,
+  });
 
   revalidatePath("/admin/coworking/sedes");
   return { success: true };
@@ -107,7 +131,7 @@ function parseSpaceFormData(formData: FormData) {
 }
 
 export async function createSpaceAction(formData: FormData): Promise<CoworkingFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseSpaceFormData(formData);
   if (!parsed.success) {
@@ -116,24 +140,36 @@ export async function createSpaceAction(formData: FormData): Promise<CoworkingFo
 
   const { locationId, precioHora, descripcion, imagenUrl, ...rest } = parsed.data;
 
-  const { error } = await supabase.from("spaces").insert({
-    ...rest,
-    location_id: locationId,
-    precio_hora: precioHora,
-    descripcion: descripcion || null,
-    imagen_url: imagenUrl || null,
-  });
+  const { data: created, error } = await supabase
+    .from("spaces")
+    .insert({
+      ...rest,
+      location_id: locationId,
+      precio_hora: precioHora,
+      descripcion: descripcion || null,
+      imagen_url: imagenUrl || null,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "coworking.espacio.crear",
+    entidad: "spaces",
+    entidadId: created?.id ?? null,
+    detalle: { nombre: rest.nombre, locationId },
+  });
 
   revalidatePath("/admin/coworking/espacios");
   return { success: true };
 }
 
 export async function updateSpaceAction(formData: FormData): Promise<CoworkingFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const parsed = parseSpaceFormData(formData);
   if (!parsed.success) {
@@ -160,18 +196,33 @@ export async function updateSpaceAction(formData: FormData): Promise<CoworkingFo
     return { error: error.message };
   }
 
+  await logAudit({
+    actorId: adminId,
+    accion: "coworking.espacio.editar",
+    entidad: "spaces",
+    entidadId: id,
+    detalle: { nombre: rest.nombre, locationId },
+  });
+
   revalidatePath("/admin/coworking/espacios");
   return { success: true };
 }
 
 export async function toggleSpaceActiveAction(spaceId: string, activo: boolean): Promise<CoworkingFormState> {
-  const { supabase } = await requireAdmin();
+  const { supabase, adminId } = await requireAdmin();
 
   const { error } = await supabase.from("spaces").update({ activo }).eq("id", spaceId);
 
   if (error) {
     return { error: error.message };
   }
+
+  await logAudit({
+    actorId: adminId,
+    accion: activo ? "coworking.espacio.activar" : "coworking.espacio.desactivar",
+    entidad: "spaces",
+    entidadId: spaceId,
+  });
 
   revalidatePath("/admin/coworking/espacios");
   return { success: true };

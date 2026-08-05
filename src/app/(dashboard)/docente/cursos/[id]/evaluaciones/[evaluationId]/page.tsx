@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 
 import { EvaluationBuilder } from "@/components/docente/EvaluationBuilder";
 import { CorrectionPanel, type PendingAttempt } from "@/components/docente/CorrectionPanel";
-import { EvaluationResults, type ResultRow } from "@/components/docente/EvaluationResults";
+import { EvaluationResults, displayState, type ResultRow } from "@/components/docente/EvaluationResults";
+import { CsvExportButton } from "@/components/admin/CsvExportButton";
+import { ATTEMPT_STATE_LABEL } from "@/modules/educativa/evaluationAttempt";
 import type { EditableEvaluation } from "@/modules/docente/evaluationEditor";
 import { extractManualAnswers, gradeAttempt, type AttemptState, type Respuestas } from "@/modules/educativa/evaluationAttempt";
 import { TP_SUBMISSIONS_BUCKET } from "@/lib/supabase/storage";
@@ -121,7 +123,19 @@ export default async function EvaluationBuilderPage({
       </div>
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold text-white">Resultados</h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-white">Resultados</h2>
+          <CsvExportButton
+            headers={["Alumno", "Nota", "Estado", "Último intento"]}
+            rows={resultRows.map((r) => [
+              r.studentName,
+              r.nota ?? "—",
+              ATTEMPT_STATE_LABEL[displayState(r)],
+              new Date(r.createdAt).toLocaleDateString("es-AR"),
+            ])}
+            filename={`resultados-${evaluation.titulo}.csv`}
+          />
+        </div>
         <EvaluationResults rows={resultRows} />
       </div>
     </div>

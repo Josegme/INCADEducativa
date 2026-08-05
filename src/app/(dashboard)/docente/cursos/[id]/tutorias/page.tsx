@@ -4,11 +4,12 @@ import { ArrowLeft } from "lucide-react";
 
 import { TutoriaModal } from "@/components/docente/TutoriaModal";
 import { TutoriaList, type DocenteTutoriaRow } from "@/components/docente/TutoriaList";
-import { flags } from "@/lib/flags";
+import { getFlags } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DocenteTutoriasPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
+  const flags = await getFlags();
 
   const { data: course } = await supabase.from("courses").select("id, titulo").eq("id", params.id).single();
 

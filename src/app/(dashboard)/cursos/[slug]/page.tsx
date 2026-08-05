@@ -6,7 +6,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EnrollButton } from "@/components/educativa/EnrollButton";
 import { AnnouncementList } from "@/components/educativa/AnnouncementList";
 import { TutoriaAlumnoList, type AlumnoTutoriaRow } from "@/components/educativa/TutoriaAlumnoList";
-import { flags } from "@/lib/flags";
+import { getFlags } from "@/lib/flags";
 import { LEVEL_LABEL, type CourseLevel } from "@/modules/educativa/catalog";
 import type { LessonRow, ModuleWithLessons } from "@/modules/educativa/lessons";
 import type { AnnouncementRow } from "@/modules/comunicacion/types";
@@ -38,6 +38,7 @@ const EVALUATION_BADGE_STATE: Record<EvaluationDisplayState, BadgeProps["state"]
 
 export default async function CourseDetailPage({ params }: { params: { slug: string } }) {
   const supabase = await createClient();
+  const flags = await getFlags();
 
   const { data: course } = await supabase
     .from("courses")
