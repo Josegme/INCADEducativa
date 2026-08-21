@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/resend";
 
 export interface SubmitReviewState {
   error?: string;
@@ -19,7 +20,7 @@ export async function submitForReviewAction(courseId: string): Promise<SubmitRev
     return { error: "No autenticado" };
   }
 
-  const { data: course } = await supabase.from("courses").select("estado").eq("id", courseId).single();
+  const { data: course } = await supabase.from("courses").select("estado, titulo").eq("id", courseId).single();
 
   if (!course) {
     return { error: "El curso no existe" };
@@ -39,6 +40,20 @@ export async function submitForReviewAction(courseId: string): Promise<SubmitRev
 
   if (error) {
     return { error: error.message };
+  }
+
+  const { data: admins } = await supabase.rpc("notify_admins_course_submitted", { p_course_id: courseId });
+
+  if (admins) {
+    await Promise.allSettled(
+      admins.map((a: { admin_email: string }) =>
+        sendEmail({
+          to: a.admin_email,
+          subject: `Curso enviado a revisión: ${course.titulo}`,
+          html: `<p>El curso "${course.titulo}" fue enviado a revisión. Revisalo en /admin/cursos.</p>`,
+        })
+      )
+    );
   }
 
   revalidatePath(`/docente/cursos/${courseId}`);

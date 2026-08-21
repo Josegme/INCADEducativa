@@ -32,7 +32,7 @@
 - [ ] Informe tiempos ociosos lunes 09:00 AM → Email · admin · `E2`
 - [x] Inscripción a curso confirmada → Email · inmediato · `E1` — `notifyUsers()` en `enrollUserAction` (in-app + email al propio alumno, `tipo=sistema`), sin RLS nueva (el alumno se notifica a sí mismo, ya permitido por `notifications_own`)
 - [x] Recordatorio tutoría 24hs y 1hs → Email + in-app · alumno + docente · `E2` — `/api/cron/tutorias`, mismo patrón que `/api/cron/coworking`. WhatsApp diferido (ver Addendum 05 — `users` no tiene campo de teléfono de perfil todavía)
-- [ ] Contenido enviado a revisión → Email · al admin · `E1` — bloqueado por RLS actual: `notifications_own` (`user_id = auth.uid() OR is_admin()`) no permite que un docente inserte una notificación con `user_id` de un admin; requiere migración nueva (policy o RPC dedicada), fuera del alcance de esta pasada
+- [x] Contenido enviado a revisión → Email · al admin · `E1` — migración 025 (`notify_admins_course_submitted`, SECURITY DEFINER) inserta notificación in-app a todos los admins y devuelve sus emails; `submitForReviewAction` envía el email vía Resend. **Migración creada, no aplicada contra ninguna DB** (mismo criterio que la 024)
 - [x] Contenido aprobado o rechazado → Email · al docente · `E1`
 - [x] Anuncio del docente al grupo (`ANNOUNCEMENT`) → In-app (Realtime) + Email · alumnos inscriptos · `E1`
 - [ ] Comunicado institucional masivo del admin → In-app + Email · cursos/carreras seleccionados · `E1`
