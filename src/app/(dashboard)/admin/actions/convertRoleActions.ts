@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { convertRoleSchema } from "@/modules/admin/convertRole";
+import { notifyUsers } from "@/lib/notifications";
+import { convertRoleSchema, ROLE_LABEL } from "@/modules/admin/convertRole";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -64,6 +65,18 @@ export async function convertUserRoleAction(formData: FormData): Promise<Convert
     entidadId: userId,
     detalle: { newRole, carreraId: carreraId || null },
   });
+
+  const { data: targetUser } = await supabase.from("users").select("email").eq("id", userId).single();
+
+  if (targetUser?.email) {
+    await notifyUsers(supabase, {
+      tipo: "sistema",
+      titulo: `Tu cuenta ahora es ${ROLE_LABEL[newRole]}`,
+      cuerpo: "Un administrador actualizó tu rol en la plataforma.",
+      recipients: [{ userId, email: targetUser.email }],
+      emailSubject: "Tu cuenta fue actualizada",
+    });
+  }
 
   revalidatePath("/admin/usuarios");
   return { success: true };

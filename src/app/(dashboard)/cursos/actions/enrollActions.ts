@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { notifyUsers } from "@/lib/notifications";
 
 export interface EnrollState {
   error?: string;
@@ -22,7 +23,7 @@ export async function enrollUserAction(courseId: string, courseSlug: string): Pr
 
   const { data: course } = await supabase
     .from("courses")
-    .select("es_gratuito, carrera_id")
+    .select("es_gratuito, carrera_id, titulo")
     .eq("id", courseId)
     .single();
 
@@ -67,6 +68,17 @@ export async function enrollUserAction(courseId: string, courseSlug: string): Pr
 
   if (error) {
     return { error: error.code === "23505" ? "Ya estás inscripto en este curso" : error.message };
+  }
+
+  if (user.email) {
+    await notifyUsers(supabase, {
+      tipo: "sistema",
+      courseId,
+      titulo: `Inscripción confirmada: ${course.titulo}`,
+      cuerpo: "Ya podés empezar a cursar — accedé desde tu dashboard.",
+      recipients: [{ userId: user.id, email: user.email }],
+      emailSubject: `Inscripción confirmada: ${course.titulo}`,
+    });
   }
 
   revalidatePath(`/cursos/${courseSlug}`);

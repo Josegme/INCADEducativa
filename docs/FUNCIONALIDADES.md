@@ -30,14 +30,14 @@
 - [ ] Nueva reserva recibida → Email · al admin · `E2`
 - [ ] Resumen diario coworking 08:00 AM → Email · admin · `E2`
 - [ ] Informe tiempos ociosos lunes 09:00 AM → Email · admin · `E2`
-- [ ] Inscripción a curso confirmada → Email · inmediato · `E1`
+- [x] Inscripción a curso confirmada → Email · inmediato · `E1` — `notifyUsers()` en `enrollUserAction` (in-app + email al propio alumno, `tipo=sistema`), sin RLS nueva (el alumno se notifica a sí mismo, ya permitido por `notifications_own`)
 - [x] Recordatorio tutoría 24hs y 1hs → Email + in-app · alumno + docente · `E2` — `/api/cron/tutorias`, mismo patrón que `/api/cron/coworking`. WhatsApp diferido (ver Addendum 05 — `users` no tiene campo de teléfono de perfil todavía)
-- [ ] Contenido enviado a revisión → Email · al admin · `E1`
+- [ ] Contenido enviado a revisión → Email · al admin · `E1` — bloqueado por RLS actual: `notifications_own` (`user_id = auth.uid() OR is_admin()`) no permite que un docente inserte una notificación con `user_id` de un admin; requiere migración nueva (policy o RPC dedicada), fuera del alcance de esta pasada
 - [x] Contenido aprobado o rechazado → Email · al docente · `E1`
 - [x] Anuncio del docente al grupo (`ANNOUNCEMENT`) → In-app (Realtime) + Email · alumnos inscriptos · `E1`
 - [ ] Comunicado institucional masivo del admin → In-app + Email · cursos/carreras seleccionados · `E1`
 - [ ] TP o pregunta abierta corregida → In-app + Email · al alumno · `E1`
-- [ ] Cambio de rol / conversión de cuenta → In-app + Email · al usuario convertido · `E1`
+- [x] Cambio de rol / conversión de cuenta → In-app + Email · al usuario convertido · `E1` — `notifyUsers()` en `convertUserRoleAction`, el admin ya tiene `is_admin()` para notificar a cualquier `user_id`
 - [ ] Secuencia de nurturing post-taller gratuito días 1, 3 y 7 → Email · lead · `E3`
 
 ### 1.4 Fundación Visual — Design System v2.0 · `E1`
