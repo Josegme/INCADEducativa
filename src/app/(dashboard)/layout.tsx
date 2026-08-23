@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Presentation,
   Settings,
+  UserCircle,
   Users,
   Video,
   Wallet,
@@ -23,6 +24,7 @@ import type { SidebarSection } from "@/components/layout/Sidebar";
 import type { TopbarRole } from "@/components/layout/Topbar";
 import { getFlags, type FeatureFlag } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
+import { getSignedAvatarUrl } from "@/lib/supabase/storage";
 
 const ICON_CLASS = "h-[18px] w-[18px]";
 
@@ -97,6 +99,11 @@ function sectionsForRole(
     sections.push({ label: "Administración", items: adminItems });
   }
 
+  sections.push({
+    label: "Cuenta",
+    items: [{ label: "Perfil", href: "/perfil", icon: <UserCircle className={ICON_CLASS} aria-hidden /> }],
+  });
+
   return sections;
 }
 
@@ -122,16 +129,18 @@ export default async function DashboardGroupLayout({
   }
 
   const [{ data: profile }, flags] = await Promise.all([
-    supabase.from("users").select("nombre, apellido, role, can_teach").eq("id", user.id).single(),
+    supabase.from("users").select("nombre, apellido, role, can_teach, avatar_url").eq("id", user.id).single(),
     getFlags(),
   ]);
 
   const role = (profile?.role ?? "alumno") as TopbarRole;
+  const avatarUrl = profile?.avatar_url ? await getSignedAvatarUrl(supabase, profile.avatar_url) : null;
 
   return (
     <DashboardLayout
       sidebarSections={sectionsForRole(role, profile?.can_teach ?? false, flags)}
       userInitials={initialsFor(profile?.nombre, profile?.apellido, user.email)}
+      avatarUrl={avatarUrl}
       role={role}
       userId={user.id}
     >

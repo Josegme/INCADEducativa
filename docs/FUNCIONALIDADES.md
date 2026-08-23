@@ -17,7 +17,7 @@
 - [ ] Un solo perfil unificado para coworking + educativa — sin cambios, el módulo coworking todavía no existe (Etapa 2)
 - [x] Asignación de rol al momento de creación de cuenta — la importación CSV asigna `role='alumno'` al crear el perfil; roles distintos se asignan después vía conversión de rol (Admin)
 - [x] Logout con limpieza de sesión — verificado en navegador
-- [ ] Perfil de usuario: nombre, foto, carrera/área, historial
+- [x] Perfil de usuario: nombre, foto, carrera/área, historial — página `/perfil`: avatar subido a bucket privado (`avatars`, RLS dueño+admin), nombre/apellido/carrera de solo lectura (la carrera la asigna el Admin, regla #12), historial de puntos (últimos 8 movimientos del ledger) y resumen de cursos inscriptos/certificados obtenidos. Verificado con script funcional autenticado (login real, upload, RLS cruzada bloqueada) — sin verificación visual en navegador (extensión sin conectar esta sesión)
 
 ### 1.2 Notificaciones Automáticas
 
