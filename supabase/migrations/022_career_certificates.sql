@@ -8,13 +8,18 @@
 --
 -- Depende de: 001_educativa_core.sql (certificate_status, careers, users).
 -- Ejecutar en: Supabase Dashboard > SQL Editor
+--
+-- uuid_generate_v4() calificado como extensions.uuid_generate_v4(): el
+-- runner de `supabase db push` no incluye el schema `extensions` en el
+-- search_path de la sesión (a diferencia del SQL Editor del Dashboard),
+-- así que la llamada sin calificar falla con "function does not exist".
 -- ============================================================
 
 create table public.career_certificates (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default extensions.uuid_generate_v4(),
   user_id           uuid not null references public.users(id) on delete cascade,
   carrera_id        uuid not null references public.careers(id) on delete cascade,
-  uuid_verificacion uuid not null unique default uuid_generate_v4(),
+  uuid_verificacion uuid not null unique default extensions.uuid_generate_v4(),
   pdf_url           text,
   estado            certificate_status not null default 'emitido',
   emitido_at        timestamptz not null default now(),

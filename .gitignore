@@ -17,3 +17,6 @@ test-results/
 
 # Cursor local config (IDE-local, no versionar)
 .cursor/
+
+# Supabase CLI local cache (link state, no versionar)
+supabase/.temp/
