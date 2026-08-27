@@ -49,7 +49,7 @@ export default async function StudentEvaluationPage({
   // la inscripción server-side.
   const { data: evaluationRow } = await supabase
     .rpc("get_evaluation_for_attempt", { p_evaluation_id: params.evaluationId })
-    .single();
+    .single<EditableEvaluation>();
 
   if (!evaluationRow || evaluationRow.course_id !== course.id) {
     notFound();
