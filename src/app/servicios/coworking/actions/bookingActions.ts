@@ -127,7 +127,7 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     const fechaFinCredito = new Date(fechaInicioCredito.getTime() + duracionHoras * 60 * 60 * 1000);
     const montoReferencia = Math.round(space.precio_hora * duracionHoras * 100) / 100;
 
-    const { data: booking, error: bookingError } = await supabase
+    const { data: booking, error: bookingError } = await admin
       .from("bookings")
       .insert({
         user_id: user.id,

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { gradeAttempt, type Respuestas } from "@/modules/educativa/evaluationAttempt";
 import { checkAndIssueCertificate } from "@/lib/certificates";
@@ -15,6 +16,7 @@ export interface AttemptActionState {
 
 export async function startAttemptAction(evaluationId: string): Promise<AttemptActionState> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -23,7 +25,10 @@ export async function startAttemptAction(evaluationId: string): Promise<AttemptA
     return { error: "No autenticado" };
   }
 
-  const { data: evaluation } = await supabase
+  // `evaluations_select` (024) ya no deja leer la tabla cruda al alumno —
+  // acá solo se necesita `config` (nunca se manda al cliente), así que
+  // el service_role es seguro.
+  const { data: evaluation } = await admin
     .from("evaluations")
     .select("id, config")
     .eq("id", evaluationId)
@@ -94,6 +99,7 @@ export async function startAttemptAction(evaluationId: string): Promise<AttemptA
 
 export async function submitAttemptAction(attemptId: string, respuestas: Respuestas): Promise<AttemptActionState> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -102,17 +108,26 @@ export async function submitAttemptAction(attemptId: string, respuestas: Respues
     return { error: "No autenticado" };
   }
 
+  // Filtrar por user_id + estado 'en_curso' evita dos abusos: que alguien
+  // reenvíe el mismo attemptId de otro usuario, y que un mismo intento ya
+  // corregido/aprobado se vuelva a enviar (cada envío otorgaba puntos de
+  // nuevo).
   const { data: attempt } = await supabase
     .from("evaluation_attempts")
     .select("id, evaluation_id")
     .eq("id", attemptId)
+    .eq("user_id", user.id)
+    .eq("estado", "en_curso")
     .single();
 
   if (!attempt) {
-    return { error: "El intento no existe" };
+    return { error: "El intento no existe o ya fue enviado" };
   }
 
-  const { data: evaluation } = await supabase
+  // `evaluations_select` (024) no deja leer `preguntas` (con la clave de
+  // respuestas) al alumno — la corrección corre server-side con service_role
+  // y solo el resultado (nota/aprobado/estado) sale de acá.
+  const { data: evaluation } = await admin
     .from("evaluations")
     .select("preguntas, nota_minima, course_id")
     .eq("id", attempt.evaluation_id)
@@ -126,7 +141,11 @@ export async function submitAttemptAction(attemptId: string, respuestas: Respues
 
   const willBeApproved = !grading.needsManualReview && grading.scoreAuto >= evaluation.nota_minima;
 
-  const { error } = await supabase
+  // El UPDATE también corre con service_role — el alumno ya no tiene
+  // permiso de RLS para escribir nota/aprobado/estado directo (024). El
+  // `.eq("estado", "en_curso")` de nuevo acá cierra la carrera entre dos
+  // envíos concurrentes del mismo intento: solo uno afecta una fila.
+  const { data: updated, error } = await admin
     .from("evaluation_attempts")
     .update({
       respuestas,
@@ -135,15 +154,23 @@ export async function submitAttemptAction(attemptId: string, respuestas: Respues
       aprobado: grading.needsManualReview ? null : willBeApproved,
       estado: grading.needsManualReview ? "pendiente_correccion" : willBeApproved ? "aprobada" : "desaprobada",
     })
-    .eq("id", attemptId);
+    .eq("id", attemptId)
+    .eq("user_id", user.id)
+    .eq("estado", "en_curso")
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     return { error: error.message };
   }
 
+  if (!updated) {
+    return { error: "El intento no existe o ya fue enviado" };
+  }
+
   if (willBeApproved) {
     await awardPoints(user.id, 25, "evaluacion_aprobada", attempt.evaluation_id);
-    await checkAndIssueCertificate(supabase, user.id, evaluation.course_id);
+    await checkAndIssueCertificate(admin, user.id, evaluation.course_id);
   }
 
   revalidatePath(`/cursos`, "layout");

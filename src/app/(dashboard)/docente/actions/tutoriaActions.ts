@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { notifyUsers } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
@@ -36,6 +37,7 @@ export async function createTutoriaAction(input: unknown): Promise<TutoriaAction
   }
 
   const supabase = await createClient();
+  const admin = createAdminClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -65,7 +67,11 @@ export async function createTutoriaAction(input: unknown): Promise<TutoriaAction
       return { error: "Ese aula ya no está disponible" };
     }
 
-    const { data: booking, error: bookingError } = await supabase
+    // bookings_insert (RLS) solo deja crear la propia reserva en estado
+    // 'pendiente' — esta reserva nace 'confirmada' (bloqueo de aula, sin
+    // pago), así que corre con el cliente service_role. La autorización
+    // real de esta acción sigue siendo can_teach_course() sobre `tutorias`.
+    const { data: booking, error: bookingError } = await admin
       .from("bookings")
       .insert({
         user_id: user.id,
