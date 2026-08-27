@@ -43,14 +43,15 @@ export default async function StudentEvaluationPage({
     redirect(`/cursos/${course.slug}`);
   }
 
+  // La tabla `evaluations` ya no es legible directo por el alumno (RLS
+  // regla #024 — el jsonb `preguntas` trae la clave de respuestas). Esta
+  // función devuelve las preguntas despojadas de esos campos, validando
+  // la inscripción server-side.
   const { data: evaluationRow } = await supabase
-    .from("evaluations")
-    .select("id, titulo, tipo, course_id, module_id, preguntas, nota_minima, config")
-    .eq("id", params.evaluationId)
-    .eq("course_id", course.id)
-    .single();
+    .rpc("get_evaluation_for_attempt", { p_evaluation_id: params.evaluationId })
+    .single<EditableEvaluation>();
 
-  if (!evaluationRow) {
+  if (!evaluationRow || evaluationRow.course_id !== course.id) {
     notFound();
   }
 

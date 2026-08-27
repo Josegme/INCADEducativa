@@ -1,5 +1,6 @@
 "use server";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { awardPoints } from "@/lib/points";
 import { checkAndIssueCertificate } from "@/lib/certificates";
@@ -52,7 +53,11 @@ export async function saveLessonProgressAction(
     const { data: lesson } = await supabase.from("lessons").select("module_id, modules(course_id)").eq("id", lessonId).single();
     const courseId = (lesson?.modules as unknown as { course_id: string } | null)?.course_id;
     if (courseId) {
-      await checkAndIssueCertificate(supabase, user.id, courseId);
+      // checkAndIssueCertificate necesita leer `evaluations` de TODO el
+      // curso para saber si quedan exámenes pendientes — desde que
+      // `evaluations_select` (024) restringe la tabla a admin/docente, la
+      // sesión del alumno vería la lista vacía y saltearía ese chequeo.
+      await checkAndIssueCertificate(createAdminClient(), user.id, courseId);
     }
   }
 

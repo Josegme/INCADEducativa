@@ -20,7 +20,7 @@ export const ATTEMPT_STATE_LABEL: Record<AttemptState, string> = {
 };
 
 export interface AnswerVF {
-  respuesta: boolean;
+  respuesta: boolean | null;
   fundamentacion: string;
 }
 
@@ -48,7 +48,9 @@ export type Respuestas = Record<string, AnswerValue>;
 export function createEmptyAnswer(question: EvaluationQuestion): AnswerValue {
   switch (question.tipo) {
     case "vf_fundamentada":
-      return { respuesta: true, fundamentacion: "" };
+      // null = todavía sin responder — antes arrancaba en `true`, lo que
+      // puntuaba la mitad del peso a preguntas que el alumno nunca leyó.
+      return { respuesta: null, fundamentacion: "" };
     case "opcion_unica":
       return { seleccionada: null };
     case "opcion_multiple":
@@ -94,8 +96,12 @@ export function gradeAttempt(preguntas: EvaluationQuestion[], respuestas: Respue
           seleccionadas.length === correctas.length && seleccionadas.every((v) => correctas.includes(v));
         if (iguales) scoreAuto += question.peso;
       } else if (correctas.length > 0) {
+        // Resta las incorrectas marcadas — si no, tildar todas las opciones
+        // siempre daba el peso completo (acertadas / correctas.length = 1).
         const acertadas = seleccionadas.filter((v) => correctas.includes(v)).length;
-        scoreAuto += question.peso * (acertadas / correctas.length);
+        const incorrectas = seleccionadas.filter((v) => !correctas.includes(v)).length;
+        const fraccion = Math.max(0, (acertadas - incorrectas) / correctas.length);
+        scoreAuto += question.peso * fraccion;
       }
       continue;
     }
