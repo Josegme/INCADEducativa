@@ -1728,4 +1728,32 @@ la 001 con columna `user_id` y RLS admin-only. Ver §61, corregido.
 
 ---
 
+## 64. Materiales adjuntos por clase — LessonAttachmentsManager / LessonAttachments
+
+Deuda funcional E1 (§3.4/§8.1): adjuntos *extra* por clase (ej. una guía de
+ejercicios sobre una clase de video), separados del contenido principal
+(`lessons.contenido_url`). Tabla propia `lesson_attachments` (migración 027)
+— reusa el bucket `contenido-cursos` existente, ruta
+`{course_id}/adjuntos/{lesson_id}/{archivo}`. RLS con `can_teach_course()`
+(004) para cubrir también el rol dual, mismo patrón que `lessons_write`.
+
+```
+LessonAttachmentsManager ("use client", src/components/docente/)
+├── Dentro de LessonModal (§?), solo visible al editar una clase existente
+│   (necesita lesson.id — en "Nueva clase" hay que guardar primero)
+├── Mismo patrón de subida que LessonUploader (§28): cliente de browser,
+│   sin progress bar (archivos de adjunto suelen ser chicos)
+└── Lista con borrar (Trash2) — addLessonAttachmentAction /
+    deleteLessonAttachmentAction (docente/actions/lessonAttachmentActions.ts)
+
+LessonAttachments (server, src/components/educativa/)
+├── En la página de clase del alumno, debajo de LessonPlayer/ContentViewer,
+│   sin importar el tipo de la clase
+└── Lista de links de descarga con URL firmada (getSignedLessonContentUrl,
+    mismo helper que el contenido principal) — no se renderiza si no hay
+    adjuntos
+```
+
+---
+
 *INCADEducativa · Design System v2.1 — COMPONENTS v1.9 · Agosto 2026*

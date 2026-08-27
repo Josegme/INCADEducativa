@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { NotificationBanner } from "@/components/ui/notification-banner";
-import { enrollUserAction } from "@/app/(dashboard)/cursos/actions/enrollActions";
+import { enrollUserAction } from "@/app/(dashboard)/(protected)/cursos/actions/enrollActions";
 
 interface EnrollButtonProps {
   courseId: string;

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import type { TallerEstado } from "@/modules/talleres/talleres";
-import { setTallerEstadoAction } from "@/app/(dashboard)/admin/actions/tallerActions";
+import { setTallerEstadoAction } from "@/app/(dashboard)/(protected)/admin/actions/tallerActions";
 
 interface TallerPublishToggleProps {
   tallerId: string;

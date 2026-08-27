@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import type { CourseStatusValue } from "@/modules/admin/courses";
-import { setCourseEstadoAction } from "@/app/(dashboard)/admin/actions/courseActions";
+import { setCourseEstadoAction } from "@/app/(dashboard)/(protected)/admin/actions/courseActions";
 
 interface PublishToggleProps {
   courseId: string;

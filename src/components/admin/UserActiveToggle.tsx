@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { setUserActivoAction } from "@/app/(dashboard)/admin/actions/userActions";
+import { setUserActivoAction } from "@/app/(dashboard)/(protected)/admin/actions/userActions";
 
 export function UserActiveToggle({ userId, activo }: { userId: string; activo: boolean }) {
   const router = useRouter();

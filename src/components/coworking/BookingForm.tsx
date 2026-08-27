@@ -38,6 +38,7 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [telefonoContacto, setTelefonoContacto] = React.useState("");
+  const [cuponCodigo, setCuponCodigo] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -130,6 +131,7 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
     formData.set("duracionHoras", String(duracionHoras));
     if (pagarConCredito) formData.set("pagarConCredito", "true");
     if (telefonoContacto) formData.set("telefonoContacto", telefonoContacto);
+    if (cuponCodigo) formData.set("cuponCodigo", cuponCodigo);
     if (!isLoggedIn) {
       formData.set("nombre", nombre);
       formData.set("email", email);
@@ -273,6 +275,20 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
             minLength={8}
           />
         </fieldset>
+      ) : null}
+
+      {!pagarConCredito ? (
+        <div>
+          <label htmlFor="cuponCodigo" className="mb-1 block text-[13px] font-medium text-[--edu-text-muted]">
+            Código de descuento (opcional)
+          </label>
+          <Input
+            id="cuponCodigo"
+            value={cuponCodigo}
+            onChange={(e) => setCuponCodigo(e.target.value.toUpperCase())}
+            placeholder="EARLYBIRD25"
+          />
+        </div>
       ) : null}
 
       <div>

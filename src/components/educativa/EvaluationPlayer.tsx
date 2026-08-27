@@ -17,7 +17,7 @@ import {
   type AttemptRow,
   type Respuestas,
 } from "@/modules/educativa/evaluationAttempt";
-import { submitAttemptAction } from "@/app/(dashboard)/cursos/actions/evaluationAttemptActions";
+import { submitAttemptAction } from "@/app/(dashboard)/(protected)/cursos/actions/evaluationAttemptActions";
 
 function useCountdown(deadline: number | null, onExpire: () => void) {
   const [remainingMs, setRemainingMs] = React.useState(deadline ? deadline - Date.now() : null);

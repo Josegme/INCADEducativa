@@ -17,7 +17,7 @@ import {
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import { slugify } from "@/lib/slugify";
 import { COURSE_LEVELS, COURSE_LEVEL_LABEL, type CourseLevelValue, type CourseRow } from "@/modules/admin/courses";
-import { createCourseAction, updateCourseAction } from "@/app/(dashboard)/admin/actions/courseActions";
+import { createCourseAction, updateCourseAction } from "@/app/(dashboard)/(protected)/admin/actions/courseActions";
 
 const SELECT_CLASS =
   "flex h-10 w-full rounded-md border-[0.5px] border-[--edu-border] bg-white/[0.06] px-3 py-2 text-sm text-[--edu-text] transition-colors focus-visible:border-[--edu-border-strong] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--inc-violet-border-strong]";

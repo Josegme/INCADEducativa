@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { regenerateCertificateAction } from "@/app/(dashboard)/admin/actions/certificateActions";
+import { regenerateCertificateAction } from "@/app/(dashboard)/(protected)/admin/actions/certificateActions";
 
 export function RegenerateCertificateButton({ certificateId }: { certificateId: string }) {
   const router = useRouter();

@@ -95,10 +95,107 @@ export async function POST(request: NextRequest) {
     noShowsNotified++;
   }
 
+  // Resumen diario 08:00 + informe de ociosos lunes 09:00 — el cron corre
+  // cada ~10 min (pg_net, migración 016), no hay una fila por evento para
+  // dedupear como arriba, así que alcanza con un gate de hora+minuto: a esa
+  // cadencia el rango "primeros 10 min de la hora" dispara una sola vez por
+  // día en la práctica.
+  const nowInBA = new Date(now.toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" }));
+  const hour = nowInBA.getHours();
+  const minute = nowInBA.getMinutes();
+  const weekday = nowInBA.getDay(); // 0=domingo, 1=lunes
+
+  let dailySummarySent = false;
+  let idleReportSent = false;
+
+  if (hour === 8 && minute < 10) {
+    dailySummarySent = await sendDailySummary(admin, now);
+  }
+
+  if (weekday === 1 && hour === 9 && minute < 10) {
+    idleReportSent = await sendIdleSpacesReport(admin, now);
+  }
+
   return NextResponse.json({
     noShowsDetected: (noShowCount as number) ?? 0,
     bookingsCompleted: (completedCount as number) ?? 0,
     remindersSent,
     noShowsNotified,
+    dailySummarySent,
+    idleReportSent,
   });
+}
+
+async function notifyAdmins(admin: ReturnType<typeof createAdminClient>, titulo: string, cuerpo: string) {
+  const { data: admins } = await admin.from("users").select("id, email").eq("role", "admin");
+  if (!admins || admins.length === 0) return false;
+
+  await notifyUsers(admin, {
+    tipo: "sistema",
+    titulo,
+    cuerpo,
+    recipients: admins.map((a) => ({ userId: a.id as string, email: a.email as string })),
+    emailSubject: titulo,
+  });
+  return true;
+}
+
+async function sendDailySummary(admin: ReturnType<typeof createAdminClient>, now: Date) {
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart.getTime() + 86400000);
+
+  const { data: bookings } = await admin
+    .from("bookings")
+    .select("estado, monto")
+    .gte("fecha_inicio", dayStart.toISOString())
+    .lt("fecha_inicio", dayEnd.toISOString());
+
+  const rows = bookings ?? [];
+  const total = rows.length;
+  const confirmadas = rows.filter((b) => b.estado === "confirmada" || b.estado === "en_uso" || b.estado === "completada").length;
+  const canceladas = rows.filter((b) => b.estado === "cancelada").length;
+  const ingresos = rows
+    .filter((b) => b.estado !== "cancelada" && b.estado !== "pendiente")
+    .reduce((sum, b) => sum + (b.monto as number), 0);
+
+  return notifyAdmins(
+    admin,
+    `Resumen diario Coworking — ${dayStart.toLocaleDateString("es-AR")}`,
+    `Reservas de hoy: ${total} (${confirmadas} confirmadas, ${canceladas} canceladas). Ingresos: $${ingresos}.`
+  );
+}
+
+async function sendIdleSpacesReport(admin: ReturnType<typeof createAdminClient>, now: Date) {
+  const weekAgo = new Date(now.getTime() - 7 * 86400000);
+
+  const [{ data: spaces }, { data: bookings }] = await Promise.all([
+    admin.from("spaces").select("id, nombre").eq("activo", true),
+    admin
+      .from("bookings")
+      .select("space_id, fecha_inicio, fecha_fin")
+      .in("estado", ["confirmada", "en_uso", "completada"])
+      .gte("fecha_inicio", weekAgo.toISOString()),
+  ]);
+
+  const spaceRows = spaces ?? [];
+  if (spaceRows.length === 0) return false;
+
+  const hoursBySpace = new Map<string, number>();
+  for (const b of bookings ?? []) {
+    const hours = (new Date(b.fecha_fin).getTime() - new Date(b.fecha_inicio).getTime()) / (1000 * 60 * 60);
+    hoursBySpace.set(b.space_id, (hoursBySpace.get(b.space_id) ?? 0) + hours);
+  }
+
+  const availableHoursPerWeek = 14 * 7; // 08:00-22:00, mismo horario comercial que BOOKING_OPEN/CLOSE_HOUR
+  const ranked = spaceRows
+    .map((s) => {
+      const booked = hoursBySpace.get(s.id) ?? 0;
+      return { nombre: s.nombre as string, ocupacionPct: Math.round((booked / availableHoursPerWeek) * 100) };
+    })
+    .sort((a, b) => a.ocupacionPct - b.ocupacionPct);
+
+  const cuerpo = ranked.map((r) => `${r.nombre}: ${r.ocupacionPct}% de ocupación`).join(" · ");
+
+  return notifyAdmins(admin, "Informe semanal de espacios ociosos — Coworking", cuerpo);
 }

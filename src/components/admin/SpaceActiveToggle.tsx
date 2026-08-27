@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { toggleSpaceActiveAction } from "@/app/(dashboard)/admin/actions/coworkingActions";
+import { toggleSpaceActiveAction } from "@/app/(dashboard)/(protected)/admin/actions/coworkingActions";
 
 export function SpaceActiveToggle({ spaceId, activo }: { spaceId: string; activo: boolean }) {
   const router = useRouter();

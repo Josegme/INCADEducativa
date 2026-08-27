@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { toggleMembershipPlanActiveAction } from "@/app/(dashboard)/admin/actions/membershipPlanActions";
+import { toggleMembershipPlanActiveAction } from "@/app/(dashboard)/(protected)/admin/actions/membershipPlanActions";
 
 export function MembershipPlanActiveToggle({ planId, activo }: { planId: string; activo: boolean }) {
   const router = useRouter();

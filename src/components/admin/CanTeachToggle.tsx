@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { setCanTeachAction } from "@/app/(dashboard)/admin/actions/convertRoleActions";
+import { setCanTeachAction } from "@/app/(dashboard)/(protected)/admin/actions/convertRoleActions";
 
 interface CanTeachToggleProps {
   userId: string;

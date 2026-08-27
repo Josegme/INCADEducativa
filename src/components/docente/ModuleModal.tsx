@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import type { EditableModule } from "@/modules/docente/courseEditor";
-import { createModuleAction, updateModuleAction } from "@/app/(dashboard)/docente/actions/moduleActions";
+import { createModuleAction, updateModuleAction } from "@/app/(dashboard)/(protected)/docente/actions/moduleActions";
 
 interface ModuleModalProps {
   courseId: string;

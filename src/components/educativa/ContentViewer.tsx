@@ -6,7 +6,7 @@ import { Download } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { saveLessonProgressAction } from "@/app/(dashboard)/cursos/actions/lessonProgressActions";
+import { saveLessonProgressAction } from "@/app/(dashboard)/(protected)/cursos/actions/lessonProgressActions";
 import type { LessonType } from "@/modules/educativa/lessons";
 
 interface ContentViewerProps {

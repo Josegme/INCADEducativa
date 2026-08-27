@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { toggleLocationActiveAction } from "@/app/(dashboard)/admin/actions/coworkingActions";
+import { toggleLocationActiveAction } from "@/app/(dashboard)/(protected)/admin/actions/coworkingActions";
 
 export function LocationActiveToggle({ locationId, activa }: { locationId: string; activa: boolean }) {
   const router = useRouter();

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPayment } from "@/lib/mercadopago/payment";
 import { getSubscription } from "@/lib/mercadopago/subscription";
 import { verifyMercadoPagoSignature } from "@/lib/mercadopago/verifySignature";
+import { notifyUsers } from "@/lib/notifications";
 import { sendEmail } from "@/lib/resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsapp } from "@/lib/twilio";
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
       .update({ estado: "confirmada" })
       .eq("id", bookingId)
       .eq("estado", "pendiente")
-      .select("id, user_id, space_id, fecha_inicio, telefono_contacto")
+      .select("id, user_id, space_id, fecha_inicio, telefono_contacto, monto")
       .maybeSingle();
 
     if (booking) {
@@ -81,6 +82,24 @@ export async function POST(request: NextRequest) {
           to: profile.email,
           subject: "Reserva confirmada — Coworking INCADE",
           html: `<p>Hola ${profile.nombre ?? ""},</p><p>Tu reserva de <strong>${espacioNombre}</strong> para el ${fecha} quedó confirmada. Podés ver el QR de acceso en tu reserva.</p>`,
+        });
+
+        // Comprobante de pago — distinto del email de confirmación de
+        // arriba: es el registro del pago en sí (monto, referencia MP),
+        // no solo el aviso de que la reserva quedó confirmada.
+        await notifyUsers(admin, {
+          tipo: "pago",
+          referenciaId: booking.id,
+          titulo: `Comprobante de pago — ${espacioNombre}`,
+          cuerpo: `Pagaste $${booking.monto} por tu reserva de ${espacioNombre} del ${fecha}.`,
+          recipients: [
+            {
+              userId: booking.user_id,
+              email: profile.email as string,
+              emailHtml: `<p>Hola ${profile.nombre ?? ""},</p><p>Este es tu comprobante de pago.</p><ul><li>Espacio: ${espacioNombre}</li><li>Fecha: ${fecha}</li><li>Monto: $${booking.monto}</li><li>Referencia de pago (MercadoPago): ${payment.id}</li></ul>`,
+            },
+          ],
+          emailSubject: "Comprobante de pago — Coworking INCADE",
         });
       }
 

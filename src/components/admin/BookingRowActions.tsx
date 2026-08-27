@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import type { BookingStatus } from "@/modules/coworking/booking";
-import { cancelBookingAction, checkInBookingAction } from "@/app/(dashboard)/admin/actions/bookingAdminActions";
+import { cancelBookingAction, checkInBookingAction } from "@/app/(dashboard)/(protected)/admin/actions/bookingAdminActions";
 
 interface BookingRowActionsProps {
   bookingId: string;
