@@ -24,15 +24,21 @@ REGLAS DE EJECUCIÓN (no negociables):
    DONE. Si falla, diagnosticá y arreglá en el mismo ciclo (máx 3 intentos);
    si no se resuelve, marcá BLOCKED y explicá por qué.
 
-## ESTADO REAL VERIFICADO — 2026-08-29 13:25 UTC (via /recap + /poner-a-punto)
+## ESTADO REAL VERIFICADO — 2026-09-01 05:22 UTC (via /recap + /poner-a-punto)
 
 Esta cola quedó redactada cuando la última migración era 024. Hoy (rama
-`fix/db-search-path-024`, HEAD `4c1b241`, pusheado y en sync con origin)
-hay 31 migraciones y trabajo importante fuera de esta cola (4 agujeros de
+`fix/db-search-path-024`, HEAD `f9f10d5`, pusheado y en sync con origin)
+hay 34 migraciones y trabajo importante fuera de esta cola (4 agujeros de
 RLS cerrados, reestructura de `(protected)/`, motor de evaluaciones,
-página de perfil, notificaciones). Los 4 gates (tsc/lint/test:unit +
-gradeAttempt) están verdes sobre ese HEAD. Detalle tarea por tarea abajo,
-sin borrar nada de lo original.
+página de perfil, notificaciones, y ahora los 10 hallazgos de
+`INFORME_CODE_REVIEW_2026-08-29.md`, ver sección "FUERA DE COLA" abajo).
+Los 4 gates (tsc/lint/test:unit) están verdes sobre ese HEAD. Detalle
+tarea por tarea abajo, sin borrar nada de lo original.
+
+> Nota de la actualización anterior (2026-08-29 13:25 UTC, HEAD `4c1b241`,
+> 31 migraciones): se preserva el detalle tarea por tarea de esa pasada
+> más abajo sin reescribirlo; solo se corrigen T3 y T7, que quedaron
+> obsoletos por trabajo verificado en esta pasada.
 
 COLA DE TAREAS:
 
@@ -97,6 +103,18 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > `quality` verde en Actions, no solo local. No marcar DONE hasta esa
 > confirmación.
 
+> ESTADO VERIFICADO (2026-09-01): DONE para `quality` sobre HEAD `beac0c6`
+> (un commit después de `4c1b241`) — `gh pr checks` corrido en esta
+> sesión confirmó `quality` pass (57s) en Actions, no solo local. `e2e`
+> sigue en rojo mismo HEAD, pero por falta de secrets de Supabase en el
+> entorno de Actions ("Your project's URL and Key are required to create
+> a Supabase client"), no por una regresión de código — ver
+> `session_handoff.md` para el runbook pendiente de esa carga de
+> secrets. Tras esta sesión se pusheó un commit más (`f9f10d5`, los 10
+> fixes del code review) y CI se disparó de nuevo (run `33473351021`):
+> `quality` → pass (41s) confirmado también sobre ese HEAD antes de
+> cerrar la sesión. `e2e`/`Vercel` seguían `pending`, sin confirmar.
+
 [T4 · GATE] Deploy Vercel + dominio incadeducativa.com + envs por ambiente
 - Chequeá `vercel whoami`. Si está logueado: `vercel link`, armá la carga
   de env vars por ambiente (production/preview/development) usando las
@@ -155,6 +173,16 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > comandos de solo lectura definido ahí). Actualizar el número a 31 antes
 > de ejecutar esta tarea.
 
+> ESTADO VERIFICADO (2026-09-01): sigue DESCONOCIDO si el staging existe,
+> pero el número de migraciones a replicar volvió a quedar obsoleto: hoy
+> hay 34 (`032_bookings_update_guard.sql`, `033_storage_coordinador_rls.sql`,
+> `034_coupon_redeem_atomic.sql` se sumaron esta sesión). `supabase
+> projects list` sí se corrió esta vez (logueado, proyecto
+> `INCADEducativa` / `wzquzbapcqesysreritu` visible y linkeado) — no
+> apareció ningún proyecto de staging separado en el listado, solo el de
+> producción y dos ajenos a este repo (`A-English`, `Planning Pro`).
+> Actualizar el número a 34 antes de ejecutar esta tarea.
+
 [T8 · GATE] RESEND_API_KEY / MP_ACCESS_TOKEN / TWILIO_* productivos
 - 100% manual (cuentas de terceros). Para cada uno dame: link exacto al
   dashboard de la key productiva, variable de .env.example que le
@@ -186,8 +214,22 @@ de escribir el ALTER, no la copies de acá a ciegas):
 ## FUERA DE COLA — trabajo verificado en la rama, no estaba en esta lista original
 
 Los siguientes commits en `fix/db-search-path-024` (ya pusheados, HEAD
-`4c1b241`) no corresponden a ninguna tarea T1-T9 de arriba. Se documentan
-acá para que la cola no quede ciega a ellos:
+`4c1b241` en la pasada del 2026-08-29; `f9f10d5` en la del 2026-09-01) no
+corresponden a ninguna tarea T1-T9 de arriba. Se documentan acá para que
+la cola no quede ciega a ellos:
+
+- `f9f10d5` (2026-09-01) — fix: los 10 hallazgos de
+  `INFORME_CODE_REVIEW_2026-08-29.md` (informe ya borrado tras
+  resolverse, ver `session_handoff.md`): catálogo público movido fuera
+  de `(protected)`, guard de columnas en `bookings_update` (migración
+  032), Storage RLS para Coordinador (migración 033), canje de cupón
+  atómico (migración 034), timezone del cron corregido, V/F "Sin
+  responder", errores de action ya no descartados en los toggles de
+  admin, RPC `get_user_discount` condicional, limpieza de huérfano en
+  Storage, horas de ocupación derivadas de constantes compartidas.
+  DoD local (tsc/lint/test:unit) verde antes de commitear; CI en Actions
+  sobre este HEAD (`33473351021`) estaba `in_progress` al cerrar esta
+  sesión, sin confirmar todavía.
 
 - `abb3a5c` — fix: cierre de 4 agujeros de RLS (users/evaluations/
   attempts/bookings) + bugs del motor de evaluaciones (V/F sin
