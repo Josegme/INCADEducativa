@@ -1,16 +1,37 @@
-# Session Handoff — 2026-09-01 12:44 UTC
+# Session Handoff — 2026-09-01 (compra de cursos, Etapa 3)
 
 ## ESTADO ACTUAL
 - Rama activa: `fix/db-search-path-024`
-- Último commit: `c379e7e` (pusheado — `origin/fix/db-search-path-024` en sync, 0 ahead / 0 behind)
-- PR #1: OPEN, MERGEABLE. `gh pr checks` sobre `c379e7e`: `quality` → SUCCESS, `e2e` → FAILURE (gap de secrets, arrastrado, no es código), `Vercel` → **SUCCESS con deploy real** (URL bajo `josegmescobar-2036s-projects/incadeducativa`) — ver hallazgo abajo.
+- Último commit: `f10c650` — **commiteado, NO pusheado todavía** (esperando indicación explícita del usuario).
+- PR #1: OPEN, MERGEABLE (estado de CI sobre `c379e7e` sigue siendo el último confirmado en Actions — `f10c650` no se pusheó, así que no disparó un run nuevo).
 
-## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `c379e7e`)
+## TRABAJO DE ESTA SESIÓN — primer entregable de Etapa 3
+Implementado (vía /continuar → plan mode → aprobación explícita → commit
+aprobado) el flujo completo de **compra individual de cursos vía
+MercadoPago**: migración `035_compras_curso.sql` (tabla + función
+`promote_lead_on_course_payment()` SECURITY DEFINER para CU-T03, sin
+aplicar contra ninguna DB), `createCoursePreference()`, server action
+`purchaseCourseAction`, branch nuevo en el webhook de MP (prefijo
+`curso:` en `external_reference`, sin tocar el flujo de bookings),
+`CoursePurchaseForm.tsx`, routing pago/gratis en
+`cursos/[slug]/page.tsx`, página de estado
+`cursos/[slug]/compra/[compraId]/page.tsx`. Plan completo en
+`C:\Users\Usuario\.claude\plans\partitioned-cooking-goose.md`.
+Suscripciones y nurturing quedan **fuera de alcance a propósito** — sin
+pricing/tiers decididos en el spec, requieren su propio plan.
+
+**DoD verde:** `tsc`/`lint`/`test:unit`/`build` los 4 en verde sobre este
+commit (build tuvo que limpiar `.next/` corrupto de una sesión anterior
+primero — mismo síntoma ya documentado, no relacionado a este código).
+
+**Sin verificar todavía:** flujo end-to-end contra una DB real (la
+migración 035 no está aplicada), ni un pago real de MercadoPago.
+
+## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `f10c650`)
 - `npx tsc --noEmit` → OK, sin errores
 - `npm run lint` → OK, 0 errores (1 warning preexistente `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
 - `npm run test:unit` → OK, 17/17 passed (3 archivos)
-- `npm run build` no se corrió esta sesión (no hubo cambios de código, solo docs) — última confirmación en el handoff anterior.
-- CI en GitHub Actions sobre `c379e7e` (run visible vía `gh pr checks`): `quality` pass, `e2e` fail por el mismo gap de secrets de Supabase de siempre.
+- `npm run build` → OK, exit 0, 60 rutas incluida `/cursos/[slug]/compra/[compraId]` nueva.
 
 ## HALLAZGO DE ESTA SESIÓN — T4 (Vercel) deja de estar BLOCKED
 El deploy de Vercel **existe y funciona de verdad** (status check `Vercel` = SUCCESS en el PR, con URL real). Las sesiones anteriores (desde 2026-08-12) no podían confirmarlo porque el MCP de Vercel veía 0 proyectos en el team conectado — eso era un problema de visibilidad del MCP, no de que faltara el deploy. Detalle actualizado en `resolver_loop1.md` T4 (bajado de BLOCKED a PARCIAL). Sigue sin confirmar: dominio custom `incadeducativa.com` y envs cargados por ambiente — la CLI de Vercel local sigue sin instalar.
