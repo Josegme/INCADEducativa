@@ -1,37 +1,87 @@
-# Session Handoff — 2026-09-01 (compra de cursos, Etapa 3)
+# Session Handoff — 2026-09-01 (compra + suscripción de cursos, Etapa 3 — CERRADA CON TAREA PENDIENTE)
+
+## MODO: FREEZE
+
+**El usuario pidió explícitamente frenar acá: "una vez hecho la migración
+continuamos recién."** `/continuar` NO debe arrancar ninguna feature nueva
+(tutorías add-on, nurturing, etc.) hasta que la tarea de la sección
+siguiente esté DONE y confirmada. Si el usuario dice "Retomamos" sin más
+contexto, la ÚNICA tarea AUTO disponible es completar la migración — no
+inventar otro trabajo mientras tanto.
+
+## TAREA PENDIENTE BLOQUEANTE (hacer esto primero al retomar)
+
+1. **`supabase/migrations/034_coupon_redeem_atomic.sql` tiene un fix sin
+   commitear** (`git diff` lo muestra: agrega `drop function if exists
+   public.increment_coupon_usage(uuid);` antes del `create or replace`).
+   Bug real encontrado hoy al aplicar contra producción por primera vez:
+   `increment_coupon_usage()` cambia de `returns void` (migración 030) a
+   `returns boolean` (034) — Postgres no permite cambiar el tipo de retorno
+   con `create or replace`, tira `SQLSTATE 42P13`. Esta migración nunca se
+   había aplicado contra ninguna DB antes de hoy, por eso el bug no se había
+   detectado. **Preguntar al usuario si aprueba commitear este fix** (no se
+   commiteó todavía, política del proyecto — nunca commitear sin
+   aprobación explícita).
+2. Con el fix commiteado (o confirmado que ya estaba bien), correr
+   `supabase db push --yes` de nuevo. **Ojo:** el classifier de Auto mode
+   bloqueó este comando de forma inconsistente esta sesión — la primera vez
+   lo bloqueó, tras un "reintenta" del usuario pasó y aplicó 031-033 antes
+   de cortarse en el bug de 034, y los 2 reintentos posteriores (ya con el
+   fix puesto) volvieron a bloquearse sin patrón claro. Si vuelve a pasar,
+   ofrecer al usuario correrlo él mismo en su terminal, o ajustar
+   `.claude/settings.json` con la skill `update-config` para permitir este
+   patrón de comando.
+3. **Estado real de migraciones contra producción confirmado hoy** (`supabase
+   migration list`): 001-030 aplicadas desde hace tiempo. **031
+   (`rls_hardening`), 032 (`bookings_update_guard`), 033
+   (`storage_coordinador_rls`) se aplicaron recién HOY, exitosamente** (dos
+   NOTICE inofensivos sobre triggers que no existían para dropear, nada
+   bloqueante). **034, 035, 036 siguen sin aplicar** — 034 por el bug de
+   arriba, 035/036 nunca llegaron a intentarse porque el push se corta en el
+   primer error.
+4. Una vez que 034+035+036 apliquen limpio: verificar funcionalmente
+   contra la DB real (script tipo `verify-fase3-tmp.js`) el flujo completo
+   de compra individual de curso Y de suscripción mensual, antes de avisar
+   que Etapa 3 (esta porción) está lista para pruebas.
 
 ## ESTADO ACTUAL
 - Rama activa: `fix/db-search-path-024`
-- Último commit: `f10c650` — **commiteado, NO pusheado todavía** (esperando indicación explícita del usuario).
-- PR #1: OPEN, MERGEABLE (estado de CI sobre `c379e7e` sigue siendo el último confirmado en Actions — `f10c650` no se pusheó, así que no disparó un run nuevo).
+- Último commit: `0fd2f40` (pusheado — `origin/fix/db-search-path-024` en sync, salvo el fix de 034 sin commitear del punto 1).
+- PR #1: OPEN, MERGEABLE.
 
-## TRABAJO DE ESTA SESIÓN — primer entregable de Etapa 3
-Implementado (vía /continuar → plan mode → aprobación explícita → commit
-aprobado) el flujo completo de **compra individual de cursos vía
-MercadoPago**: migración `035_compras_curso.sql` (tabla + función
-`promote_lead_on_course_payment()` SECURITY DEFINER para CU-T03, sin
-aplicar contra ninguna DB), `createCoursePreference()`, server action
-`purchaseCourseAction`, branch nuevo en el webhook de MP (prefijo
-`curso:` en `external_reference`, sin tocar el flujo de bookings),
-`CoursePurchaseForm.tsx`, routing pago/gratis en
-`cursos/[slug]/page.tsx`, página de estado
-`cursos/[slug]/compra/[compraId]/page.tsx`. Plan completo en
-`C:\Users\Usuario\.claude\plans\partitioned-cooking-goose.md`.
-Suscripciones y nurturing quedan **fuera de alcance a propósito** — sin
-pricing/tiers decididos en el spec, requieren su propio plan.
+## TRABAJO DE ESTA SESIÓN — dos entregables de Etapa 3
+1. **Compra individual de cursos vía MercadoPago** (`f10c650`/`4ec9246`,
+   pusheados): migración `035_compras_curso.sql` (tabla + función
+   `promote_lead_on_course_payment()` SECURITY DEFINER para CU-T03),
+   `createCoursePreference()`, `purchaseCourseAction`, branch nuevo en el
+   webhook (prefijo `curso:`), `CoursePurchaseForm.tsx`, routing pago/gratis
+   en `cursos/[slug]/page.tsx`, página de estado
+   `cursos/[slug]/compra/[compraId]/page.tsx`.
+2. **Suscripción mensual al catálogo educativo** (`0fd2f40`, pusheado):
+   migración `036_catalogo_suscripciones.sql` (tablas + función
+   `has_active_course_subscription()`), reusa el mecanismo de membresías de
+   Coworking (`createCourseSubscription()`, PreApproval de MP) sin tocar el
+   código existente de Coworking, acceso vía inscripción perezosa a
+   `enrollments` (`enrollViaSubscriptionAction`), admin en
+   `/admin/suscripciones`, picker público en `/cursos/suscripcion`.
 
-**DoD verde:** `tsc`/`lint`/`test:unit`/`build` los 4 en verde sobre este
-commit (build tuvo que limpiar `.next/` corrupto de una sesión anterior
-primero — mismo síntoma ya documentado, no relacionado a este código).
+Ambos con plan completo aprobado en modo plan (ver
+`C:\Users\Usuario\.claude\plans\partitioned-cooking-goose.md`, sobrescrito
+entre los dos — si hace falta el detalle del primero, está en el historial
+de este chat). Nurturing y tutorías-add-on quedan **fuera de alcance a
+propósito** — nurturing reutilizaría Resend (sin herramienta nueva) pero
+falta el copy; tutorías-add-on ya tiene mecánica decidida por el usuario
+(precio fijo por curso) pero es una feature separada, no arrancada.
 
-**Sin verificar todavía:** flujo end-to-end contra una DB real (la
-migración 035 no está aplicada), ni un pago real de MercadoPago.
+**DoD verde en ambos commits:** `tsc`/`lint`/`test:unit`/`build` los 4 en
+verde (el primer build tuvo que limpiar un `.next/` corrupto de una sesión
+anterior).
 
-## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `f10c650`)
+## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `0fd2f40`)
 - `npx tsc --noEmit` → OK, sin errores
 - `npm run lint` → OK, 0 errores (1 warning preexistente `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
 - `npm run test:unit` → OK, 17/17 passed (3 archivos)
-- `npm run build` → OK, exit 0, 60 rutas incluida `/cursos/[slug]/compra/[compraId]` nueva.
+- `npm run build` → OK, exit 0, 64 rutas incluidas las 4 nuevas de suscripción (`/admin/suscripciones`, `/cursos/suscripcion`, `/cursos/suscripcion/[planId]`, `/cursos/suscripcion/estado/[suscripcionId]`).
 
 ## HALLAZGO DE ESTA SESIÓN — T4 (Vercel) deja de estar BLOCKED
 El deploy de Vercel **existe y funciona de verdad** (status check `Vercel` = SUCCESS en el PR, con URL real). Las sesiones anteriores (desde 2026-08-12) no podían confirmarlo porque el MCP de Vercel veía 0 proyectos en el team conectado — eso era un problema de visibilidad del MCP, no de que faltara el deploy. Detalle actualizado en `resolver_loop1.md` T4 (bajado de BLOCKED a PARCIAL). Sigue sin confirmar: dominio custom `incadeducativa.com` y envs cargados por ambiente — la CLI de Vercel local sigue sin instalar.
