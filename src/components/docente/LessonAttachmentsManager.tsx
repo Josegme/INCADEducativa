@@ -64,6 +64,7 @@ export function LessonAttachmentsManager({ lessonId, courseId, attachments }: Le
     e.target.value = "";
 
     if (result.error) {
+      await supabase.storage.from(LESSON_CONTENT_BUCKET).remove([path]);
       setError(result.error);
       return;
     }

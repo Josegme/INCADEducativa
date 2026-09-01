@@ -150,7 +150,7 @@ export function extractManualAnswers(preguntas: EvaluationQuestion[], respuestas
       result.push({
         questionId: question.id,
         enunciado: question.enunciado,
-        tipoLabel: `V/F: ${a.respuesta ? "Verdadero" : "Falso"}`,
+        tipoLabel: `V/F: ${a.respuesta === null ? "Sin responder" : a.respuesta ? "Verdadero" : "Falso"}`,
         texto: a.fundamentacion,
       });
     } else if (question.tipo === "abierta") {

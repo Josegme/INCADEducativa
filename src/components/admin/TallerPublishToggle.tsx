@@ -15,11 +15,17 @@ interface TallerPublishToggleProps {
 export function TallerPublishToggle({ tallerId, estado }: TallerPublishToggleProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   async function handleSetEstado(next: TallerEstado) {
     setIsLoading(true);
-    await setTallerEstadoAction(tallerId, next);
+    setError(null);
+    const result = await setTallerEstadoAction(tallerId, next);
     setIsLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     router.refresh();
   }
 
@@ -28,13 +34,16 @@ export function TallerPublishToggle({ tallerId, estado }: TallerPublishTogglePro
   }
 
   return (
-    <div className="flex gap-2">
-      <Button variant="ghost" size="sm" disabled={isLoading} onClick={() => handleSetEstado(estado === "publicado" ? "borrador" : "publicado")}>
-        {estado === "publicado" ? "Volver a borrador" : "Publicar"}
-      </Button>
-      <Button variant="ghost" size="sm" disabled={isLoading} onClick={() => handleSetEstado("cancelado")}>
-        Cancelar
-      </Button>
+    <div className="flex flex-col items-start gap-1">
+      <div className="flex gap-2">
+        <Button variant="ghost" size="sm" disabled={isLoading} onClick={() => handleSetEstado(estado === "publicado" ? "borrador" : "publicado")}>
+          {estado === "publicado" ? "Volver a borrador" : "Publicar"}
+        </Button>
+        <Button variant="ghost" size="sm" disabled={isLoading} onClick={() => handleSetEstado("cancelado")}>
+          Cancelar
+        </Button>
+      </div>
+      {error ? <span className="text-[12px] text-[--edu-danger-text]">{error}</span> : null}
     </div>
   );
 }

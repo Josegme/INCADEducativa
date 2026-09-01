@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { notifyUsers } from "@/lib/notifications";
 import { sendWhatsapp } from "@/lib/twilio";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { BOOKING_OPEN_HOUR, BOOKING_CLOSE_HOUR } from "@/modules/coworking/booking";
 
 /**
  * Disparado por pg_cron + pg_net (migración 016) cada ~10 min, o a mano con
@@ -141,8 +142,15 @@ async function notifyAdmins(admin: ReturnType<typeof createAdminClient>, titulo:
 }
 
 async function sendDailySummary(admin: ReturnType<typeof createAdminClient>, now: Date) {
-  const dayStart = new Date(now);
-  dayStart.setHours(0, 0, 0, 0);
+  // dayStart/dayEnd tienen que ser la medianoche real de Buenos Aires, no la
+  // del runtime (UTC en Vercel) — `setHours` sobre un Date siempre opera en
+  // la zona local del proceso, así que arrancar desde un Date "corrido" a
+  // BA (como nowInBA en el handler) igual da 00:00 UTC, que es 21:00 ART del
+  // día anterior, no 00:00 ART. Se arma el string ISO con el offset de
+  // Argentina explícito (-03:00, fijo todo el año, sin DST) para anclar el
+  // instante real sin depender de la zona horaria del runtime.
+  const baDateStr = now.toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+  const dayStart = new Date(`${baDateStr}T00:00:00-03:00`);
   const dayEnd = new Date(dayStart.getTime() + 86400000);
 
   const { data: bookings } = await admin
@@ -187,7 +195,7 @@ async function sendIdleSpacesReport(admin: ReturnType<typeof createAdminClient>,
     hoursBySpace.set(b.space_id, (hoursBySpace.get(b.space_id) ?? 0) + hours);
   }
 
-  const availableHoursPerWeek = 14 * 7; // 08:00-22:00, mismo horario comercial que BOOKING_OPEN/CLOSE_HOUR
+  const availableHoursPerWeek = (BOOKING_CLOSE_HOUR - BOOKING_OPEN_HOUR) * 7;
   const ranked = spaceRows
     .map((s) => {
       const booked = hoursBySpace.get(s.id) ?? 0;

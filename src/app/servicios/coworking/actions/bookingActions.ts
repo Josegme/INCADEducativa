@@ -217,8 +217,11 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     coupon = { id: foundCoupon.id, descuento_pct: foundCoupon.descuento_pct };
   }
 
-  const { data: discountData } = await supabase.rpc("get_user_discount");
-  const descuentoPctInstitucional = typeof discountData === "number" ? discountData : 0;
+  let descuentoPctInstitucional = 0;
+  if (!coupon) {
+    const { data: discountData } = await supabase.rpc("get_user_discount");
+    descuentoPctInstitucional = typeof discountData === "number" ? discountData : 0;
+  }
 
   const amount = coupon
     ? {
@@ -228,6 +231,18 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
         tipoDescuento: "cupon" as const,
       }
     : computeBookingAmount(space.precio_hora, duracionHoras, descuentoPctInstitucional);
+
+  // El canje se hace ANTES de insertar la reserva: increment_coupon_usage()
+  // ahora es atómico (chequea usos_maximos y suma en la misma sentencia,
+  // migración 034) para que dos reservas concurrentes con el mismo código no
+  // superen el límite. Si el insert de la reserva falla después, se libera
+  // el cupón con decrement_coupon_usage().
+  if (coupon) {
+    const { data: redeemed } = await supabase.rpc("increment_coupon_usage", { p_coupon_id: coupon.id });
+    if (!redeemed) {
+      return { error: "Ese cupón alcanzó su límite de usos. Probá sin cupón o con otro código." };
+    }
+  }
 
   const fechaInicio = new Date(`${fecha}T${String(horaInicio).padStart(2, "0")}:00:00`);
   const fechaFin = new Date(fechaInicio.getTime() + duracionHoras * 60 * 60 * 1000);
@@ -248,14 +263,13 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     .single();
 
   if (bookingError || !booking) {
+    if (coupon) {
+      await supabase.rpc("decrement_coupon_usage", { p_coupon_id: coupon.id });
+    }
     if (bookingError?.code === "23P01") {
       return { error: "Ese horario ya no está disponible — elegí otro" };
     }
     return { error: "No se pudo crear la reserva — intentá de nuevo" };
-  }
-
-  if (coupon) {
-    await supabase.rpc("increment_coupon_usage", { p_coupon_id: coupon.id });
   }
 
   // payments es de escritura exclusiva del sistema (RLS solo permite admin) —

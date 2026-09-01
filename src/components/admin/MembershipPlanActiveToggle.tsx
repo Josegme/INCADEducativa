@@ -9,17 +9,26 @@ import { toggleMembershipPlanActiveAction } from "@/app/(dashboard)/(protected)/
 export function MembershipPlanActiveToggle({ planId, activo }: { planId: string; activo: boolean }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   async function handleClick() {
     setIsLoading(true);
-    await toggleMembershipPlanActiveAction(planId, !activo);
+    setError(null);
+    const result = await toggleMembershipPlanActiveAction(planId, !activo);
     setIsLoading(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
     router.refresh();
   }
 
   return (
-    <Button variant="ghost" size="sm" disabled={isLoading} onClick={handleClick}>
-      {activo ? "Desactivar" : "Activar"}
-    </Button>
+    <div className="flex flex-col items-start gap-1">
+      <Button variant="ghost" size="sm" disabled={isLoading} onClick={handleClick}>
+        {activo ? "Desactivar" : "Activar"}
+      </Button>
+      {error ? <span className="text-[12px] text-[--edu-danger-text]">{error}</span> : null}
+    </div>
   );
 }
