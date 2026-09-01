@@ -5,6 +5,7 @@ import { Check, ClipboardList, Clock, Lock, UploadCloud } from "lucide-react";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EnrollButton } from "@/components/educativa/EnrollButton";
 import { CoursePurchaseForm } from "@/components/educativa/CoursePurchaseForm";
+import { SubscriptionAccessButton } from "@/components/educativa/SubscriptionAccessButton";
 import { AnnouncementList } from "@/components/educativa/AnnouncementList";
 import { TutoriaAlumnoList, type AlumnoTutoriaRow } from "@/components/educativa/TutoriaAlumnoList";
 import { getFlags } from "@/lib/flags";
@@ -114,6 +115,11 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
 
   const { data: discountData } = user ? await supabase.rpc("get_user_discount") : { data: 0 };
   const discountPct = typeof discountData === "number" ? discountData : 0;
+
+  const { data: hasSubscriptionData } = user
+    ? await supabase.rpc("has_active_course_subscription")
+    : { data: false };
+  const hasActiveSubscription = hasSubscriptionData === true;
 
   const { data: progressRows } =
     user && isEnrolled && flatLessons.length > 0
@@ -286,7 +292,9 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
       </div>
 
       {!course.es_gratuito && !isEnrolled ? (
-        flags.comunidad ? (
+        hasActiveSubscription ? (
+          <SubscriptionAccessButton courseId={course.id} courseSlug={course.slug} />
+        ) : flags.comunidad ? (
           <CoursePurchaseForm
             courseId={course.id}
             precio={course.precio}

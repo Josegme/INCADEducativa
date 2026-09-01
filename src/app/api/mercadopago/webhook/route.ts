@@ -40,6 +40,21 @@ export async function POST(request: NextRequest) {
   const type = body?.type ?? url.searchParams.get("type");
 
   if (type === "subscription_preapproval") {
+    // Suscripción al catálogo educativo (Etapa 3) vs membresía de Coworking
+    // — no se puede prefijar el preapproval id (lo genera MP), así que se
+    // distingue con una consulta barata por mp_preapproval_id. Si no
+    // aparece en catalogo_suscripciones, es una membresía de Coworking —
+    // handleSubscriptionWebhook queda sin tocar ni un carácter.
+    const { data: catalogSub } = await createAdminClient()
+      .from("catalogo_suscripciones")
+      .select("id")
+      .eq("mp_preapproval_id", dataId)
+      .maybeSingle();
+
+    if (catalogSub) {
+      return handleCourseSubscriptionWebhook(dataId, catalogSub.id as string);
+    }
+
     return handleSubscriptionWebhook(dataId);
   }
 
@@ -181,6 +196,58 @@ async function handleCoursePurchaseWebhook(
       ],
       emailSubject: "Compra confirmada — INCADEducativa",
     });
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+/**
+ * Suscripción mensual al catálogo educativo (Etapa 3). Mismo cuerpo que
+ * handleSubscriptionWebhook (Coworking) pero sin el concepto de créditos —
+ * acá "activa" solo da acceso al catálogo, no consume nada. Siempre mensual
+ * (sin chequear ningún `tipo`, a diferencia de las membresías).
+ */
+async function handleCourseSubscriptionWebhook(preapprovalId: string, suscripcionId: string) {
+  const subscription = await getSubscription(preapprovalId);
+  if (!subscription) {
+    return NextResponse.json({ error: "Suscripción no encontrada" }, { status: 404 });
+  }
+
+  const admin = createAdminClient();
+
+  if (subscription.status === "authorized") {
+    const inicio = new Date();
+    const fin = new Date(inicio);
+    fin.setMonth(fin.getMonth() + 1);
+
+    await admin
+      .from("catalogo_suscripciones")
+      .update({
+        activa: true,
+        inicio: inicio.toISOString().slice(0, 10),
+        fin: fin.toISOString().slice(0, 10),
+      })
+      .eq("id", suscripcionId);
+
+    const { data: sub } = await admin
+      .from("catalogo_suscripciones")
+      .select("user_id")
+      .eq("id", suscripcionId)
+      .single();
+
+    const { data: profile } = sub
+      ? await admin.from("users").select("email, nombre").eq("id", sub.user_id).single()
+      : { data: null };
+
+    if (profile?.email) {
+      await sendEmail({
+        to: profile.email,
+        subject: "Suscripción al catálogo activada — INCADEducativa",
+        html: `<p>Hola ${profile.nombre ?? ""},</p><p>Tu suscripción mensual al catálogo educativo quedó activada. Ya podés acceder a los cursos pagos.</p>`,
+      });
+    }
+  } else if (subscription.status === "cancelled" || subscription.status === "paused") {
+    await admin.from("catalogo_suscripciones").update({ activa: false }).eq("id", suscripcionId);
   }
 
   return NextResponse.json({ received: true });
