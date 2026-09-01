@@ -11,6 +11,11 @@
 -- fallar el canje. decrement_coupon_usage() es la compensación simétrica
 -- que se usa si la reserva falla después de haber canjeado el cupón.
 
+-- increment_coupon_usage() cambia de `returns void` (030) a `returns
+-- boolean` acá — create or replace no permite cambiar el tipo de retorno de
+-- una función existente (SQLSTATE 42P13), hace falta dropearla primero.
+drop function if exists public.increment_coupon_usage(uuid);
+
 create or replace function public.increment_coupon_usage(p_coupon_id uuid)
 returns boolean as $$
   update public.coupons
