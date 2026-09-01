@@ -132,6 +132,19 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > Sigue BLOCKED-ESPERANDO-HUMANO heredado del 2026-08-18, sin
 > confirmación posterior.
 
+> ESTADO VERIFICADO (2026-09-01): PARCIAL — el deploy en sí YA EXISTE Y
+> FUNCIONA, corrige la entrada anterior. `gh pr checks fix/db-search-path-024`
+> muestra un status check `Vercel` = SUCCESS con URL real de deployment
+> bajo `josegmescobar-2036s-projects/incadeducativa` (integración Git de
+> Vercel, dispara en cada push al PR). La CLI local sigue sin instalar
+> (por eso `vercel whoami`/`vercel link` no se pudo correr desde acá),
+> pero eso ya no bloquea nada — el proyecto está linkeado del lado de
+> Vercel. Sigue sin verificar desde este entorno: dominio custom
+> `incadeducativa.com` (DNS), envs cargados por los 3 ambientes
+> (production/preview/development). Downgrade de BLOCKED a PARCIAL — no
+> marcar DONE hasta confirmar esos dos puntos con el usuario o con
+> `vercel domains inspect` una vez instalada la CLI.
+
 [T5 · GATE] Sentry activo
 - `npx @sentry/wizard@latest -i nextjs` (login interactivo — avisame si
   necesitás que lo autorice en el navegador).
@@ -197,6 +210,17 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > por `comm` sobre `.env.example` vs `.env.local`: sin valor cargado
 > localmente: `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
 > `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`.
+
+> ESTADO VERIFICADO (2026-09-01): BLOCKED-ESPERANDO-HUMANO, pero avanzó.
+> Mismo `comm` sobre `.env.example` vs `.env.local` hoy solo devuelve
+> `CRON_SECRET` — las 6 variables que faltaban el 29/08 (incluida
+> `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
+> `TWILIO_*`) ya tienen valor cargado localmente (nunca se leyó ni se
+> expone el valor, solo existencia). Esto NO confirma que sean keys de
+> **producción** ni que estén cargadas en Vercel — el DoD sigue
+> pendiente hasta que el usuario confirme el pago real de prueba vía
+> webhook. Falta cargar `CRON_SECRET` localmente si los cron jobs lo
+> necesitan.
 
 [T9 · AUTO] PWA — manifest + service worker
 - Implementá public/manifest.json (íconos, nombre, colores del Design

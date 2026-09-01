@@ -1,35 +1,59 @@
-# Session Handoff — 2026-09-01 06:10 UTC
+# Session Handoff — 2026-09-01 12:44 UTC
 
 ## ESTADO ACTUAL
 - Rama activa: `fix/db-search-path-024`
-- Último commit: `8fbaa04` (pusheado — `origin/fix/db-search-path-024` en sync, 0 ahead / 0 behind)
-- PR #1: OPEN, MERGEABLE. CI sobre `f9f10d5` confirmado: `quality` → pass (41s). CI sobre `8fbaa04` (el fix de middleware, último de la sesión) no se llegó a chequear en Actions antes de cerrar — confirmar con `gh pr checks fix/db-search-path-024` al retomar. `e2e` viene fallando desde antes por gap de secrets de Supabase (ver abajo), no por código.
+- Último commit: `c379e7e` (pusheado — `origin/fix/db-search-path-024` en sync, 0 ahead / 0 behind)
+- PR #1: OPEN, MERGEABLE. `gh pr checks` sobre `c379e7e`: `quality` → SUCCESS, `e2e` → FAILURE (gap de secrets, arrastrado, no es código), `Vercel` → **SUCCESS con deploy real** (URL bajo `josegmescobar-2036s-projects/incadeducativa`) — ver hallazgo abajo.
 
-## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `8fbaa04`)
+## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `c379e7e`)
 - `npx tsc --noEmit` → OK, sin errores
 - `npm run lint` → OK, 0 errores (1 warning preexistente `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
 - `npm run test:unit` → OK, 17/17 passed (3 archivos)
-- `npm run build` + `npm run start -p 3100` + `curl` anónimo → manifest.json/sw.js/icons pasan de 307→/login a 200 con content-type correcto; `/dashboard` (control) sigue protegido igual que antes.
-- CI en GitHub Actions sobre `33279775859`/`33473351021`: `quality` pass, `e2e` fail — falla por falta de secrets de Supabase en el entorno de Actions ("Your project's URL and Key are required to create a Supabase client"), no por un bug de código.
+- `npm run build` no se corrió esta sesión (no hubo cambios de código, solo docs) — última confirmación en el handoff anterior.
+- CI en GitHub Actions sobre `c379e7e` (run visible vía `gh pr checks`): `quality` pass, `e2e` fail por el mismo gap de secrets de Supabase de siempre.
+
+## HALLAZGO DE ESTA SESIÓN — T4 (Vercel) deja de estar BLOCKED
+El deploy de Vercel **existe y funciona de verdad** (status check `Vercel` = SUCCESS en el PR, con URL real). Las sesiones anteriores (desde 2026-08-12) no podían confirmarlo porque el MCP de Vercel veía 0 proyectos en el team conectado — eso era un problema de visibilidad del MCP, no de que faltara el deploy. Detalle actualizado en `resolver_loop1.md` T4 (bajado de BLOCKED a PARCIAL). Sigue sin confirmar: dominio custom `incadeducativa.com` y envs cargados por ambiente — la CLI de Vercel local sigue sin instalar.
 
 ## MODO: NORMAL
-Cola al día, gates verdes localmente, T9 (PWA) avanzado con un fix real de middleware. Falta confirmar CI en Actions sobre `8fbaa04`. `e2e` sigue rojo por el gap de secrets, arrastrado, no relacionado a los commits de hoy.
+Cola al día, gates verdes, sin código pendiente de commitear (0 ahead/0 behind). T4 avanzó de estado (ver arriba), T8 también (ver `resolver_loop1.md`: de 6 variables faltantes a solo `CRON_SECRET`). El bloque grande que falta para el 100% del sistema es Etapa 3 (pago de cursos vía MercadoPago, suscripciones, nurturing automatizado) — ver `docs/FUNCIONALIDADES.md`, la mayoría de esos ítems siguen en `[ ]`.
 
 ## PRÓXIMA TAREA SUGERIDA (vía /continuar)
-1. Confirmar en GitHub Actions que `quality` sigue verde sobre `8fbaa04`.
-2. T9 (PWA) sigue PARCIAL: el bug de middleware que bloqueaba manifest/sw/icons para visitantes sin sesión está resuelto y verificado por curl, pero la corrida oficial de Lighthouse ("PWA en verde/installable") sigue sin hacerse — el CLI de `lighthouse` falla en este entorno Windows con `EPERM` al limpiar el tmp dir de `chrome-launcher` al cerrar Chrome (bug conocido de la herramienta, no del repo) y la extensión de Chrome no estaba conectada en esta sesión. Si se soluciona uno de esos dos accesos, correr Lighthouse contra `/`, `/login` y `/cursos` para cerrar el DoD.
-3. Si se quiere `e2e` verde en CI: cargar los secrets de Supabase que necesita el `webServer` de Playwright (`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` u otros que arme `.env.local`) como Secrets del repo en GitHub — 100% manual, dashboard de GitHub.
-4. Retomar T4/T6/T7/T8 de `resolver_loop1.md` (gates 100% manuales) o seguir con deuda funcional E1/E2 fuera de cola.
+1. Con el usuario: confirmar si instala la CLI de Vercel (`npm i -g vercel`) para poder verificar dominio/envs por ambiente sin depender del dashboard manual.
+2. Retomar T6 (rotar service role key) y T7 (Supabase staging, 34 migraciones a replicar) — ambos siguen 100% manuales/BLOCKED.
+3. Si el usuario quiere seguir hacia el 100%: planificar Etapa 3 completa (pagos de cursos individuales vía MP — 8 ítems del checklist en `[ ]` —, suscripciones, nurturing días 1/3/7), es lo más grande que falta.
+4. Si se quiere `e2e` verde en CI: cargar los secrets de Supabase que necesita el `webServer` de Playwright como Secrets del repo en GitHub.
 
 ## PENDIENTES SIN RESOLVER (arrastrados)
 - `verify-fase3-tmp.js` sin trackear en la raíz del repo — script temporal de verificación, deliberadamente sin commitear (se autodeclara "no se commitea" en su propio header)
 - Archivos demo del wizard de Sentry (`sentry-example-api`, `sentry-example-page`, `global-error.tsx`) sin limpiar antes de producción real — no se tocaron esta sesión
-- Comentario desactualizado en `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega hasta acá es /carreras") — quedó obsoleto por el fix del hallazgo #1 del code review (`/cursos` también llega ahí sin sesión ahora, por diseño). No bloqueante, cosmético — actualizar cuando se toque ese archivo de nuevo.
+- Comentario desactualizado en `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega hasta acá es /carreras") — cosmético, actualizar cuando se toque ese archivo de nuevo
+- `docs/FUNCIONALIDADES.md:462` sigue describiendo el deploy de Vercel como "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — quedó obsoleto por el hallazgo de esta sesión, no se corrigió todavía (fuera del alcance de `/poner-a-punto`, que solo toca `resolver_loop1.md`/`session_handoff.md`)
 
 ## RESUELTO DESDE EL HANDOFF ANTERIOR
-- Los 10 hallazgos de `INFORME_CODE_REVIEW_2026-08-29.md` (informe ya borrado tras resolverse, por decisión del usuario) están commiteados y pusheados en `f9f10d5`: catálogo público movido fuera de `(protected)`, RLS de `bookings_update` con guard de columnas (migración 032), Storage RLS para Coordinador (migración 033), canje de cupón atómico (migración 034), timezone del cron corregido a `-03:00` explícito, V/F "Sin responder" distinguido de "Falso", errores de action ya no se descartan silenciosamente en los toggles de admin, RPC `get_user_discount` condicional a que no haya cupón, limpieza de archivo huérfano en Storage si falla el insert, horas de ocupación derivadas de `BOOKING_OPEN_HOUR`/`BOOKING_CLOSE_HOUR` en vez de hardcodeadas.
+- Los 10 hallazgos de `INFORME_CODE_REVIEW_2026-08-29.md` (informe ya borrado tras resolverse, por decisión del usuario) están commiteados y pusheados en `f9f10d5`.
+- El fix de middleware que bloqueaba manifest/sw/icons para visitantes sin sesión (T9) está commiteado y pusheado en `8fbaa04`.
 
 ## Handoffs anteriores
+
+### Session Handoff — 2026-09-01 06:10 UTC
+
+#### ESTADO ACTUAL
+- Rama activa: `fix/db-search-path-024`
+- Último commit: `8fbaa04` (pusheado — `origin/fix/db-search-path-024` en sync, 0 ahead / 0 behind)
+- PR #1: OPEN, MERGEABLE. CI sobre `f9f10d5` confirmado: `quality` → pass (41s). `e2e` viene fallando desde antes por gap de secrets de Supabase, no por código.
+
+#### RESULTADO DE LOS 4 GATES (verificado local, esa sesión, sobre HEAD `8fbaa04`)
+- `npx tsc --noEmit` → OK, sin errores
+- `npm run lint` → OK, 0 errores (1 warning preexistente `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
+- `npm run test:unit` → OK, 17/17 passed (3 archivos)
+- `npm run build` + `npm run start -p 3100` + `curl` anónimo → manifest.json/sw.js/icons pasan de 307→/login a 200 con content-type correcto; `/dashboard` (control) sigue protegido igual que antes.
+- CI en GitHub Actions sobre `33279775859`/`33473351021`: `quality` pass, `e2e` fail — falla por falta de secrets de Supabase en el entorno de Actions, no por un bug de código.
+
+#### PENDIENTES SIN RESOLVER (arrastrados)
+- `verify-fase3-tmp.js` sin trackear en la raíz del repo — script temporal de verificación, deliberadamente sin commitear
+- Archivos demo del wizard de Sentry sin limpiar antes de producción real
+- Comentario desactualizado en `src/app/(dashboard)/layout.tsx:143-145`
 
 ### Session Handoff — 2026-08-29 13:25 UTC
 
