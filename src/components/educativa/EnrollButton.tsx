@@ -14,14 +14,13 @@ import { enrollUserAction } from "@/app/(dashboard)/(protected)/cursos/actions/e
 interface EnrollButtonProps {
   courseId: string;
   courseSlug: string;
-  esGratuito: boolean;
   progresoPct?: number;
   canEnroll: boolean;
   /** Lección a la que lleva "Continuar" — undefined si el curso todavía no tiene contenido. */
   resumeLessonId?: string;
 }
 
-export function EnrollButton({ courseId, courseSlug, esGratuito, progresoPct, canEnroll, resumeLessonId }: EnrollButtonProps) {
+export function EnrollButton({ courseId, courseSlug, progresoPct, canEnroll, resumeLessonId }: EnrollButtonProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -75,14 +74,6 @@ export function EnrollButton({ courseId, courseSlug, esGratuito, progresoPct, ca
           )}
         </Button>
       </div>
-    );
-  }
-
-  if (!esGratuito) {
-    return (
-      <Button variant="primary" disabled title="Cursos pagos disponibles en Etapa 3">
-        Disponible en Etapa 3
-      </Button>
     );
   }
 

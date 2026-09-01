@@ -4,6 +4,7 @@ import { Check, ClipboardList, Clock, Lock, UploadCloud } from "lucide-react";
 
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EnrollButton } from "@/components/educativa/EnrollButton";
+import { CoursePurchaseForm } from "@/components/educativa/CoursePurchaseForm";
 import { AnnouncementList } from "@/components/educativa/AnnouncementList";
 import { TutoriaAlumnoList, type AlumnoTutoriaRow } from "@/components/educativa/TutoriaAlumnoList";
 import { getFlags } from "@/lib/flags";
@@ -42,7 +43,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, slug, titulo, descripcion, nivel, duracion_hs, es_gratuito, carrera:careers(nombre)")
+    .select("id, slug, titulo, descripcion, nivel, duracion_hs, es_gratuito, precio, carrera:careers(nombre)")
     .eq("slug", params.slug)
     .eq("estado", "publicado")
     .single();
@@ -110,6 +111,9 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
     : { data: null };
 
   const isEnrolled = Boolean(enrollment);
+
+  const { data: discountData } = user ? await supabase.rpc("get_user_discount") : { data: 0 };
+  const discountPct = typeof discountData === "number" ? discountData : 0;
 
   const { data: progressRows } =
     user && isEnrolled && flatLessons.length > 0
@@ -281,14 +285,27 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
         </div>
       </div>
 
-      <EnrollButton
-        courseId={course.id}
-        courseSlug={course.slug}
-        esGratuito={course.es_gratuito}
-        progresoPct={enrollment?.progreso_pct}
-        canEnroll={profile?.role === "alumno"}
-        resumeLessonId={firstIncompleteId ?? flatLessons[0]?.id}
-      />
+      {!course.es_gratuito && !isEnrolled ? (
+        flags.comunidad ? (
+          <CoursePurchaseForm
+            courseId={course.id}
+            precio={course.precio}
+            descuentoPct={discountPct}
+            isAnonymous={!user}
+            showGuestFields={!user && flags.publica}
+          />
+        ) : (
+          <Badge state="locked">Compra de cursos disponible próximamente</Badge>
+        )
+      ) : (
+        <EnrollButton
+          courseId={course.id}
+          courseSlug={course.slug}
+          progresoPct={enrollment?.progreso_pct}
+          canEnroll={profile?.role === "alumno"}
+          resumeLessonId={firstIncompleteId ?? flatLessons[0]?.id}
+        />
+      )}
 
       <div>
         <h2 className="mb-2 text-[13px] font-semibold text-[--edu-text]">Contenido del curso</h2>

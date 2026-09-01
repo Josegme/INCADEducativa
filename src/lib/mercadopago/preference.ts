@@ -64,3 +64,70 @@ export async function createBookingPreference(
 
   return { preferenceId: result.id, initPoint: result.init_point };
 }
+
+export interface CreateCoursePreferenceInput {
+  compraId: string;
+  courseSlug: string;
+  courseTitle: string;
+  unitPrice: number;
+  payerEmail: string;
+}
+
+export interface CoursePreferenceResult {
+  preferenceId: string;
+  initPoint: string;
+}
+
+/**
+ * Crea la preferencia de checkout para la compra de un curso individual
+ * (Etapa 3). `external_reference` lleva el prefijo `curso:` para que el
+ * webhook pueda distinguir este tipo de pago del de una reserva de
+ * Coworking sin tocar `createBookingPreference` ni el flujo existente.
+ * Devuelve null si MP_ACCESS_TOKEN no está configurada — el llamador debe
+ * dejar la compra en `pendiente` sin preferencia asociada en vez de fallar.
+ */
+export async function createCoursePreference(
+  input: CreateCoursePreferenceInput
+): Promise<CoursePreferenceResult | null> {
+  const client = getMercadoPagoClient();
+  if (!client) {
+    console.warn(
+      `[mercadopago] MP_ACCESS_TOKEN vacía — no se creó preferencia para la compra ${input.compraId}`
+    );
+    return null;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const returnUrl = `${appUrl}/cursos/${input.courseSlug}/compra/${input.compraId}`;
+
+  const preference = new Preference(client);
+  const result = await preference.create({
+    body: {
+      items: [
+        {
+          id: input.compraId,
+          title: input.courseTitle,
+          quantity: 1,
+          unit_price: input.unitPrice,
+          currency_id: "ARS",
+        },
+      ],
+      payer: { email: input.payerEmail },
+      external_reference: `curso:${input.compraId}`,
+      notification_url: `${appUrl}/api/mercadopago/webhook`,
+      back_urls: {
+        success: returnUrl,
+        pending: returnUrl,
+        failure: returnUrl,
+      },
+      auto_return: "approved",
+    },
+  });
+
+  if (!result.id || !result.init_point) {
+    console.error(`[mercadopago] Preferencia creada sin id/init_point para la compra ${input.compraId}`);
+    return null;
+  }
+
+  return { preferenceId: result.id, initPoint: result.init_point };
+}

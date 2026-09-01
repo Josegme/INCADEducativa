@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getPayment } from "@/lib/mercadopago/payment";
+import { getPayment, type MpPaymentInfo } from "@/lib/mercadopago/payment";
 import { getSubscription } from "@/lib/mercadopago/subscription";
 import { verifyMercadoPagoSignature } from "@/lib/mercadopago/verifySignature";
 import { notifyUsers } from "@/lib/notifications";
@@ -49,6 +49,15 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+
+  // Compra de curso individual (Etapa 3) — prefijo `curso:` en
+  // external_reference, ver createCoursePreference(). El resto de este
+  // handler (bookings de Coworking) queda sin tocar: bookingId sigue siendo
+  // el external_reference pelado, exactamente como antes.
+  if (payment.externalReference.startsWith("curso:")) {
+    return handleCoursePurchaseWebhook(admin, payment, payment.externalReference.slice("curso:".length));
+  }
+
   const bookingId = payment.externalReference;
 
   const estado =
@@ -110,6 +119,68 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+/**
+ * Compra individual de un curso (Etapa 3). `compras_curso` juega el doble
+ * rol que Coworking separa en dos tablas (payments + bookings) — acá no
+ * hay contención de recurso físico que justifique separarlas, así que el
+ * guard de idempotencia (`.eq("estado","pendiente")`) se colapsa en una
+ * sola tabla.
+ */
+async function handleCoursePurchaseWebhook(
+  admin: ReturnType<typeof createAdminClient>,
+  payment: MpPaymentInfo,
+  compraId: string
+) {
+  const estado =
+    payment.status === "approved" ? "aprobado" : payment.status === "rejected" ? "rechazado" : "pendiente";
+
+  const { data: compra } = await admin
+    .from("compras_curso")
+    .update({ mp_payment_id: payment.id, estado, webhook_payload: payment.raw as object })
+    .eq("id", compraId)
+    .eq("estado", "pendiente")
+    .select("id, user_id, course_id, monto")
+    .maybeSingle();
+
+  if (!compra || estado !== "aprobado") {
+    return NextResponse.json({ received: true });
+  }
+
+  // Idempotente: si el usuario ya tiene esta inscripción por otra vía, el
+  // unique(user_id, course_id) de enrollments rechaza el insert sin romper
+  // el resto del flujo.
+  await admin.from("enrollments").insert({ user_id: compra.user_id, course_id: compra.course_id });
+
+  const [{ data: profile }, { data: course }] = await Promise.all([
+    admin.from("users").select("email, nombre, role").eq("id", compra.user_id).single(),
+    admin.from("courses").select("titulo, slug").eq("id", compra.course_id).single(),
+  ]);
+
+  if (profile?.role === "lead") {
+    await admin.rpc("promote_lead_on_course_payment", { p_user_id: compra.user_id, p_compra_id: compra.id });
+  }
+
+  if (profile?.email) {
+    await notifyUsers(admin, {
+      tipo: "pago",
+      referenciaId: compra.id,
+      courseId: compra.course_id,
+      titulo: `Pago aprobado — ${course?.titulo ?? "tu curso"}`,
+      cuerpo: `Pagaste $${compra.monto} por "${course?.titulo}". Ya podés acceder desde tu dashboard.`,
+      recipients: [
+        {
+          userId: compra.user_id,
+          email: profile.email as string,
+          emailHtml: `<p>Hola ${profile.nombre ?? ""},</p><p>Tu compra de <strong>${course?.titulo}</strong> quedó confirmada. Monto: $${compra.monto}. Referencia de pago (MercadoPago): ${payment.id}.</p>`,
+        },
+      ],
+      emailSubject: "Compra confirmada — INCADEducativa",
+    });
   }
 
   return NextResponse.json({ received: true });
