@@ -138,5 +138,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // manifest.json/sw.js/icons quedan afuera del auth gate: son los assets que
+  // el browser pide para evaluar instalabilidad PWA (Lighthouse, "Agregar a
+  // pantalla de inicio") ANTES de que haya sesión — si el middleware los
+  // redirige a /login, el manifest nunca carga y la app deja de ser instalable
+  // para cualquier visitante sin sesión.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|icons/).*)"],
 };
