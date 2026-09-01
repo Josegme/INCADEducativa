@@ -211,6 +211,22 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > No se corrió Lighthouse en este /recap (fuera del set de comandos de
 > solo lectura) — no marcar DONE completo sin esa corrida.
 
+> ESTADO VERIFICADO (2026-09-01, vía /continuar): PARCIAL, pero se resolvió
+> un bug real que bloqueaba el DoD. El matcher de `src/middleware.ts` no
+> excluía `manifest.json`/`sw.js`/`icons/` del auth gate: cualquier
+> visitante SIN sesión que los pidiera recibía 307→/login en vez del
+> archivo — la PWA no era instalable para nadie no logueado, en ninguna
+> página pública. Fix commiteado y pusheado (`8fbaa04`), verificado con
+> build de producción + curl anónimo (manifest/sw/icons: 307→200; ruta
+> protegida de control sin cambios). Sigue sin correrse Lighthouse en sí
+> ("PWA en verde/installable" del DoD original): el CLI de `lighthouse`
+> falla en este entorno Windows con EPERM al limpiar el tmp dir de
+> chrome-launcher al cerrar Chrome (bug conocido de la herramienta, no
+> del repo — https://github.com/GoogleChrome/lighthouse/issues, buscar
+> "EPERM" + "Windows"), y la extensión de Chrome no estaba conectada
+> en esta sesión. No marcar DONE hasta correr Lighthouse real contra
+> `/`, `/login` y `/cursos`.
+
 ## FUERA DE COLA — trabajo verificado en la rama, no estaba en esta lista original
 
 Los siguientes commits en `fix/db-search-path-024` (ya pusheados, HEAD

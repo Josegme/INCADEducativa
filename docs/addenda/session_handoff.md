@@ -1,23 +1,25 @@
-# Session Handoff — 2026-09-01 05:22 UTC
+# Session Handoff — 2026-09-01 06:10 UTC
 
 ## ESTADO ACTUAL
 - Rama activa: `fix/db-search-path-024`
-- Último commit: `f9f10d5` (pusheado — `origin/fix/db-search-path-024` en sync, 0 ahead / 0 behind)
-- PR #1: OPEN, MERGEABLE. CI sobre este HEAD (run `33473351021`): `quality` → pass (41s, confirmado en Actions). `e2e` y `Vercel` seguían `pending` al cerrar esta sesión — chequear con `gh pr checks fix/db-search-path-024` para el resultado final; `e2e` es esperable que siga fallando por el gap de secrets de Supabase (ver abajo), no por este commit.
+- Último commit: `8fbaa04` (pusheado — `origin/fix/db-search-path-024` en sync, 0 ahead / 0 behind)
+- PR #1: OPEN, MERGEABLE. CI sobre `f9f10d5` confirmado: `quality` → pass (41s). CI sobre `8fbaa04` (el fix de middleware, último de la sesión) no se llegó a chequear en Actions antes de cerrar — confirmar con `gh pr checks fix/db-search-path-024` al retomar. `e2e` viene fallando desde antes por gap de secrets de Supabase (ver abajo), no por código.
 
-## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `f9f10d5`)
+## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `8fbaa04`)
 - `npx tsc --noEmit` → OK, sin errores
 - `npm run lint` → OK, 0 errores (1 warning preexistente `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
-- `npm run test:unit` → OK, 17/17 passed (3 archivos, incluye `tests/unit/extractManualAnswers.test.ts` nuevo)
-- CI en GitHub Actions sobre el run anterior (`33279775859`, HEAD `beac0c6`, 2026-08-29): `quality` pass, `e2e` fail — falla por falta de secrets de Supabase en el entorno de Actions ("Your project's URL and Key are required to create a Supabase client"), no por un bug de código.
+- `npm run test:unit` → OK, 17/17 passed (3 archivos)
+- `npm run build` + `npm run start -p 3100` + `curl` anónimo → manifest.json/sw.js/icons pasan de 307→/login a 200 con content-type correcto; `/dashboard` (control) sigue protegido igual que antes.
+- CI en GitHub Actions sobre `33279775859`/`33473351021`: `quality` pass, `e2e` fail — falla por falta de secrets de Supabase en el entorno de Actions ("Your project's URL and Key are required to create a Supabase client"), no por un bug de código.
 
 ## MODO: NORMAL
-Cola al día, gates verdes localmente, fix del code review commiteado y pusheado. Falta confirmar CI en Actions sobre este HEAD nuevo (recién disparado). `e2e` sigue rojo por el gap de secrets, arrastrado, no relacionado a este commit.
+Cola al día, gates verdes localmente, T9 (PWA) avanzado con un fix real de middleware. Falta confirmar CI en Actions sobre `8fbaa04`. `e2e` sigue rojo por el gap de secrets, arrastrado, no relacionado a los commits de hoy.
 
-## PRÓXIMA TAREA SUGERIDA
-1. Confirmar en GitHub Actions que `quality` sigue verde sobre `f9f10d5` (run `33473351021`).
-2. Si se quiere `e2e` verde en CI: cargar los secrets de Supabase que necesita el `webServer` de Playwright (`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` u otros que arme `.env.local`) como Secrets del repo en GitHub — 100% manual, dashboard de GitHub.
-3. Retomar T4/T6/T7/T8 de `resolver_loop1.md` (gates 100% manuales) o seguir con deuda funcional E1/E2 fuera de cola.
+## PRÓXIMA TAREA SUGERIDA (vía /continuar)
+1. Confirmar en GitHub Actions que `quality` sigue verde sobre `8fbaa04`.
+2. T9 (PWA) sigue PARCIAL: el bug de middleware que bloqueaba manifest/sw/icons para visitantes sin sesión está resuelto y verificado por curl, pero la corrida oficial de Lighthouse ("PWA en verde/installable") sigue sin hacerse — el CLI de `lighthouse` falla en este entorno Windows con `EPERM` al limpiar el tmp dir de `chrome-launcher` al cerrar Chrome (bug conocido de la herramienta, no del repo) y la extensión de Chrome no estaba conectada en esta sesión. Si se soluciona uno de esos dos accesos, correr Lighthouse contra `/`, `/login` y `/cursos` para cerrar el DoD.
+3. Si se quiere `e2e` verde en CI: cargar los secrets de Supabase que necesita el `webServer` de Playwright (`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` u otros que arme `.env.local`) como Secrets del repo en GitHub — 100% manual, dashboard de GitHub.
+4. Retomar T4/T6/T7/T8 de `resolver_loop1.md` (gates 100% manuales) o seguir con deuda funcional E1/E2 fuera de cola.
 
 ## PENDIENTES SIN RESOLVER (arrastrados)
 - `verify-fase3-tmp.js` sin trackear en la raíz del repo — script temporal de verificación, deliberadamente sin commitear (se autodeclara "no se commitea" en su propio header)
