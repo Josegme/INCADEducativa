@@ -278,6 +278,145 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > en esta sesión. No marcar DONE hasta correr Lighthouse real contra
 > `/`, `/login` y `/cursos`.
 
+## T10-T15 — origen: propuesta de campaña autónoma (2026-09-03)
+
+El usuario compartió un draft de "campaña autónoma" (`camapaña.md`, ya
+borrado — era solo para intercambio de opinión, nunca se ejecutó tal
+cual). Evaluación profesional: la cola de trabajo (7 slices) es sólida
+y bien priorizada, pero el modo de ejecución que proponía ("no
+preguntes nunca", incluido un `supabase db push --yes` autónomo contra
+producción) no es aceptable — invierte el riesgo real (protege lo
+barato de revertir — un commit — y no protege lo caro — un schema de
+prod). Se adoptan las 7 slices como T10-T15 de esta cola, con AUTO/GATE
+reasignados según haga falta o no un checkpoint humano puntual. La
+TABLA DE DECISIONES del draft se conserva casi intacta más abajo — es
+buena práctica genuina — salvo donde choca con lo anterior.
+
+Regla general para T10-T15: se puede encadenar código dentro de un
+slice sin pedir aprobación por cada detalle menor (aplica la TABLA DE
+DECISIONES), pero **cada slice se cierra y se reporta por separado** —
+no se saltea automáticamente al siguiente T sin que el usuario lo pida
+de nuevo (misma regla de "una tarea por invocación" de `/continuar`).
+Ningún slice hace `git commit`/`git push` sin aprobación explícita
+(regla no negociable de CLAUDE.md).
+
+[T10 · GATE puntual] Desbloquear DB — aplicar 034+035+036 en producción
+- El fix de `034_coupon_redeem_atomic.sql` (drop antes de recrear
+  `increment_coupon_usage`, bug `SQLSTATE 42P13`) ya está commiteado
+  (`18e1414`) — nada de código pendiente acá.
+- Lo único que falta: correr `supabase db push --yes` contra el
+  proyecto productivo (`INCADEducativa`) para aplicar 034, 035 y 036.
+  **Esto requiere confirmación explícita del usuario en el momento de
+  ejecutarlo** — es un cambio de schema irreversible contra producción,
+  no negociable aunque el resto del slice sea AUTO. Si el
+  classifier/Auto-review bloquea el comando: 1 reintento, y si vuelve a
+  bloquear, dejar el comando exacto documentado y ofrecer que el
+  usuario lo corra en su propia terminal — no loopear.
+- Con las 3 migraciones aplicadas: correr una verificación puntual
+  contra la DB real (script tipo `verify-fase3-tmp.js`, sin commitear)
+  del flujo de compra individual de curso y de suscripción mensual.
+- DoD: `supabase migration list` muestra Remote = Local en 034/035/036;
+  verificación funcional de ambos flujos confirmada contra la DB real.
+
+[T11 · AUTO] E3 ya codeada — checklist desactualizado
+- Marcar en `docs/FUNCIONALIDADES.md` lo que YA existe y funciona:
+  compra individual de curso, suscripciones (admin + picker público),
+  branch `curso:` del webhook de MercadoPago, `promote_lead_on_course_payment()`
+  (CU-T03), catálogo público gateado por `FEATURE_PUBLICA`.
+- Completar huecos reales detectados en esos flujos (UI admin de
+  precios, estados de compra/suscripción, RLS, flags) — no
+  reimplementar lo que ya está.
+- DoD: checklist refleja el estado real verificado en código; huecos
+  reales cerrados con los 4 gates en verde.
+
+[T12 · AUTO, con cuidado de efectos reales] Nurturing de leads (días 1/3/7)
+- Cron al patrón de `/api/cron/coworking`. Emails vía Resend. 3 mails
+  cortos: d1 bienvenida taller, d3 vitrina de cursos, d7 CTA comunidad,
+  tono INCADE institucional ES/AR — documentar el copy en
+  `COMPONENTS.md` para que el usuario lo pueda revisar/ajustar después,
+  no se aprueba tácitamente por default.
+- No agregar herramientas nuevas (nada de Twilio/Mailchimp/Brevo).
+- **Cuidado explícito:** no disparar envíos reales contra leads de la
+  tabla real durante el desarrollo/testing — usar un destinatario de
+  prueba propio o un modo dry-run/log-only hasta que el usuario
+  confirme que quiere probar contra Resend de verdad. `RESEND_API_KEY`
+  ya tiene valor cargado localmente, así que un test mal acotado
+  mandaría mail de verdad.
+- DoD: cron + templates + lógica de envío listos y testeados con
+  destinatario de prueba; sin secretos ni URLs de terceros inventadas.
+
+[T13 · AUTO (código) / GATE (prueba real)] Tutorías add-on pago
+- Precio fijo por curso (decisión ya tomada por el usuario): campo en
+  el curso, default 0 = no se vende, lo carga el Admin.
+- Integración MercadoPago + webhook, mismo patrón que compra de cursos
+  (`f10c650`): firma `x-signature` verificada, webhook como única
+  fuente de verdad, acceso recién con `payment.approved`. Carreras
+  siguen sin ser comprables (ADR-15) — este flujo es solo tutorías.
+- El código y el flujo de escritura (branch nuevo del webhook, tabla,
+  RLS) se pueden codear en AUTO. La prueba de un pago real de punta a
+  punta la corre el usuario, igual que se dejó pendiente para T8 en su
+  momento — no se simulan tokens de pago.
+- DoD: 4 gates en verde; branch del webhook cubierto por test unitario
+  de la lógica de gracia (approved → acceso, resto → sin acceso).
+
+[T14 · AUTO] Comunidad / foro (`FEATURE_COMUNIDAD`)
+- MVP: foros por carrera + feed institucional. Flag en DB + fallback
+  env, apagado por default (`getFlags()`), nunca hardcodeado.
+- Solo usuarios autenticados, sin anónimos. Admin puede ocultar
+  publicaciones. Sin likes ni DMs — mantener el alcance mínimo.
+- DoD: 4 gates en verde; flag confirmado apagado por default; ruta
+  nueva no rompe nada de `(protected)/`.
+
+[T15 · AUTO] Deuda funcional chica + calidad
+- Historial unificado de logros en `/certificados` (cursos aprobados +
+  carreras), sin schema nuevo si no hace falta.
+- Perfil unificado coworking+educativa si sigue pendiente en el
+  checklist.
+- Limpiar demos del wizard de Sentry (`sentry-example-api`,
+  `sentry-example-page`, `global-error.tsx` si son solo boilerplate del
+  wizard).
+- Fix del comentario obsoleto en `src/app/(dashboard)/layout.tsx:143-145`.
+- Actualizar `docs/FUNCIONALIDADES.md:462`: Vercel YA existe (ver
+  `session_handoff.md` 2026-09-01) — no volver a marcar
+  BLOCKED-ESPERANDO-HUMANO.
+- Calidad: intentar que `tests/e2e/coworking-critical-path.spec.ts`
+  corra en local (pago simulado, sin sandbox MP real); sumar Vitest de
+  la lógica nueva de T11-T14 (nurturing, promote_lead, acceso por
+  suscripción/tutoría).
+- DoD: 4 gates en verde al cierre; sin `console.log` ni hex hardcodeado
+  en UI nueva.
+
+FUERA DE ALCANCE (no implementar en T10-T15, mismo criterio del draft
+original): bolsa de trabajo, mentoría 1:1, eventos, biblioteca,
+certificaciones externas, motor de recomendaciones, puntos por taller,
+WhatsApp masivo, reprogramar reservas.
+
+### Tabla de decisiones para T10-T15 (adaptada del draft — se conserva casi intacta)
+
+| Duda | Decisión |
+|---|---|
+| ¿Commit / push? | Con aprobación explícita, como siempre — nunca automático. |
+| ¿Editar migración ya aplicada 001-033? | Nunca. Nueva migración secuencial. |
+| Copy nurturing sin aprobar | ES/AR, tono INCADE institucional, 3 mails cortos (d1/d3/d7). Documentar en `COMPONENTS.md` para revisión posterior del usuario. |
+| Precio tutorías add-on | Campo en el curso, default 0 = no se vende. Admin lo carga. |
+| WhatsApp admisiones | CTA a `https://incade.edu.ar` — no inventar teléfono. |
+| ¿`FEATURE_PUBLICA` en prod? | Código listo, flag default false. Admin togglea en `/admin/configuracion`. |
+| Foro: anónimo / moderación | Solo usuarios autenticados. Admin puede ocultar. Sin likes/DMs. |
+| Pago MP sin token real | Código + firma `x-signature` + webhook como única fuente de verdad. No simular tokens — la prueba real la corre el usuario. |
+| Resend sin API key / con key de test | Código + templates completos. No disparar envíos reales a leads reales sin confirmación explícita del usuario. |
+| ¿`convert_user_role`? | Siempre la RPC. Nunca `UPDATE users.role`. Carreras solo las asigna Admin (regla 12). |
+| RLS | `is_admin()` security definer. Nunca subquery a `public.users`. |
+| Puntos | APPEND-ONLY. Nunca `UPDATE`/`DELETE` en `points_log`. |
+| UI | DS v2.1: tokens `--edu-*`/`--inc-*`, Inter, Lucide. Sin hex. Dark only. |
+| Schema | Español, snake_case, migraciones secuenciales en `supabase/migrations/`. |
+| Flags | `getFlags()` DB + fallback env. Nunca hardcodear un módulo apagado. |
+| Secretos | Nunca escribir keys. Si falta un secret: BLOCKED-HUMANO con comando/dashboard exacto. |
+| Classifier/Auto-review bloquea un comando | 1 reintento equivalente más seguro. Si bloquea de nuevo: documentar el comando exacto para el humano, no loopear. |
+| Vercel CLI / dominio / envs prod / rotar service role / staging / secrets GHA Playwright | BLOCKED-HUMANO (ya cubierto por T4/T6/T7 arriba). |
+| Migración de schema contra producción (`supabase db push`) | **Siempre pedir confirmación puntual antes de ejecutar**, sin excepción — no entra en el criterio de "AUTO" aunque el resto del slice sí lo sea. |
+| Conflicto spec vs código | Actualizar spec primero (versionar), después el código. Mismo criterio para el DS. |
+| Alcance ambiguo | El corte más chico que deja el caso de uso testeable. Anotar la deuda en `session_handoff.md`. |
+
 ## FUERA DE COLA — trabajo verificado en la rama, no estaba en esta lista original
 
 Los siguientes commits en `fix/db-search-path-024` (ya pusheados, HEAD
