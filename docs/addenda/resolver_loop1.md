@@ -301,6 +301,23 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
 (regla no negociable de CLAUDE.md).
 
 [T10 · GATE puntual] Desbloquear DB — aplicar 034+035+036 en producción
+
+> ESTADO VERIFICADO (2026-09-03): DONE. `supabase db push --yes` corrido
+> por el usuario (el classifier de Auto mode volvió a bloquearlo en esta
+> sesión al intentarlo desde acá, mismo patrón de siempre). Falló la
+> primera vez por el mismo bug ya conocido: `uuid_generate_v4()` sin
+> calificar en 035/036 (fix en `1567e35`/`dd66235`, análogo al de la
+> migración 022). Reintentado por el usuario tras el fix: aplicó limpio.
+> `supabase migration list` confirma Remote = Local en las 36
+> migraciones. Verificación funcional completa contra producción con
+> `verify-compra-suscripcion-tmp.js` (script temporal, sin commitear):
+> compra individual de curso (guard de idempotencia del webhook,
+> enrollment, `promote_lead_on_course_payment()`, role_history,
+> notificación, reintento idempotente) y suscripción mensual (RLS de
+> auto-alta, `has_active_course_subscription()` antes/después de activar,
+> RLS que bloquea la reedición propia una vez activa, inscripción
+> perezosa vía suscripción) — todos los checks en verde, fixtures
+> limpiados y confirmados sin residuo en producción.
 - El fix de `034_coupon_redeem_atomic.sql` (drop antes de recrear
   `increment_coupon_usage`, bug `SQLSTATE 42P13`) ya está commiteado
   (`18e1414`) — nada de código pendiente acá.

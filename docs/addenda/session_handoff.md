@@ -1,53 +1,54 @@
-# Session Handoff — 2026-09-03 (puesta a punto tras /recap — MODO FREEZE sigue vigente)
+# Session Handoff — 2026-09-03 (034+035+036 aplicadas y verificadas — MODO NORMAL)
 
-## MODO: FREEZE
+## MODO: NORMAL
 
-La tarea bloqueante sigue siendo aplicar las migraciones 034+035+036
-contra producción. `/continuar` NO debe arrancar ninguna feature nueva
-(tutorías add-on, nurturing, etc.) hasta que esa tarea esté DONE y
-confirmada. Si el usuario dice "Retomamos" sin más contexto, la ÚNICA
-tarea AUTO disponible es completar esa migración.
+La tarea bloqueante de FREEZE quedó resuelta: 034, 035 y 036 aplicadas
+contra producción y verificadas funcionalmente. La cola está al día
+(T1-T10 DONE o BLOCKED-ESPERANDO-HUMANO según corresponda; T11-T15
+son las slices nuevas de Etapa 3, ver `resolver_loop1.md`). Se puede
+seguir con desarrollo normal desde la cola.
 
-## TAREA PENDIENTE BLOQUEANTE (hacer esto primero al retomar)
+## T10 CERRADA — desbloqueo de DB (compra/suscripción de cursos)
 
-1. **Corrección sobre el handoff anterior:** el fix de
-   `034_coupon_redeem_atomic.sql` (agrega
-   `drop function if exists public.increment_coupon_usage(uuid);` antes
-   del `create or replace`, por el cambio de tipo de retorno void→boolean
-   que Postgres no permite vía `create or replace`, SQLSTATE 42P13)
-   **ya está commiteado** (`18e1414`), incluso antes del commit que
-   registró esta cola como FREEZE (`7992b22`). El handoff anterior decía
-   "sin commitear" — era un error de redacción del momento, no un
-   estado real pendiente. No hace falta volver a pedir aprobación para
-   ese commit puntual.
-2. Lo que sigue pendiente de verdad: correr `supabase db push --yes`
-   contra producción para aplicar 034/035/036. **Ojo:** el classifier de
-   Auto mode bloqueó este comando de forma inconsistente en la sesión
-   anterior (primera vez bloqueado, con "reintentá" pasó y aplicó
-   031-033, dos reintentos posteriores volvieron a bloquearse sin patrón
-   claro). Si vuelve a pasar: ofrecer al usuario correrlo él mismo en su
-   terminal, o ajustar `.claude/settings.json` con la skill
-   `update-config` para permitir el patrón.
-3. **Estado real de migraciones contra producción, confirmado el
-   2026-09-02 con `supabase migration list`** (CLI logueada, proyecto
-   `INCADEducativa` linkeado): 001-033 aplicadas (columna Remote = Local
-   en las 33). **034, 035, 036 siguen sin aplicar** (columna Remote
-   vacía) — sin cambios desde la sesión anterior.
-4. Una vez que 034+035+036 apliquen limpio: verificar funcionalmente
-   contra la DB real (script tipo `verify-fase3-tmp.js`) el flujo
-   completo de compra individual de curso Y de suscripción mensual,
-   antes de avisar que Etapa 3 (esta porción) está lista para pruebas.
+1. El fix de `034_coupon_redeem_atomic.sql` ya estaba commiteado
+   (`18e1414`) desde antes.
+2. Se detectó un segundo bug del mismo origen al intentar aplicar:
+   `035_compras_curso.sql` y `036_catalogo_suscripciones.sql` usaban
+   `uuid_generate_v4()` sin calificar — mismo bug ya resuelto antes en
+   la migración 022 (`db58f37`): `supabase db push` no incluye
+   `extensions` en el `search_path` de la sesión. Corregido en
+   `1567e35`/`dd66235` (calificado como `extensions.uuid_generate_v4()`),
+   commiteado y pusheado.
+3. El usuario corrió `supabase db push --yes` en su propia terminal (el
+   classifier de Auto mode volvió a bloquearlo dos veces desde acá) —
+   aplicó 034+035+036 sin error.
+4. `supabase migration list` confirmado el 2026-09-03: Remote = Local
+   en las 36 migraciones.
+5. Verificación funcional contra producción con
+   `verify-compra-suscripcion-tmp.js` (script temporal, sin commitear,
+   mismo criterio que `verify-fase3-tmp.js`): compra individual de
+   curso (guard de idempotencia del webhook, enrollment,
+   `promote_lead_on_course_payment()`, `role_history`, notificación de
+   bienvenida, reintento idempotente) y suscripción mensual (RLS de
+   auto-alta, `has_active_course_subscription()` antes/después de
+   activar, RLS que bloquea la reedición propia una vez activa,
+   inscripción perezosa vía suscripción) — **todos los checks en
+   verde**. Fixtures de prueba limpiados y confirmados sin residuo
+   (`courses`/`catalogo_planes`/`compras_curso`/`catalogo_suscripciones`
+   verificados vacíos de datos de QA tras la corrida).
 
-## ESTADO ACTUAL (verificado 2026-09-02 vía /recap)
+## ESTADO ACTUAL
 - Rama activa: `fix/db-search-path-024`
-- Último commit: `7992b22` (pusheado — `origin/fix/db-search-path-024` en
-  sync, 0 ahead / 0 behind confirmado con `git log @{u}..`).
-- PR #1: OPEN. `gh pr view` reportó `mergeable: UNKNOWN` en esta corrida
-  — no se puede afirmar "MERGEABLE" en tono categórico como decían
-  handoffs anteriores sin volver a consultar (GitHub a veces tarda en
-  recalcular ese campo tras un push, no implica conflicto confirmado).
+- Último commit: `dd66235` (pusheado — `origin/fix/db-search-path-024`
+  en sync, 0 ahead / 0 behind).
+- PR #1: OPEN. `mergeable` no reconsultado en esta pasada — ver nota de
+  la sesión anterior en "Handoffs anteriores" antes de asumir
+  "MERGEABLE" sin volver a chequear.
+- `docs/addenda/resolver_loop1.md` tiene T10-T15 nuevas (slices de la
+  propuesta de campaña reformuladas, ver commit `93b59f5`). T10 ahora
+  DONE, T11-T15 siguen sin arrancar.
 
-## RESULTADO DE LOS GATES DE CI (verificado 2026-09-02, sobre HEAD `7992b22`)
+## RESULTADO DE LOS GATES DE CI (verificado 2026-09-02, sobre HEAD `7992b22` — sin cambios de código desde entonces, solo docs + SQL)
 - `npx tsc --noEmit` → OK, sin errores
 - `npm run lint` → OK, 0 errores (1 warning preexistente
   `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
@@ -55,54 +56,73 @@ tarea AUTO disponible es completar esa migración.
 - GitHub Actions, run `33523997424` (2026-09-01T15:10 UTC): job
   `quality` → SUCCESS. Job `e2e` → FAILURE, pero tiene
   `continue-on-error: true` en `ci.yml`, no bloquea el gate real.
-- `npm run build` no se corrió en esta pasada (no pedido explícitamente
-  por el usuario).
+- `npm run build` no se corrió en esta pasada.
 
-## CORRECCIÓN — T8 (env vars productivas) tenía un error de interpretación
-El handoff del 2026-09-01 decía que solo faltaba `CRON_SECRET` y que las
-otras 6 (`ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
+## PRÓXIMA TAREA SUGERIDA (vía /continuar)
+1. T11 (checklist real de E3 en `FUNCIONALIDADES.md`) — buen punto de
+   partida, bajo riesgo.
+2. T12-T14 (nurturing, tutorías pago, foro) — cada una con su propio
+   checkpoint según la tabla de decisiones de `resolver_loop1.md`.
+3. T6 (rotar service role key) y T7 (Supabase staging, 36 migraciones a
+   replicar) siguen 100% manuales/BLOCKED, sin cambios.
+
+## PENDIENTES SIN RESOLVER (arrastrados)
+- `verify-fase3-tmp.js` y `verify-compra-suscripcion-tmp.js` sin
+  trackear en la raíz del repo — scripts temporales de verificación,
+  deliberadamente sin commitear
+- Archivos demo del wizard de Sentry (`sentry-example-api`,
+  `sentry-example-page`, `global-error.tsx`) sin limpiar antes de
+  producción real — parte del alcance de T15
+- Comentario desactualizado en
+  `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega
+  hasta acá es /carreras") — cosmético, parte del alcance de T15
+- `docs/FUNCIONALIDADES.md:462` sigue describiendo el deploy de Vercel
+  como "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto,
+  parte del alcance de T15
+- Corrección de T8 (env vars productivas) del handoff 2026-09-02 sigue
+  vigente sin cambios: `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`,
+  `MP_WEBHOOK_SECRET`, `TWILIO_*` siguen sin valor en `.env.local`
+
+## RESUELTO DESDE EL HANDOFF ANTERIOR
+- Migraciones 034, 035 y 036 aplicadas contra producción y verificadas
+  funcionalmente (ver T10 arriba) — cierra la tarea bloqueante que tenía
+  el proyecto en MODO FREEZE desde el 2026-09-01.
+
+## Handoffs anteriores
+
+### Session Handoff — 2026-09-03 (puesta a punto tras /recap — MODO FREEZE, previo a aplicar 034-036)
+
+#### MODO: FREEZE (según ese momento)
+La tarea bloqueante era aplicar las migraciones 034+035+036 contra
+producción. `/continuar` no debía arrancar ninguna feature nueva hasta
+que esa tarea estuviera DONE y confirmada.
+
+#### TAREA PENDIENTE BLOQUEANTE (según ese momento)
+1. Corrección sobre un handoff anterior: el fix de
+   `034_coupon_redeem_atomic.sql` ya estaba commiteado (`18e1414`) desde
+   antes de que se abriera el FREEZE — el handoff de esa sesión lo daba
+   por pendiente por error de redacción.
+2. Pendiente real: correr `supabase db push --yes` contra producción
+   (034/035/036 seguían sin aplicar, confirmado con
+   `supabase migration list`).
+3. Una vez aplicado: verificar funcionalmente compra de curso y
+   suscripción — esto es justo lo que se cerró en la sesión siguiente
+   (ver T10 arriba).
+
+#### CORRECCIÓN — T8 (env vars productivas) tenía un error de interpretación
+El handoff del 2026-09-01 decía que solo faltaba `CRON_SECRET` y que
+las otras 6 (`ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
 `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`) ya
 tenían valor cargado localmente. Eso salió de correr el `comm` de
 `/recap` en la dirección que trae el propio comando del skill, que
-calcula lo inverso de lo que describe. Corriendo la dirección correcta
-el 2026-09-02: esas 6 variables **siguen sin valor** en `.env.local`.
-Solo `CRON_SECRET` tiene valor local, pero no está declarada en
-`.env.example` (caso distinto, no es lo que T8 mide). Detalle completo
-en `resolver_loop1.md` T8.
+calcula lo inverso de lo que describe. Corriendo la dirección correcta:
+esas 6 variables **siguen sin valor** en `.env.local`. Sigue vigente,
+sin cambios en la sesión del 09-03.
 
-## PRÓXIMA TAREA SUGERIDA (vía /continuar)
-1. Correr `supabase db push --yes` para aplicar 034/035/036 (requiere
-   aprobación del usuario por tratarse de producción).
-2. Verificación funcional del flujo de compra/suscripción de cursos
-   post-aplicación.
-3. Recién después, T6 (rotar service role key) y T7 (Supabase staging,
-   36 migraciones a replicar, no 34) siguen 100% manuales/BLOCKED.
-
-## PENDIENTES SIN RESOLVER (arrastrados)
-- `verify-fase3-tmp.js` sin trackear en la raíz del repo — script
-  temporal de verificación, deliberadamente sin commitear (se
-  autodeclara "no se commitea" en su propio header)
-- Archivos demo del wizard de Sentry (`sentry-example-api`,
-  `sentry-example-page`, `global-error.tsx`) sin limpiar antes de
-  producción real
-- Comentario desactualizado en
-  `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega
-  hasta acá es /carreras") — cosmético, actualizar cuando se toque ese
-  archivo de nuevo
-- `docs/FUNCIONALIDADES.md:462` sigue describiendo el deploy de Vercel
-  como "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto,
-  fuera del alcance de `/poner-a-punto` (solo toca
-  `resolver_loop1.md`/`session_handoff.md`)
-
-## RESUELTO DESDE EL HANDOFF ANTERIOR
-- El fix de `034_coupon_redeem_atomic.sql` (drop antes de recrear
-  `increment_coupon_usage`) está commiteado (`18e1414`) — el handoff
-  anterior lo daba por pendiente por error de redacción.
-- Migraciones 001-033 confirmadas aplicadas en producción vía
-  `supabase migration list` (antes solo se sabía por inferencia de
-  `session_handoff.md`, ahora verificado con el CLI logueado).
-
-## Handoffs anteriores
+#### ESTADO ACTUAL (según ese momento)
+- Último commit: `7992b22` (pusheado, 0 ahead/0 behind).
+- PR #1: OPEN. `gh pr view` reportó `mergeable: UNKNOWN` — no se pudo
+  afirmar "MERGEABLE" categóricamente como decían handoffs anteriores.
 
 ### Session Handoff — 2026-09-01 (compra + suscripción de cursos, Etapa 3 — CERRADA CON TAREA PENDIENTE)
 
