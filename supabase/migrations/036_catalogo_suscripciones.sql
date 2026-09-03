@@ -8,10 +8,16 @@
 -- que no aplica acá).
 -- NO aplicar contra ninguna DB sin aprobación explícita del usuario.
 -- Ejecutar en: Supabase Dashboard > SQL Editor
+--
+-- uuid_generate_v4() calificado como extensions.uuid_generate_v4(): el
+-- runner de `supabase db push` no incluye el schema `extensions` en el
+-- search_path de la sesión (a diferencia del SQL Editor del Dashboard),
+-- así que la llamada sin calificar falla con "function does not exist"
+-- (mismo bug ya resuelto en la migración 022).
 -- ============================================================
 
 create table public.catalogo_planes (
-  id         uuid primary key default uuid_generate_v4(),
+  id         uuid primary key default extensions.uuid_generate_v4(),
   nombre     text not null,
   precio     numeric(10,2) not null,
   activo     boolean not null default true,
@@ -23,7 +29,7 @@ comment on table public.catalogo_planes is
   (a diferencia de membership_plans): el spec solo pide cadencia mensual.';
 
 create table public.catalogo_suscripciones (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default extensions.uuid_generate_v4(),
   user_id           uuid not null references public.users(id) on delete cascade,
   plan_id           uuid references public.catalogo_planes(id),
   monto             numeric(10,2) not null,
