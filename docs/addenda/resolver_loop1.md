@@ -86,6 +86,12 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > local, requiere acceso a la DB real. No se lo vuelve a marcar DONE
 > hasta que alguien confirme esa aplicación.
 
+> ESTADO VERIFICADO (2026-09-02): DONE. `supabase migration list`
+> corrido con la CLI logueada contra el proyecto productivo
+> (`INCADEducativa`) confirma columna Remote = Local para 024 — y de
+> hecho para el rango completo 001-033. Deja de ser "no verificable",
+> queda cerrada.
+
 [T3 · GATE] CI verde en GitHub tras el fix del lockfile
 - Recién después de que yo apruebe y commitee T1+T2: creá rama, empujala,
   abrí PR si hay `gh` autenticado, y `gh run watch` hasta que el job
@@ -196,6 +202,13 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > producción y dos ajenos a este repo (`A-English`, `Planning Pro`).
 > Actualizar el número a 34 antes de ejecutar esta tarea.
 
+> ESTADO VERIFICADO (2026-09-02): sigue DESCONOCIDO/sin staging — mismo
+> `supabase projects list` de hoy solo lista `INCADEducativa`
+> (producción, linkeado) y los dos proyectos ajenos. El número de
+> migraciones volvió a quedar obsoleto otra vez: hoy hay 36
+> (`035_compras_curso.sql`, `036_catalogo_suscripciones.sql` se sumaron
+> después del 09-01). Actualizar a 36 antes de ejecutar esta tarea.
+
 [T8 · GATE] RESEND_API_KEY / MP_ACCESS_TOKEN / TWILIO_* productivos
 - 100% manual (cuentas de terceros). Para cada uno dame: link exacto al
   dashboard de la key productiva, variable de .env.example que le
@@ -221,6 +234,20 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > pendiente hasta que el usuario confirme el pago real de prueba vía
 > webhook. Falta cargar `CRON_SECRET` localmente si los cron jobs lo
 > necesitan.
+
+> CORRECCIÓN (2026-09-02): la nota de 2026-09-01 está mal — error de
+> dirección en el `comm`. El comando literal que trae el skill `/recap`
+> (`comm -13 <(...example) <(...local)`) calcula lo inverso de lo que
+> describe: devuelve variables CON valor en `.env.local` que NO están
+> declaradas en `.env.example` (por eso salió solo `CRON_SECRET` — tiene
+> valor local pero no figura en `.env.example`, no es que las demás ya
+> estuvieran cargadas). Corriendo la dirección correcta
+> (`comm -23 <(...example) <(...local)`, "declaradas en .env.example
+> sin valor en .env.local"): `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`,
+> `MP_WEBHOOK_SECRET`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
+> `TWILIO_WHATSAPP_FROM` **siguen sin valor** en `.env.local`. No hubo
+> ningún avance real desde el 29/08 en este punto — sigue
+> BLOCKED-ESPERANDO-HUMANO tal cual estaba.
 
 [T9 · AUTO] PWA — manifest + service worker
 - Implementá public/manifest.json (íconos, nombre, colores del Design

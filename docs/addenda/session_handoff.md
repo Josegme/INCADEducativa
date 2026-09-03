@@ -1,111 +1,201 @@
-# Session Handoff — 2026-09-01 (compra + suscripción de cursos, Etapa 3 — CERRADA CON TAREA PENDIENTE)
+# Session Handoff — 2026-09-03 (puesta a punto tras /recap — MODO FREEZE sigue vigente)
 
 ## MODO: FREEZE
 
-**El usuario pidió explícitamente frenar acá: "una vez hecho la migración
-continuamos recién."** `/continuar` NO debe arrancar ninguna feature nueva
-(tutorías add-on, nurturing, etc.) hasta que la tarea de la sección
-siguiente esté DONE y confirmada. Si el usuario dice "Retomamos" sin más
-contexto, la ÚNICA tarea AUTO disponible es completar la migración — no
-inventar otro trabajo mientras tanto.
+La tarea bloqueante sigue siendo aplicar las migraciones 034+035+036
+contra producción. `/continuar` NO debe arrancar ninguna feature nueva
+(tutorías add-on, nurturing, etc.) hasta que esa tarea esté DONE y
+confirmada. Si el usuario dice "Retomamos" sin más contexto, la ÚNICA
+tarea AUTO disponible es completar esa migración.
 
 ## TAREA PENDIENTE BLOQUEANTE (hacer esto primero al retomar)
 
-1. **`supabase/migrations/034_coupon_redeem_atomic.sql` tiene un fix sin
-   commitear** (`git diff` lo muestra: agrega `drop function if exists
-   public.increment_coupon_usage(uuid);` antes del `create or replace`).
-   Bug real encontrado hoy al aplicar contra producción por primera vez:
-   `increment_coupon_usage()` cambia de `returns void` (migración 030) a
-   `returns boolean` (034) — Postgres no permite cambiar el tipo de retorno
-   con `create or replace`, tira `SQLSTATE 42P13`. Esta migración nunca se
-   había aplicado contra ninguna DB antes de hoy, por eso el bug no se había
-   detectado. **Preguntar al usuario si aprueba commitear este fix** (no se
-   commiteó todavía, política del proyecto — nunca commitear sin
-   aprobación explícita).
-2. Con el fix commiteado (o confirmado que ya estaba bien), correr
-   `supabase db push --yes` de nuevo. **Ojo:** el classifier de Auto mode
-   bloqueó este comando de forma inconsistente esta sesión — la primera vez
-   lo bloqueó, tras un "reintenta" del usuario pasó y aplicó 031-033 antes
-   de cortarse en el bug de 034, y los 2 reintentos posteriores (ya con el
-   fix puesto) volvieron a bloquearse sin patrón claro. Si vuelve a pasar,
-   ofrecer al usuario correrlo él mismo en su terminal, o ajustar
-   `.claude/settings.json` con la skill `update-config` para permitir este
-   patrón de comando.
-3. **Estado real de migraciones contra producción confirmado hoy** (`supabase
-   migration list`): 001-030 aplicadas desde hace tiempo. **031
-   (`rls_hardening`), 032 (`bookings_update_guard`), 033
-   (`storage_coordinador_rls`) se aplicaron recién HOY, exitosamente** (dos
-   NOTICE inofensivos sobre triggers que no existían para dropear, nada
-   bloqueante). **034, 035, 036 siguen sin aplicar** — 034 por el bug de
-   arriba, 035/036 nunca llegaron a intentarse porque el push se corta en el
-   primer error.
+1. **Corrección sobre el handoff anterior:** el fix de
+   `034_coupon_redeem_atomic.sql` (agrega
+   `drop function if exists public.increment_coupon_usage(uuid);` antes
+   del `create or replace`, por el cambio de tipo de retorno void→boolean
+   que Postgres no permite vía `create or replace`, SQLSTATE 42P13)
+   **ya está commiteado** (`18e1414`), incluso antes del commit que
+   registró esta cola como FREEZE (`7992b22`). El handoff anterior decía
+   "sin commitear" — era un error de redacción del momento, no un
+   estado real pendiente. No hace falta volver a pedir aprobación para
+   ese commit puntual.
+2. Lo que sigue pendiente de verdad: correr `supabase db push --yes`
+   contra producción para aplicar 034/035/036. **Ojo:** el classifier de
+   Auto mode bloqueó este comando de forma inconsistente en la sesión
+   anterior (primera vez bloqueado, con "reintentá" pasó y aplicó
+   031-033, dos reintentos posteriores volvieron a bloquearse sin patrón
+   claro). Si vuelve a pasar: ofrecer al usuario correrlo él mismo en su
+   terminal, o ajustar `.claude/settings.json` con la skill
+   `update-config` para permitir el patrón.
+3. **Estado real de migraciones contra producción, confirmado el
+   2026-09-02 con `supabase migration list`** (CLI logueada, proyecto
+   `INCADEducativa` linkeado): 001-033 aplicadas (columna Remote = Local
+   en las 33). **034, 035, 036 siguen sin aplicar** (columna Remote
+   vacía) — sin cambios desde la sesión anterior.
 4. Una vez que 034+035+036 apliquen limpio: verificar funcionalmente
-   contra la DB real (script tipo `verify-fase3-tmp.js`) el flujo completo
-   de compra individual de curso Y de suscripción mensual, antes de avisar
-   que Etapa 3 (esta porción) está lista para pruebas.
+   contra la DB real (script tipo `verify-fase3-tmp.js`) el flujo
+   completo de compra individual de curso Y de suscripción mensual,
+   antes de avisar que Etapa 3 (esta porción) está lista para pruebas.
 
-## ESTADO ACTUAL
+## ESTADO ACTUAL (verificado 2026-09-02 vía /recap)
 - Rama activa: `fix/db-search-path-024`
-- Último commit: `0fd2f40` (pusheado — `origin/fix/db-search-path-024` en sync, salvo el fix de 034 sin commitear del punto 1).
-- PR #1: OPEN, MERGEABLE.
+- Último commit: `7992b22` (pusheado — `origin/fix/db-search-path-024` en
+  sync, 0 ahead / 0 behind confirmado con `git log @{u}..`).
+- PR #1: OPEN. `gh pr view` reportó `mergeable: UNKNOWN` en esta corrida
+  — no se puede afirmar "MERGEABLE" en tono categórico como decían
+  handoffs anteriores sin volver a consultar (GitHub a veces tarda en
+  recalcular ese campo tras un push, no implica conflicto confirmado).
 
-## TRABAJO DE ESTA SESIÓN — dos entregables de Etapa 3
-1. **Compra individual de cursos vía MercadoPago** (`f10c650`/`4ec9246`,
-   pusheados): migración `035_compras_curso.sql` (tabla + función
-   `promote_lead_on_course_payment()` SECURITY DEFINER para CU-T03),
-   `createCoursePreference()`, `purchaseCourseAction`, branch nuevo en el
-   webhook (prefijo `curso:`), `CoursePurchaseForm.tsx`, routing pago/gratis
-   en `cursos/[slug]/page.tsx`, página de estado
-   `cursos/[slug]/compra/[compraId]/page.tsx`.
-2. **Suscripción mensual al catálogo educativo** (`0fd2f40`, pusheado):
-   migración `036_catalogo_suscripciones.sql` (tablas + función
-   `has_active_course_subscription()`), reusa el mecanismo de membresías de
-   Coworking (`createCourseSubscription()`, PreApproval de MP) sin tocar el
-   código existente de Coworking, acceso vía inscripción perezosa a
-   `enrollments` (`enrollViaSubscriptionAction`), admin en
-   `/admin/suscripciones`, picker público en `/cursos/suscripcion`.
-
-Ambos con plan completo aprobado en modo plan (ver
-`C:\Users\Usuario\.claude\plans\partitioned-cooking-goose.md`, sobrescrito
-entre los dos — si hace falta el detalle del primero, está en el historial
-de este chat). Nurturing y tutorías-add-on quedan **fuera de alcance a
-propósito** — nurturing reutilizaría Resend (sin herramienta nueva) pero
-falta el copy; tutorías-add-on ya tiene mecánica decidida por el usuario
-(precio fijo por curso) pero es una feature separada, no arrancada.
-
-**DoD verde en ambos commits:** `tsc`/`lint`/`test:unit`/`build` los 4 en
-verde (el primer build tuvo que limpiar un `.next/` corrupto de una sesión
-anterior).
-
-## RESULTADO DE LOS 4 GATES (verificado local, esta sesión, sobre HEAD `0fd2f40`)
+## RESULTADO DE LOS GATES DE CI (verificado 2026-09-02, sobre HEAD `7992b22`)
 - `npx tsc --noEmit` → OK, sin errores
-- `npm run lint` → OK, 0 errores (1 warning preexistente `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
+- `npm run lint` → OK, 0 errores (1 warning preexistente
+  `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
 - `npm run test:unit` → OK, 17/17 passed (3 archivos)
-- `npm run build` → OK, exit 0, 64 rutas incluidas las 4 nuevas de suscripción (`/admin/suscripciones`, `/cursos/suscripcion`, `/cursos/suscripcion/[planId]`, `/cursos/suscripcion/estado/[suscripcionId]`).
+- GitHub Actions, run `33523997424` (2026-09-01T15:10 UTC): job
+  `quality` → SUCCESS. Job `e2e` → FAILURE, pero tiene
+  `continue-on-error: true` en `ci.yml`, no bloquea el gate real.
+- `npm run build` no se corrió en esta pasada (no pedido explícitamente
+  por el usuario).
 
-## HALLAZGO DE ESTA SESIÓN — T4 (Vercel) deja de estar BLOCKED
-El deploy de Vercel **existe y funciona de verdad** (status check `Vercel` = SUCCESS en el PR, con URL real). Las sesiones anteriores (desde 2026-08-12) no podían confirmarlo porque el MCP de Vercel veía 0 proyectos en el team conectado — eso era un problema de visibilidad del MCP, no de que faltara el deploy. Detalle actualizado en `resolver_loop1.md` T4 (bajado de BLOCKED a PARCIAL). Sigue sin confirmar: dominio custom `incadeducativa.com` y envs cargados por ambiente — la CLI de Vercel local sigue sin instalar.
-
-## MODO: NORMAL
-Cola al día, gates verdes, sin código pendiente de commitear (0 ahead/0 behind). T4 avanzó de estado (ver arriba), T8 también (ver `resolver_loop1.md`: de 6 variables faltantes a solo `CRON_SECRET`). El bloque grande que falta para el 100% del sistema es Etapa 3 (pago de cursos vía MercadoPago, suscripciones, nurturing automatizado) — ver `docs/FUNCIONALIDADES.md`, la mayoría de esos ítems siguen en `[ ]`.
+## CORRECCIÓN — T8 (env vars productivas) tenía un error de interpretación
+El handoff del 2026-09-01 decía que solo faltaba `CRON_SECRET` y que las
+otras 6 (`ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`) ya
+tenían valor cargado localmente. Eso salió de correr el `comm` de
+`/recap` en la dirección que trae el propio comando del skill, que
+calcula lo inverso de lo que describe. Corriendo la dirección correcta
+el 2026-09-02: esas 6 variables **siguen sin valor** en `.env.local`.
+Solo `CRON_SECRET` tiene valor local, pero no está declarada en
+`.env.example` (caso distinto, no es lo que T8 mide). Detalle completo
+en `resolver_loop1.md` T8.
 
 ## PRÓXIMA TAREA SUGERIDA (vía /continuar)
-1. Con el usuario: confirmar si instala la CLI de Vercel (`npm i -g vercel`) para poder verificar dominio/envs por ambiente sin depender del dashboard manual.
-2. Retomar T6 (rotar service role key) y T7 (Supabase staging, 34 migraciones a replicar) — ambos siguen 100% manuales/BLOCKED.
-3. Si el usuario quiere seguir hacia el 100%: planificar Etapa 3 completa (pagos de cursos individuales vía MP — 8 ítems del checklist en `[ ]` —, suscripciones, nurturing días 1/3/7), es lo más grande que falta.
-4. Si se quiere `e2e` verde en CI: cargar los secrets de Supabase que necesita el `webServer` de Playwright como Secrets del repo en GitHub.
+1. Correr `supabase db push --yes` para aplicar 034/035/036 (requiere
+   aprobación del usuario por tratarse de producción).
+2. Verificación funcional del flujo de compra/suscripción de cursos
+   post-aplicación.
+3. Recién después, T6 (rotar service role key) y T7 (Supabase staging,
+   36 migraciones a replicar, no 34) siguen 100% manuales/BLOCKED.
 
 ## PENDIENTES SIN RESOLVER (arrastrados)
-- `verify-fase3-tmp.js` sin trackear en la raíz del repo — script temporal de verificación, deliberadamente sin commitear (se autodeclara "no se commitea" en su propio header)
-- Archivos demo del wizard de Sentry (`sentry-example-api`, `sentry-example-page`, `global-error.tsx`) sin limpiar antes de producción real — no se tocaron esta sesión
-- Comentario desactualizado en `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega hasta acá es /carreras") — cosmético, actualizar cuando se toque ese archivo de nuevo
-- `docs/FUNCIONALIDADES.md:462` sigue describiendo el deploy de Vercel como "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — quedó obsoleto por el hallazgo de esta sesión, no se corrigió todavía (fuera del alcance de `/poner-a-punto`, que solo toca `resolver_loop1.md`/`session_handoff.md`)
+- `verify-fase3-tmp.js` sin trackear en la raíz del repo — script
+  temporal de verificación, deliberadamente sin commitear (se
+  autodeclara "no se commitea" en su propio header)
+- Archivos demo del wizard de Sentry (`sentry-example-api`,
+  `sentry-example-page`, `global-error.tsx`) sin limpiar antes de
+  producción real
+- Comentario desactualizado en
+  `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega
+  hasta acá es /carreras") — cosmético, actualizar cuando se toque ese
+  archivo de nuevo
+- `docs/FUNCIONALIDADES.md:462` sigue describiendo el deploy de Vercel
+  como "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto,
+  fuera del alcance de `/poner-a-punto` (solo toca
+  `resolver_loop1.md`/`session_handoff.md`)
 
 ## RESUELTO DESDE EL HANDOFF ANTERIOR
-- Los 10 hallazgos de `INFORME_CODE_REVIEW_2026-08-29.md` (informe ya borrado tras resolverse, por decisión del usuario) están commiteados y pusheados en `f9f10d5`.
-- El fix de middleware que bloqueaba manifest/sw/icons para visitantes sin sesión (T9) está commiteado y pusheado en `8fbaa04`.
+- El fix de `034_coupon_redeem_atomic.sql` (drop antes de recrear
+  `increment_coupon_usage`) está commiteado (`18e1414`) — el handoff
+  anterior lo daba por pendiente por error de redacción.
+- Migraciones 001-033 confirmadas aplicadas en producción vía
+  `supabase migration list` (antes solo se sabía por inferencia de
+  `session_handoff.md`, ahora verificado con el CLI logueado).
 
 ## Handoffs anteriores
+
+### Session Handoff — 2026-09-01 (compra + suscripción de cursos, Etapa 3 — CERRADA CON TAREA PENDIENTE)
+
+#### MODO: FREEZE (según ese momento)
+El usuario pidió explícitamente frenar acá: "una vez hecho la migración
+continuamos recién." `/continuar` NO debe arrancar ninguna feature nueva
+(tutorías add-on, nurturing, etc.) hasta que la tarea de la sección
+siguiente esté DONE y confirmada.
+
+#### TAREA PENDIENTE BLOQUEANTE (según ese momento — punto 1 corregido arriba)
+1. `supabase/migrations/034_coupon_redeem_atomic.sql` tiene un fix sin
+   commitear (`git diff` lo muestra: agrega
+   `drop function if exists public.increment_coupon_usage(uuid);` antes
+   del `create or replace`). Bug real encontrado al aplicar contra
+   producción por primera vez: `increment_coupon_usage()` cambia de
+   `returns void` (migración 030) a `returns boolean` (034) — Postgres
+   no permite cambiar el tipo de retorno con `create or replace`, tira
+   `SQLSTATE 42P13`. **Preguntar al usuario si aprueba commitear este
+   fix.**
+2. Con el fix commiteado, correr `supabase db push --yes` de nuevo.
+3. Estado real de migraciones contra producción confirmado ese día
+   (`supabase migration list`): 001-030 aplicadas desde hace tiempo.
+   031 (`rls_hardening`), 032 (`bookings_update_guard`), 033
+   (`storage_coordinador_rls`) se aplicaron ese mismo día. 034, 035, 036
+   seguían sin aplicar.
+4. Una vez que 034+035+036 apliquen limpio: verificar funcionalmente
+   contra la DB real el flujo completo de compra individual de curso Y
+   de suscripción mensual.
+
+#### ESTADO ACTUAL (según ese momento)
+- Rama activa: `fix/db-search-path-024`
+- Último commit: `0fd2f40` (pusheado — en sync salvo el fix de 034 sin
+  commitear del punto 1, que se commiteó después como `18e1414`).
+- PR #1: OPEN, MERGEABLE.
+
+#### TRABAJO DE ESA SESIÓN — dos entregables de Etapa 3
+1. **Compra individual de cursos vía MercadoPago** (`f10c650`/`4ec9246`):
+   migración `035_compras_curso.sql` (tabla + función
+   `promote_lead_on_course_payment()` SECURITY DEFINER para CU-T03),
+   `createCoursePreference()`, `purchaseCourseAction`, branch nuevo en
+   el webhook (prefijo `curso:`), `CoursePurchaseForm.tsx`, routing
+   pago/gratis en `cursos/[slug]/page.tsx`, página de estado
+   `cursos/[slug]/compra/[compraId]/page.tsx`.
+2. **Suscripción mensual al catálogo educativo** (`0fd2f40`): migración
+   `036_catalogo_suscripciones.sql` (tablas + función
+   `has_active_course_subscription()`), reusa el mecanismo de
+   membresías de Coworking (`createCourseSubscription()`, PreApproval de
+   MP) sin tocar el código existente de Coworking, acceso vía
+   inscripción perezosa a `enrollments` (`enrollViaSubscriptionAction`),
+   admin en `/admin/suscripciones`, picker público en
+   `/cursos/suscripcion`.
+
+Nurturing y tutorías-add-on quedaron fuera de alcance a propósito.
+
+#### RESULTADO DE LOS 4 GATES (verificado esa sesión, sobre HEAD `0fd2f40`)
+- `npx tsc --noEmit` → OK, sin errores
+- `npm run lint` → OK, 0 errores (1 warning preexistente
+  `jsx-a11y/alt-text`)
+- `npm run test:unit` → OK, 17/17 passed (3 archivos)
+- `npm run build` → OK, exit 0, 64 rutas incluidas las 4 nuevas de
+  suscripción.
+
+#### HALLAZGO DE ESA SESIÓN — T4 (Vercel) deja de estar BLOCKED
+El deploy de Vercel existe y funciona de verdad (status check `Vercel` =
+SUCCESS en el PR, con URL real). Detalle en `resolver_loop1.md` T4
+(bajado de BLOCKED a PARCIAL).
+
+#### MODO: NORMAL (nota: bloque contradictorio dejado tal cual del
+original — la sesión pasó a FREEZE después de escribir esto; se
+preserva sin editar por fidelidad histórica)
+Cola al día, gates verdes, sin código pendiente de commitear. T4 avanzó
+de estado, T8 también (de 6 variables faltantes a solo `CRON_SECRET` —
+corregido más arriba, esa lectura era errónea). El bloque grande que
+falta para el 100% del sistema es Etapa 3, ver `docs/FUNCIONALIDADES.md`.
+
+#### PRÓXIMA TAREA SUGERIDA (según ese momento)
+1. Confirmar si se instala la CLI de Vercel.
+2. Retomar T6 y T7 — ambos 100% manuales/BLOCKED.
+3. Si se quiere seguir hacia el 100%: planificar Etapa 3 completa.
+4. Si se quiere `e2e` verde en CI: cargar los secrets de Supabase que
+   necesita el `webServer` de Playwright como Secrets del repo.
+
+#### PENDIENTES SIN RESOLVER (arrastrados, según ese momento)
+- `verify-fase3-tmp.js` sin trackear
+- Archivos demo del wizard de Sentry sin limpiar
+- Comentario desactualizado en `src/app/(dashboard)/layout.tsx:143-145`
+- `docs/FUNCIONALIDADES.md:462` desactualizado sobre Vercel
+
+#### RESUELTO DESDE EL HANDOFF ANTERIOR (según ese momento)
+- Los 10 hallazgos de `INFORME_CODE_REVIEW_2026-08-29.md` commiteados y
+  pusheados en `f9f10d5`.
+- El fix de middleware que bloqueaba manifest/sw/icons (T9) commiteado
+  y pusheado en `8fbaa04`.
 
 ### Session Handoff — 2026-09-01 06:10 UTC
 
