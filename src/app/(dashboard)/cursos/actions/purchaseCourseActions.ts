@@ -67,7 +67,7 @@ export async function purchaseCourseAction(formData: FormData): Promise<Purchase
 
   if (!user) {
     const flags = await getFlags();
-    if (!flags.comunidad) {
+    if (!flags.publica) {
       return { error: "Iniciá sesión para comprar este curso" };
     }
 

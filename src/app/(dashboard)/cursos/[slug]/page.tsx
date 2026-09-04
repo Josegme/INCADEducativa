@@ -294,13 +294,13 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
       {!course.es_gratuito && !isEnrolled ? (
         hasActiveSubscription ? (
           <SubscriptionAccessButton courseId={course.id} courseSlug={course.slug} />
-        ) : flags.comunidad ? (
+        ) : flags.publica ? (
           <CoursePurchaseForm
             courseId={course.id}
             precio={course.precio}
             descuentoPct={discountPct}
             isAnonymous={!user}
-            showGuestFields={!user && flags.publica}
+            showGuestFields={!user}
           />
         ) : (
           <Badge state="locked">Compra de cursos disponible próximamente</Badge>

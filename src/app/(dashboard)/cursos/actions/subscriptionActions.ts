@@ -36,7 +36,7 @@ export async function createCatalogSubscriptionAction(formData: FormData): Promi
 
   if (!user) {
     const flags = await getFlags();
-    if (!flags.comunidad) {
+    if (!flags.publica) {
       return { error: "Iniciá sesión para suscribirte" };
     }
 

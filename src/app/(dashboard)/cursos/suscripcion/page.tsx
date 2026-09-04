@@ -44,7 +44,7 @@ export default async function CatalogSuscripcionPage() {
         </div>
       ) : null}
 
-      {!flags.comunidad ? (
+      {!flags.publica ? (
         <p className="text-sm text-[--edu-text-muted]">La suscripción al catálogo está disponible próximamente.</p>
       ) : planRows.length === 0 ? (
         <p className="text-sm text-[--edu-text-muted]">Todavía no hay planes de suscripción publicados.</p>

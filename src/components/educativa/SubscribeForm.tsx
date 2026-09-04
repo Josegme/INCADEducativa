@@ -11,7 +11,7 @@ import { createCatalogSubscriptionAction } from "@/app/(dashboard)/cursos/action
 interface SubscribeFormProps {
   planId: string;
   isAnonymous: boolean;
-  /** flags.comunidad && flags.publica — habilita la rama de autorregistro de invitado. */
+  /** flags.publica — habilita la rama de autorregistro de invitado. */
   showGuestFields: boolean;
 }
 

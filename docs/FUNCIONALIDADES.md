@@ -327,15 +327,15 @@
 > Registro libre por email + contraseña. Catálogo educativo abierto en E3. Reserva de Coworking a precio público desde E2 (sin descuento institucional).
 
 - [ ] Reservar Coworking a precio público con registro mínimo · `E2`
-- [ ] Registrarse con email y contraseña
+- [x] Registrarse con email y contraseña — sin página `/registro` standalone (no la pide el spec): registro inline nombre+email+contraseña en el mismo paso de compra (`purchaseCourseAction`) o suscripción (`createCatalogSubscriptionAction`), gateado por `FEATURE_PUBLICA`, crea `role='comunidad'` directo (regla #2)
 - [x] Ver catálogo público de cursos sin login — `/cursos` y `/cursos/[slug]` ya manejaban `user === null` en todos lados (no hizo falta tocar las páginas), el bloqueo real era `src/middleware.ts` (nunca las dejaba pasar sin sesión). Gateado por `FEATURE_PUBLICA` (apagado por default) — con el flag apagado el comportamiento no cambia respecto a antes de esta pasada
-- [ ] Comprar cursos individuales (flujo MercadoPago)
-- [ ] Suscribirse mensualmente para acceso a catálogo
-- [ ] Acceder a contenido tras confirmación de pago
-- [ ] Completar clases, cuestionarios y examen final
-- [ ] Obtener certificado digital con QR verificable
-- [ ] Acceder a tutorías como add-on pago según el curso contratado
-- [ ] Participar en talleres en vivo
+- [x] Comprar cursos individuales (flujo MercadoPago) — migración 035 (`compras_curso`), `purchaseCourseAction` + `createCoursePreference()`, branch `curso:` del webhook (`handleCoursePurchaseWebhook`). Verificado funcionalmente contra producción en la sesión anterior (`verify-compra-suscripcion-tmp.js`)
+- [x] Suscribirse mensualmente para acceso a catálogo — migración 036 (`catalogo_suscripciones`/`catalogo_planes`), `createCatalogSubscriptionAction` + `createCourseSubscription()` (PreApproval MP), branch `subscription_preapproval` del webhook (`handleCourseSubscriptionWebhook`). Verificado funcionalmente contra producción en la sesión anterior
+- [x] Acceder a contenido tras confirmación de pago — `handleCoursePurchaseWebhook` inserta en `enrollments` al aprobarse el pago; acceso por suscripción vía inscripción perezosa (`enrollViaSubscriptionAction`, gateada por `has_active_course_subscription()`)
+- [x] Completar clases, cuestionarios y examen final — mismo mecanismo genérico de `enrollments`/`lessons_select`/`lp_own` que usa `alumno`, sin restricción de rol en las RLS (verificado leyendo `001_educativa_core.sql`)
+- [x] Obtener certificado digital con QR verificable — mismo `checkAndIssueCertificate()` genérico, no distingue rol
+- [ ] Acceder a tutorías como add-on pago según el curso contratado — no implementado (T13)
+- [x] Participar en talleres en vivo — `inscribirseTallerAction` es "sin restricción de rol — cualquier autenticado puede inscribirse" (comentario propio del código)
 - [x] Ver carreras como vitrina (descripción, materias, salida laboral) pero **sin opción de compra** — CTA "Inscribite en el Instituto" → admisiones presenciales (CU-T02, ADR-15) · `E1` — `CareerBlockedCTA` (ya andaba para roles logueados no-alumno); esta pasada arregló 2 bugs reales: `/carreras` estaba atrás de login sin excepción (movido fuera de `(dashboard)/(protected)`, migración 029 abre `careers_select` a anon) y el botón CTA no tenía `href` (ahora linkea a incade.edu.ar — falta el número de WhatsApp de admisiones, no está en el repo)
 - [x] Ser convertido a Alumno INCADE por el Admin tras matrícula presencial (conversión aditiva, conserva historial — CU-T04) · `E1` — `convertUserRoleAction` + `ConvertRoleModal`, wireado en `/admin/usuarios`
 
@@ -349,7 +349,7 @@
 - [x] Acceder al taller gratuito de forma inmediata tras registro — `inscribirseTallerAction` inscribe en el mismo request que crea la cuenta, sin paso intermedio
 - [x] Ver carreras como vitrina con CTA a admisiones presenciales (no comprable — CU-T02, ADR-15) · `E1` — ver nota arriba, mismo fix (`/carreras` público + CTA con `href`). **Corrección:** la sesión que hizo este fix originalmente movió las rutas y el layout pero se olvidó de `src/middleware.ts` (tiene su propio gate de auth independiente) — quedó sin efecto real hasta la Fase 3, que lo completó
 - [ ] Recibir secuencia de nurturing por email días 1, 3 y 7
-- [ ] Convertirse en Usuario Comunidad Online al pagar su primer curso (automático por webhook MP — CU-T03) · `E3`
+- [x] Convertirse en Usuario Comunidad Online al pagar su primer curso (automático por webhook MP — CU-T03) · `E3` — `promote_lead_on_course_payment()` (migración 035, SECURITY DEFINER), llamada desde `handleCoursePurchaseWebhook` cuando `profile.role === 'lead'`. Idempotente, auditado en `role_history` (`by: 'system:compra_curso'`). Verificado funcionalmente contra producción (incluido el reintento idempotente) en la sesión anterior
 - [ ] Ser convertido directamente a Alumno INCADE por el Admin tras matrícula presencial (CU-T05) · `E1`
 
 ---

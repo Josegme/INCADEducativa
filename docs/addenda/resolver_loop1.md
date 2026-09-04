@@ -346,6 +346,16 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
 - DoD: checklist refleja el estado real verificado en código; huecos
   reales cerrados con los 4 gates en verde.
 
+> ESTADO VERIFICADO (2026-09-04): EN RAMA SIN MERGEAR — checklist
+> actualizado (§6/§7 de `FUNCIONALIDADES.md`, ver `session_handoff.md`
+> para el detalle línea por línea) y 1 hueco real cerrado: compra/
+> suscripción de cursos estaban gateadas por el flag equivocado
+> (`FEATURE_COMUNIDAD` en vez de `FEATURE_PUBLICA`) en 6 archivos —
+> corregido. UI admin de precios ya existía (`/admin/suscripciones`,
+> `/admin/cursos`), no hizo falta nada nuevo ahí. 3 gates verdes
+> (tsc/lint/test:unit); `npm run build` no corrido. Sin commitear —
+> esperando aprobación explícita del usuario.
+
 [T12 · AUTO, con cuidado de efectos reales] Nurturing de leads (días 1/3/7)
 - Cron al patrón de `/api/cron/coworking`. Emails vía Resend. 3 mails
   cortos: d1 bienvenida taller, d3 vitrina de cursos, d7 CTA comunidad,

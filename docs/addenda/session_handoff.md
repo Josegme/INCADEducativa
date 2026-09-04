@@ -1,6 +1,56 @@
-# Session Handoff — 2026-09-03 (034+035+036 aplicadas y verificadas — MODO NORMAL)
+# Session Handoff — 2026-09-04 (T11 — checklist E3 + fix real de flag de compra/suscripción — MODO NORMAL)
 
 ## MODO: NORMAL
+
+## T11 — EN CURSO (checklist actualizado + 1 bug real cerrado, sin commitear)
+
+Tras `/recap` (gates verdes sobre HEAD `8112e87`, PR MERGEABLE, 36
+migraciones Remote=Local) y `/continuar`, se tomó T11 de la cola
+(`resolver_loop1.md`).
+
+1. **Checklist actualizado** (`docs/FUNCIONALIDADES.md` §6 y §7): se
+   verificó en código (no se confió en el estado previo del doc) que ya
+   funcionan: compra individual de curso (migración 035,
+   `purchaseCourseAction`, branch `curso:` del webhook), suscripción
+   mensual (migración 036, `createCatalogSubscriptionAction`, branch
+   `subscription_preapproval`), acceso a contenido tras pago
+   (`enrollments` insert en el webhook), clases/evaluaciones/certificado
+   para `comunidad` (mismo mecanismo genérico sin restricción de rol en
+   las RLS), talleres para `comunidad` (`inscribirseTallerAction` "sin
+   restricción de rol"), y `promote_lead_on_course_payment()` (CU-T03,
+   idempotente, auditado en `role_history`). Sigue sin marcar: tutorías
+   add-on pago (T13, no implementado).
+
+2. **Bug real encontrado y corregido**: la compra individual y la
+   suscripción de cursos estaban gateadas por `flags.comunidad`
+   (`FEATURE_COMUNIDAD`, el flag del foro — E3 pero módulo distinto, ni
+   siquiera construido todavía, T14) en vez de `flags.publica`
+   (`FEATURE_PUBLICA`, el flag real de "apertura pública" que ya gatea
+   `/cursos` en `middleware.ts` y que la propia CLAUDE.md describe como
+   paraguas de "catálogo abierto, suscripciones, leads"). Efecto real:
+   si el Admin togglea `FEATURE_PUBLICA=true` (como dice la tabla de
+   decisiones de `resolver_loop1.md`) pero deja `FEATURE_COMUNIDAD=false`
+   (foro sin construir, sin motivo para prenderlo), el botón de compra/
+   suscripción seguía mostrando "disponible próximamente" — el flag
+   correcto no habilitaba la feature que se supone que abre. El script
+   de verificación de la sesión anterior (`verify-compra-suscripcion-tmp.js`)
+   nunca lo detectó porque bypassea la UI/action y escribe directo contra
+   la DB. Corregido en 4 puntos + 2 comentarios desactualizados:
+   `cursos/[slug]/page.tsx`, `cursos/suscripcion/page.tsx`,
+   `purchaseCourseActions.ts`, `subscriptionActions.ts`,
+   `CoursePurchaseForm.tsx`, `SubscribeForm.tsx`.
+
+3. **DoD verificado**: `npx tsc --noEmit` OK, `npm run lint` OK (mismo
+   warning preexistente de `jsx-a11y/alt-text`), `npm run test:unit` OK
+   (17/17). `npm run build` no se corrió en esta pasada.
+
+4. **Pendiente de esta sesión**: diff mostrado al usuario, esperando
+   aprobación explícita para `git commit` (regla no negociable, nunca
+   automático). No se tocó el resto del alcance de T11 (UI admin de
+   precios ya existía — `/admin/suscripciones` con CRUD de planes,
+   `/admin/cursos` con campo `precio` — no hacía falta nada nuevo ahí).
+
+## ESTADO PREVIO (2026-09-03, T10 cerrada)
 
 La tarea bloqueante de FREEZE quedó resuelta: 034, 035 y 036 aplicadas
 contra producción y verificadas funcionalmente. La cola está al día

@@ -14,7 +14,7 @@ interface CoursePurchaseFormProps {
   precio: number;
   descuentoPct: number;
   isAnonymous: boolean;
-  /** flags.comunidad && flags.publica — habilita la rama de autorregistro de invitado. */
+  /** flags.publica — habilita la rama de autorregistro de invitado. */
   showGuestFields: boolean;
 }
 
