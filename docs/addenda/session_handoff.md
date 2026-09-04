@@ -1,56 +1,41 @@
-# Session Handoff — 2026-09-04 (T13 — add-on pago de tutorías para comunidad, sin commitear — MODO NORMAL)
+# Session Handoff — 2026-09-04 (cierre de sesión — T10-T13 DONE, todo pusheado + migraciones 037/038 aplicadas — MODO NORMAL)
 
 ## MODO: NORMAL
 
-## ESTADO ACTUAL
+## ESTADO ACTUAL (cierre de sesión, continuar mañana)
 - Rama activa: `fix/db-search-path-024`
-- Commit local: `e28e1e0` (T12, aprobado, **sin pushear todavía**). T13
-  (ver abajo) está hecha en el working tree, sin commitear — esperando
-  aprobación. Último pusheado: `ac71418`.
-- PR #1: OPEN, MERGEABLE (`gh pr view`, reconsultado en la pasada de
-  T11). CI de Actions sobre `605a210`/`ac71418`/`e28e1e0` sin confirmar
-  todavía (nada nuevo pusheado desde `ac71418`).
-- Migración 037 aplicada contra producción (T12, ver historial abajo).
-  Migración 038 (T13, ver abajo) **sin aplicar contra ninguna DB**.
+- Último commit: `beaf569` (T13) — **pusheado**, `origin/fix/db-search-path-024`
+  en sync, 0 ahead / 0 behind (confirmado con `git log
+  origin/fix/db-search-path-024 --oneline -1`).
+- PR #1: OPEN, MERGEABLE (reconsultado en la pasada de T11 — no
+  revalidado sobre este HEAD exacto). CI de Actions sobre
+  `605a210`/`ac71418`/`e28e1e0`/`beaf569` sin confirmar en esta sesión.
+- **Migraciones 037 y 038 aplicadas contra producción**, ambas a pedido
+  explícito del usuario. `supabase migration list` confirma Remote=Local
+  en las 38 migraciones. Detalle:
+  - 037 (T12, nurturing): job `nurturing-notify` (pg_cron) programado
+    pero **no funcional** — sigue con placeholders `<APP_URL>`/
+    `<CRON_SECRET>` sin reemplazar, mismo patrón que 016/018 hasta el
+    deploy.
+  - 038 (T13, tutorías add-on): `precio_tutorias_addon` y
+    `has_tutoria_addon_access()` ya existen en producción, listos para
+    usarse en cuanto el Admin cargue un precio en algún curso.
 
-## T13 — HECHA, SIN COMMITEAR — add-on pago de tutorías para comunidad
-1. **Contradicción real con el spec, resuelta primero (regla #7 CLAUDE.md):**
-   `INCADEducativa_Spec_v3.md` §6.4 decía explícitamente "sin flujo de
-   pago" para tutorías (Addendum 05, julio 2026, previo a que existiera
-   compra/suscripción de cursos). Spec bumpeado a v3.7: alumno sigue
-   gratis sin cambios; agrega que un `comunidad` que compró/se suscribió
-   a un curso paga un add-on aparte para acceder a las tutorías de ESE
-   curso — nunca estuvo incluido en lo que compró.
-2. Migración `038_tutoria_addon.sql`: `courses.precio_tutorias_addon`
-   (default 0 = no se vende, lo carga el Admin en `CourseModal`), tabla
-   `tutoria_addon_compras` (mismo patrón que `compras_curso`),
-   `has_tutoria_addon_access(p_course_id)` SECURITY DEFINER. **Sin
-   aplicar contra ninguna DB.**
-3. Branch `tutoria-addon:` nuevo en el webhook de MP
-   (`handleTutoriaAddonPurchaseWebhook`) — no toca `enrollments` (el
-   usuario ya está inscripto), solo aprueba la fila de compra que lee
-   `has_tutoria_addon_access()`.
-4. `purchaseTutoriaAddonAction` (siempre exige sesión — a diferencia de
-   compra/suscripción de curso, no hay rama de autorregistro: solo tiene
-   sentido pagar el add-on de un curso al que ya se accedió) +
-   `TutoriaAddonPurchaseCard`.
-5. Gate en `cursos/[slug]/page.tsx`: `alumno` ve tutorías gratis sin
-   cambios; `comunidad` sin `has_tutoria_addon_access()` ve el CTA de
-   compra si `precio_tutorias_addon > 0`, o nada si el Admin no lo
-   habilitó para ese curso (0 = no se vende, no error).
-6. Lógica de gracia pura en `src/modules/educativa/tutoriaAddon.ts`
-   (`resolveTutoriaAddonEstado`/`grantsTutoriaAddonAccess`: approved →
-   acceso, cualquier otro status → sin acceso), cubierta por 6 unit
-   tests nuevos — DoD explícito de T13.
-7. Checklist actualizado: `docs/FUNCIONALIDADES.md` línea 337 marcada
-   `[x]`. **Sin probar un pago real de punta a punta** — la prueba real
-   la corre el usuario, mismo criterio que T8/T10 (no se simulan
-   tokens de pago de MercadoPago).
-8. Gates verificados: `npx tsc --noEmit` OK, `npm run lint` OK (mismo
-   warning preexistente), `npm run test:unit` OK (31/31, 5 archivos —
-   antes 25/25 en 4). `npm run build` no se corrió.
-9. Pendiente: diff mostrado al usuario, esperando aprobación explícita
-   para `git commit`.
+## SESIÓN DE HOY (2026-09-04) — resumen de lo cerrado
+1. **T11** — checklist E3 actualizado (compra/suscripción de cursos) +
+   bug real corregido (flag `FEATURE_COMUNIDAD` en vez de
+   `FEATURE_PUBLICA` gateando compra/suscripción). Commits `605a210` +
+   `ac71418`.
+2. **T12** — nurturing de leads días 1/3/7 (`/api/cron/nurturing`,
+   migración 037). Copy documentado en `COMPONENTS.md` §65, pendiente de
+   aprobación del usuario, **sin probar contra Resend real**. Commit
+   `e28e1e0`.
+3. **T13** — add-on pago de tutorías para `comunidad` (migración 038).
+   Contradicción real con el spec resuelta primero (v3.6→v3.7, regla #7
+   CLAUDE.md: tutorías decía "sin flujo de pago"). **Sin probar un pago
+   real de punta a punta.** Commit `beaf569`.
+4. Los 3 gates (tsc/lint/test:unit) verdes en cada cierre de tarea;
+   `npm run build` no se corrió en toda la sesión.
 
 ## PRÓXIMA TAREA SUGERIDA (vía /continuar)
 1. T14 (comunidad/foro, `FEATURE_COMUNIDAD`) — checkpoint según la
@@ -79,18 +64,20 @@
   `TWILIO_*` siguen sin valor en `.env.local`
 - Copy de nurturing (T12) pendiente de aprobación del usuario — ver
   `COMPONENTS.md` §65
-- Commit `e28e1e0` (T12) y el de T13 (aún sin hacer) sin pushear —
-  pendiente de aprobación aparte
 - Job `nurturing-notify` (pg_cron, migración 037 ya aplicada) sigue con
   placeholders `<APP_URL>`/`<CRON_SECRET>` sin reemplazar — no dispara
   de verdad hasta el deploy
-- Migración 038 (T13) sin aplicar contra ninguna DB — requiere
-  aprobación explícita antes de `supabase db push`, mismo criterio que
-  toda migración nueva
+- T13: sin probar un pago real de punta a punta del add-on de tutorías
+  (la prueba real la corre el usuario cuando quiera, mismo criterio que
+  T8/T10)
+- CI de Actions sin confirmar sobre el HEAD `beaf569` en esta sesión —
+  confirmar con `gh pr checks` o `gh run list` en la próxima
 
 ## RESUELTO DESDE EL HANDOFF ANTERIOR
-- T11 cerrada: checklist E3 actualizado + bug real de flags corregido,
-  commiteado y pusheado (`605a210`/`ac71418`).
+- T11, T12 y T13 cerradas en esta sesión (2026-09-04), todas commiteadas
+  y pusheadas (`605a210`/`ac71418`/`e28e1e0`/`beaf569`). Migraciones 037
+  y 038 aplicadas contra producción. Ver "SESIÓN DE HOY" arriba para el
+  detalle de cada una.
 
 ## Handoffs anteriores
 

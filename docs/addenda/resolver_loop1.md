@@ -426,8 +426,15 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
 > cubierta por 6 unit tests nuevos (`resolveTutoriaAddonEstado`/
 > `grantsTutoriaAddonAccess`). 3 gates verdes (tsc/lint/test:unit, 31/31);
 > `npm run build` no corrido. **Sin probar un pago real** — la prueba real
-> la corre el usuario, mismo criterio que T8/T10. Sin commitear —
-> esperando aprobación explícita del usuario.
+> la corre el usuario, mismo criterio que T8/T10. Commit `beaf569`,
+> aprobado y pusheado.
+>
+> ACTUALIZACIÓN (2026-09-04): usuario pidió explícitamente aplicar la
+> migración 038 contra producción. `supabase db push --yes` corrido, sin
+> error. `supabase migration list` confirma Remote=Local en 038 (38
+> migraciones). `has_tutoria_addon_access()` y `precio_tutorias_addon`
+> ya existen en producción — sigue pendiente la prueba real de un pago
+> de punta a punta (la corre el usuario cuando quiera).
 
 [T14 · AUTO] Comunidad / foro (`FEATURE_COMUNIDAD`)
 - MVP: foros por carrera + feed institucional. Flag en DB + fallback
