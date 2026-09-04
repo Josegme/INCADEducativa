@@ -373,6 +373,22 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
 - DoD: cron + templates + lógica de envío listos y testeados con
   destinatario de prueba; sin secretos ni URLs de terceros inventadas.
 
+> ESTADO VERIFICADO (2026-09-04): HECHA, SIN COMMITEAR. Migración 037
+> (columnas de flag + `pg_cron`, sin aplicar contra ninguna DB) + ruta
+> `/api/cron/nurturing` (mismo patrón que coworking/tutorías) + lógica
+> pura en `src/modules/comunicacion/nurturing.ts`, cubierta por 8 unit
+> tests nuevos (sin red). Copy documentado en `COMPONENTS.md` §65,
+> marcado explícitamente como borrador pendiente de aprobación — no se
+> asume aprobado. DoD parcial: "testeado con destinatario de prueba"
+> NO se cumplió al pie de la letra — no se corrió ningún envío real
+> contra Resend en esta sesión (`RESEND_API_KEY` tiene valor local, un
+> test mal acotado mandaría mail real a un lead real); solo se
+> verificó la lógica de elegibilidad con tests puros. Un test contra
+> Resend real con destinatario propio queda pendiente de que el
+> usuario lo confirme explícitamente. 3 gates verdes (tsc/lint/
+> test:unit, 25/25); `npm run build` no corrido. Sin commitear —
+> esperando aprobación explícita del usuario.
+
 [T13 · AUTO (código) / GATE (prueba real)] Tutorías add-on pago
 - Precio fijo por curso (decisión ya tomada por el usuario): campo en
   el curso, default 0 = no se vende, lo carga el Admin.

@@ -38,7 +38,7 @@
 - [x] Comunicado institucional masivo del admin → In-app + Email · cursos/carreras seleccionados · `E1` — `/admin/comunicados`, `BroadcastComposer` + `broadcastAnnouncementAction`, reusa `notifyUsers()` (sin schema nuevo, no persiste en `announcements` porque esa tabla es de un solo curso — el comunicado no queda en el feed de ningún curso puntual)
 - [x] TP o pregunta abierta corregida → In-app + Email · al alumno · `E1` — `correctionActions.ts` (`correctAttemptAction`) ya llama `notifyUsers()` con `emailSubject`
 - [x] Cambio de rol / conversión de cuenta → In-app + Email · al usuario convertido · `E1` — `notifyUsers()` en `convertUserRoleAction`, el admin ya tiene `is_admin()` para notificar a cualquier `user_id`
-- [ ] Secuencia de nurturing post-taller gratuito días 1, 3 y 7 → Email · lead · `E3`
+- [x] Secuencia de nurturing post-taller gratuito días 1, 3 y 7 → Email · lead · `E3` — `/api/cron/nurturing` (migración 037, mismo patrón que Coworking/Tutorías), lógica pura en `src/modules/comunicacion/nurturing.ts` cubierta por unit tests. Copy borrador documentado en `COMPONENTS.md` §65, **pendiente de aprobación del usuario**. Sin probar contra Resend real en esta pasada (`RESEND_API_KEY` ya tiene valor local — riesgo de mail real, ver nota en COMPONENTS.md). Migración sin aplicar contra ninguna DB
 
 ### 1.4 Fundación Visual — Design System v2.0 · `E1`
 
@@ -348,7 +348,7 @@
 - [x] Quedar registrado en la base de marketing de INCADE con área de interés — visible en `/admin/leads` (área de interés inferida de los talleres, no un campo propio)
 - [x] Acceder al taller gratuito de forma inmediata tras registro — `inscribirseTallerAction` inscribe en el mismo request que crea la cuenta, sin paso intermedio
 - [x] Ver carreras como vitrina con CTA a admisiones presenciales (no comprable — CU-T02, ADR-15) · `E1` — ver nota arriba, mismo fix (`/carreras` público + CTA con `href`). **Corrección:** la sesión que hizo este fix originalmente movió las rutas y el layout pero se olvidó de `src/middleware.ts` (tiene su propio gate de auth independiente) — quedó sin efecto real hasta la Fase 3, que lo completó
-- [ ] Recibir secuencia de nurturing por email días 1, 3 y 7
+- [x] Recibir secuencia de nurturing por email días 1, 3 y 7 — ver §1.2, mismo mecanismo (`/api/cron/nurturing`). El copy está hardcodeado en código, no es editable por el Admin todavía (ver §2.4, sigue sin marcar)
 - [x] Convertirse en Usuario Comunidad Online al pagar su primer curso (automático por webhook MP — CU-T03) · `E3` — `promote_lead_on_course_payment()` (migración 035, SECURITY DEFINER), llamada desde `handleCoursePurchaseWebhook` cuando `profile.role === 'lead'`. Idempotente, auditado en `role_history` (`by: 'system:compra_curso'`). Verificado funcionalmente contra producción (incluido el reintento idempotente) en la sesión anterior
 - [ ] Ser convertido directamente a Alumno INCADE por el Admin tras matrícula presencial (CU-T05) · `E1`
 

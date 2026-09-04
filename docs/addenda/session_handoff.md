@@ -1,68 +1,52 @@
-# Session Handoff — 2026-09-04 (T11 cerrada — checklist E3 + fix de flag de compra/suscripción, pusheado — MODO NORMAL)
+# Session Handoff — 2026-09-04 (T12 — nurturing de leads días 1/3/7, sin commitear — MODO NORMAL)
 
 ## MODO: NORMAL
 
 ## ESTADO ACTUAL
 - Rama activa: `fix/db-search-path-024`
-- Último commit: `605a210` (pusheado — `origin/fix/db-search-path-024`
-  en sync, 0 ahead / 0 behind, confirmado con
-  `git log origin/fix/db-search-path-024 --oneline -1`).
-- PR #1: OPEN, MERGEABLE (`gh pr view`, reconsultado esta pasada). El
-  `statusCheckRollup` que devuelve `gh pr view` ahora mismo sigue
-  siendo el del HEAD anterior (`8112e87`) — Actions todavía no corrió
-  sobre `605a210` (recién pusheado), confirmar en la próxima sesión.
+- Último commit pusheado: `ac71418` (`origin/fix/db-search-path-024` en
+  sync a esa altura, 0 ahead / 0 behind). T12 (ver abajo) está hecha en
+  el working tree, sin commitear todavía — esperando aprobación.
+- PR #1: OPEN, MERGEABLE (`gh pr view`, reconsultado en la pasada de
+  T11). CI de Actions sobre `605a210`/`ac71418` sin confirmar todavía.
 
-## T11 CERRADA — checklist E3 + fix de flag de compra/suscripción
-1. Checklist actualizado en `docs/FUNCIONALIDADES.md` §6/§7 con lo que
-   ya funciona en código (verificado ahí, no en la memoria de sesiones
-   previas): compra individual de curso (migración 035,
-   `purchaseCourseAction`, branch `curso:` del webhook), suscripción
-   mensual (migración 036, `createCatalogSubscriptionAction`, branch
-   `subscription_preapproval`), acceso a contenido tras pago
-   (`enrollments` insert en el webhook), clases/evaluaciones/
-   certificado y talleres para `comunidad` (mismo mecanismo genérico
-   sin restricción de rol en las RLS), `promote_lead_on_course_payment()`
-   (CU-T03, idempotente, auditado en `role_history`). Sigue sin marcar:
-   tutorías add-on pago (T13, no implementado).
-2. Bug real encontrado y corregido: la compra individual y la
-   suscripción de cursos estaban gateadas por `flags.comunidad`
-   (`FEATURE_COMUNIDAD`, el flag del foro — módulo distinto, sin
-   construir, T14) en vez de `flags.publica` (`FEATURE_PUBLICA`, el
-   flag real de "apertura pública" que ya gatea `/cursos` en
-   `middleware.ts`). Efecto real: togglear `FEATURE_PUBLICA=true` (como
-   indica la tabla de decisiones de `resolver_loop1.md`) sin
-   `FEATURE_COMUNIDAD=true` (foro sin construir, sin motivo para
-   prenderlo) dejaba el botón de compra/suscripción mostrando
-   "disponible próximamente". El script de verificación de la sesión
-   anterior (`verify-compra-suscripcion-tmp.js`) no lo detectó porque
-   bypassea la UI/action y escribe directo contra la DB. Corregido en 6
-   archivos: `cursos/[slug]/page.tsx`, `cursos/suscripcion/page.tsx`,
-   `purchaseCourseActions.ts`, `subscriptionActions.ts`,
-   `CoursePurchaseForm.tsx`, `SubscribeForm.tsx`.
-3. UI admin de precios ya existía (`/admin/suscripciones` CRUD de
-   planes, `/admin/cursos` campo `precio`) — no hizo falta nada nuevo.
-4. Commit `605a210`, aprobado y pusheado en esta sesión.
-
-## RESULTADO DE LOS GATES DE CI (verificado 2026-09-04, sobre HEAD `605a210`)
-- `npx tsc --noEmit` → OK, sin errores
-- `npm run lint` → OK, 0 errores (1 warning preexistente
-  `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
-- `npm run test:unit` → OK, 17/17 passed (3 archivos)
-- `npm run build` no se corrió en esta pasada.
-- GitHub Actions sobre este HEAD exacto: no corrido todavía (recién
-  pusheado) — confirmar con `gh pr checks` o `gh run list --branch
-  fix/db-search-path-024` en la próxima sesión.
+## T12 — HECHA, SIN COMMITEAR — nurturing de leads días 1/3/7
+1. Mismo patrón que `/api/cron/coworking` y `/api/cron/tutorias`:
+   migración `037_lead_nurturing.sql` (3 columnas de flag en `users` +
+   `pg_cron`/`pg_net` con placeholders `<APP_URL>`/`<CRON_SECRET>`, sin
+   aplicar contra ninguna DB) + ruta `/api/cron/nurturing` (mismo
+   auth `CRON_SECRET` Bearer).
+2. Lógica de elegibilidad pura en `src/modules/comunicacion/nurturing.ts`
+   (`isNurturingDue`: "al menos N días desde el alta", no ventana
+   angosta — no pierde el envío si el cron estuvo caído) + copy de los
+   3 mails (`nurturingEmailContent`), cubierta por 8 tests nuevos en
+   `tests/unit/nurturing.test.ts` (sin red, sin Resend).
+3. Copy documentado en `docs/design/COMPONENTS.md` §65, marcado
+   explícitamente como borrador pendiente de aprobación (no se
+   commitea como aprobado tácitamente, por instrucción de T12).
+4. **No se corrió un envío real contra Resend en esta sesión** —
+   `RESEND_API_KEY` ya tiene valor cargado localmente, un test mal
+   acotado mandaría mail real. Solo se verificó la lógica pura con
+   unit tests. Un test contra Resend real queda pendiente de que el
+   usuario lo confirme explícitamente con un destinatario propio.
+5. Checklist actualizado: `docs/FUNCIONALIDADES.md` líneas 41 y 351
+   (nurturing lead) marcadas `[x]`. Línea 144 (§2.4, "Admin configura
+   secuencias de nurturing") queda sin marcar a propósito — el copy
+   está hardcodeado en código, no es editable desde `/admin` todavía.
+6. Gates verificados: `npx tsc --noEmit` OK, `npm run lint` OK (mismo
+   warning preexistente), `npm run test:unit` OK (25/25, 4 archivos —
+   antes 17/17 en 3). `npm run build` no se corrió.
+7. Pendiente: diff mostrado al usuario, esperando aprobación explícita
+   para `git commit`.
 
 ## PRÓXIMA TAREA SUGERIDA (vía /continuar)
-1. T12 (nurturing de leads días 1/3/7) — primera AUTO disponible sin
-   arrancar.
-2. T13 (tutorías add-on pago, código AUTO / prueba real GATE) y T14
+1. T13 (tutorías add-on pago, código AUTO / prueba real GATE) o T14
    (comunidad/foro) — cada una con su checkpoint según la tabla de
    decisiones de `resolver_loop1.md`.
-3. T15 (deuda funcional chica: `FUNCIONALIDADES.md:462` desactualizado
+2. T15 (deuda funcional chica: `FUNCIONALIDADES.md:462` desactualizado
    sobre Vercel, comentario obsoleto en `layout.tsx:143-145`, limpiar
    demos de Sentry).
-4. T4/T5/T6/T7/T8/T9 siguen GATE/manuales, sin cambios — ver detalle en
+3. T4/T5/T6/T7/T8/T9 siguen GATE/manuales, sin cambios — ver detalle en
    `resolver_loop1.md`.
 
 ## PENDIENTES SIN RESOLVER (arrastrados)
@@ -81,12 +65,30 @@
 - T8 (env vars productivas) sigue vigente sin cambios:
   `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
   `TWILIO_*` siguen sin valor en `.env.local`
+- Copy de nurturing (T12) pendiente de aprobación del usuario — ver
+  `COMPONENTS.md` §65
+- Migración 037 sin aplicar contra ninguna DB — ni siquiera local,
+  requiere aprobación explícita antes de `supabase db push`
 
 ## RESUELTO DESDE EL HANDOFF ANTERIOR
-- T11 cerrada: checklist E3 actualizado + bug real de flags corregido
-  (ver arriba), commiteado y pusheado.
+- T11 cerrada: checklist E3 actualizado + bug real de flags corregido,
+  commiteado y pusheado (`605a210`/`ac71418`).
 
 ## Handoffs anteriores
+
+### Session Handoff — 2026-09-04 (T11 cerrada — checklist E3 + fix de flag de compra/suscripción, pusheado)
+
+1. Checklist actualizado en `docs/FUNCIONALIDADES.md` §6/§7 con lo que ya funciona en
+   código: compra individual de curso (migración 035), suscripción mensual (migración
+   036), acceso a contenido tras pago, clases/evaluaciones/certificado y talleres para
+   `comunidad`, `promote_lead_on_course_payment()` (CU-T03).
+2. Bug real corregido: compra/suscripción de cursos gateadas por `flags.comunidad`
+   (FEATURE_COMUNIDAD, foro sin construir) en vez de `flags.publica` (FEATURE_PUBLICA,
+   flag real de apertura pública). Corregido en 6 archivos.
+3. Commit `605a210` (código) + `ac71418` (reconciliación de docs), ambos aprobados y
+   pusheados. `origin/fix/db-search-path-024` en sync al cierre de esa pasada.
+4. Gates sobre HEAD `605a210`: tsc/lint/test:unit OK (17/17). `npm run build` no corrido.
+   Actions sobre ese HEAD exacto no había corrido todavía al cierre.
 
 ### Session Handoff — 2026-09-03/04 (T10 cerrada — 034-036 aplicadas; T11 iniciada — checklist E3)
 
