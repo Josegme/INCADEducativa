@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import type { TallerRow } from "@/modules/talleres/talleres";
-import { createTallerAction, updateTallerAction } from "@/app/(dashboard)/admin/actions/tallerActions";
+import { createTallerAction, updateTallerAction } from "@/app/(dashboard)/(protected)/admin/actions/tallerActions";
 
 interface TallerModalProps {
   taller?: TallerRow;

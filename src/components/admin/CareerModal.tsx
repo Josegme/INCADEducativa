@@ -17,7 +17,7 @@ import {
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import { slugify } from "@/lib/slugify";
 import type { CareerRow } from "@/modules/admin/careers";
-import { createCareerAction, updateCareerAction } from "@/app/(dashboard)/admin/actions/careerActions";
+import { createCareerAction, updateCareerAction } from "@/app/(dashboard)/(protected)/admin/actions/careerActions";
 
 interface CareerModalProps {
   career?: CareerRow;

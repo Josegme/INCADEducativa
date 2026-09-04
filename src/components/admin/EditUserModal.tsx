@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
-import { updateUserAction } from "@/app/(dashboard)/admin/actions/userActions";
+import { updateUserAction } from "@/app/(dashboard)/(protected)/admin/actions/userActions";
 
 interface EditUserModalProps {
   userId: string;

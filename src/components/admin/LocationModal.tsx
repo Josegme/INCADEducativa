@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import type { LocationRow } from "@/modules/admin/coworking";
-import { createLocationAction, updateLocationAction } from "@/app/(dashboard)/admin/actions/coworkingActions";
+import { createLocationAction, updateLocationAction } from "@/app/(dashboard)/(protected)/admin/actions/coworkingActions";
 
 interface LocationModalProps {
   location?: LocationRow;

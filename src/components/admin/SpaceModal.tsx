@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import { SPACE_TYPES, SPACE_TYPE_LABEL, type LocationRow, type SpaceRow, type SpaceType } from "@/modules/admin/coworking";
-import { createSpaceAction, updateSpaceAction } from "@/app/(dashboard)/admin/actions/coworkingActions";
+import { createSpaceAction, updateSpaceAction } from "@/app/(dashboard)/(protected)/admin/actions/coworkingActions";
 
 const SELECT_CLASS =
   "flex h-10 w-full rounded-md border-[0.5px] border-[--edu-border] bg-white/[0.06] px-3 py-2 text-sm text-[--edu-text] transition-colors focus-visible:border-[--edu-border-strong] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--inc-violet-border-strong]";

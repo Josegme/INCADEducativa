@@ -17,11 +17,21 @@ import {
   type AttemptRow,
   type Respuestas,
 } from "@/modules/educativa/evaluationAttempt";
-import { submitAttemptAction } from "@/app/(dashboard)/cursos/actions/evaluationAttemptActions";
+import { submitAttemptAction } from "@/app/(dashboard)/(protected)/cursos/actions/evaluationAttemptActions";
 
 function useCountdown(deadline: number | null, onExpire: () => void) {
   const [remainingMs, setRemainingMs] = React.useState(deadline ? deadline - Date.now() : null);
   const expiredRef = React.useRef(false);
+
+  // `onExpire` es una función nueva en cada render (cierra sobre
+  // `respuestas`). El intervalo de abajo solo se reinicia cuando cambia
+  // `deadline`, así que sin esta ref quedaba atado al `onExpire` del
+  // primer render — al vencer el tiempo enviaba las respuestas vacías con
+  // las que arrancó el examen, no las que el alumno realmente cargó.
+  const onExpireRef = React.useRef(onExpire);
+  React.useEffect(() => {
+    onExpireRef.current = onExpire;
+  });
 
   React.useEffect(() => {
     if (!deadline) return;
@@ -31,12 +41,11 @@ function useCountdown(deadline: number | null, onExpire: () => void) {
       setRemainingMs(remaining);
       if (remaining <= 0 && !expiredRef.current) {
         expiredRef.current = true;
-        onExpire();
+        onExpireRef.current();
       }
     }, 1000);
 
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deadline]);
 
   return remainingMs;

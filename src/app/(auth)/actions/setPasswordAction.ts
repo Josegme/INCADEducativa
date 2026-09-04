@@ -30,5 +30,19 @@ export async function setPasswordAction(formData: FormData): Promise<SetPassword
     };
   }
 
+  // Onboarding: si todavía no tiene foto de perfil, la ofrecemos antes de
+  // soltarlo en el dashboard (única parte del perfil que el import CSV no
+  // completa — nombre/apellido/DNI/carrera ya vienen del admin).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("users").select("avatar_url").eq("id", user.id).single()
+    : { data: null };
+
+  if (!profile?.avatar_url) {
+    redirect("/perfil?onboarding=1");
+  }
+
   redirect("/dashboard");
 }

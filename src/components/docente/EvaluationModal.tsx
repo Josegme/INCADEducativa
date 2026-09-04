@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import { EVALUATION_TIPO_LABEL, type EvaluationTipo } from "@/modules/docente/evaluationEditor";
-import { createEvaluationAction } from "@/app/(dashboard)/docente/actions/evaluationActions";
+import { createEvaluationAction } from "@/app/(dashboard)/(protected)/docente/actions/evaluationActions";
 
 interface EvaluationModalProps {
   courseId: string;

@@ -1728,4 +1728,83 @@ la 001 con columna `user_id` y RLS admin-only. Ver §61, corregido.
 
 ---
 
-*INCADEducativa · Design System v2.1 — COMPONENTS v1.9 · Agosto 2026*
+## 64. Materiales adjuntos por clase — LessonAttachmentsManager / LessonAttachments
+
+Deuda funcional E1 (§3.4/§8.1): adjuntos *extra* por clase (ej. una guía de
+ejercicios sobre una clase de video), separados del contenido principal
+(`lessons.contenido_url`). Tabla propia `lesson_attachments` (migración 027)
+— reusa el bucket `contenido-cursos` existente, ruta
+`{course_id}/adjuntos/{lesson_id}/{archivo}`. RLS con `can_teach_course()`
+(004) para cubrir también el rol dual, mismo patrón que `lessons_write`.
+
+```
+LessonAttachmentsManager ("use client", src/components/docente/)
+├── Dentro de LessonModal (§?), solo visible al editar una clase existente
+│   (necesita lesson.id — en "Nueva clase" hay que guardar primero)
+├── Mismo patrón de subida que LessonUploader (§28): cliente de browser,
+│   sin progress bar (archivos de adjunto suelen ser chicos)
+└── Lista con borrar (Trash2) — addLessonAttachmentAction /
+    deleteLessonAttachmentAction (docente/actions/lessonAttachmentActions.ts)
+
+LessonAttachments (server, src/components/educativa/)
+├── En la página de clase del alumno, debajo de LessonPlayer/ContentViewer,
+│   sin importar el tipo de la clase
+└── Lista de links de descarga con URL firmada (getSignedLessonContentUrl,
+    mismo helper que el contenido principal) — no se renderiza si no hay
+    adjuntos
+```
+
+---
+
+## 65. Nurturing de leads días 1/3/7 (T12) — copy pendiente de aprobación
+
+**⚠️ Este copy es un borrador — no está aprobado tácitamente. Revisar y
+ajustar antes de un envío real contra leads reales.**
+
+Secuencia de 3 emails cortos, tono institucional INCADE ES/AR, disparados
+por `/api/cron/nurturing` (migración 037) según días desde el alta como
+`role='lead'` (post-registro a un taller gratuito, ver §5.5 de
+`FUNCIONALIDADES.md`). Lógica de elegibilidad en
+`src/modules/comunicacion/nurturing.ts` (`isNurturingDue`, cubierta por
+`tests/unit/nurturing.test.ts`); copy en `nurturingEmailContent()` del
+mismo archivo.
+
+**Día 1 — bienvenida al taller**
+> Asunto: *Gracias por sumarte al taller — INCADE*
+> Gracias por registrarte en nuestro taller gratuito. Esperamos que te
+> haya sido útil. Si te interesó, en INCADE tenés cursos y carreras
+> completas para seguir formándote. Cuando quieras, date una vuelta por
+> nuestro catálogo.
+
+**Día 3 — vitrina de cursos**
+> Asunto: *Cursos que te pueden interesar — INCADE*
+> Te dejamos algunos de los cursos más elegidos de nuestro catálogo
+> educativo, por si querés seguir aprendiendo con nosotros. Podés verlos
+> completos en incadeducativa.com/cursos.
+
+**Día 7 — CTA comunidad**
+> Asunto: *¿Seguimos en contacto? — INCADE*
+> Esperamos que el taller te haya servido. Si querés seguir cerca de
+> INCADE, sumate a nuestra comunidad: te avisamos de nuevos talleres,
+> cursos y contenido. Nos encontrás en incadeducativa.com cuando quieras.
+
+**Decisiones de esta pasada:**
+- Sin herramientas nuevas (Resend, ya en uso — nada de Twilio/Mailchimp/
+  Brevo).
+- Envío in-app (bandeja de notificaciones) + email, mismo `notifyUsers()`
+  que el resto del sistema, `tipo='sistema'` (no hay un tipo dedicado de
+  "nurturing" en el enum — no se justificaba agregar uno para 3 mails).
+- **No se corrió un envío real contra Resend en esta sesión** —
+  `RESEND_API_KEY` ya tiene valor cargado localmente, así que una prueba
+  mal acotada mandaría mail de verdad a una dirección real (regla
+  explícita de `resolver_loop1.md` T12). La lógica de elegibilidad
+  (quién está due, qué día, deduplicación) está cubierta por unit tests
+  puros, sin red. Un test contra Resend real queda para cuando el
+  usuario lo confirme explícitamente, con un destinatario de prueba
+  propio.
+- Migración 037 (columnas de flag + `pg_cron`) sin aplicar contra
+  ninguna DB — mismo criterio que toda migración nueva.
+
+---
+
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.10 · Septiembre 2026*

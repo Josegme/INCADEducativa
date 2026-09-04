@@ -7,9 +7,9 @@
 | Campo | Detalle |
 |---|---|
 | **Proyecto** | INCADEducativa — Plataforma Educativa + Módulos de Servicio |
-| **Versión** | 3.6 — Módulo Talleres (Addendum 06) |
+| **Versión** | 3.7 — Add-on pago de Tutorías para Comunidad (§6.4, T13) |
 | **Autores** | Escobar, José Gustavo · Schwegler, Alan |
-| **Fecha** | Junio 2026 |
+| **Fecha** | Junio 2026 (v3.7: Septiembre 2026) |
 | **Metodología** | Spec-Driven Development (SDD) · Clean Architecture |
 | **Stack** | Next.js 14 · Supabase · MercadoPago · Claude API · Vercel |
 | **Dominio** | incadeducativa.com (dominio independiente) |
@@ -421,12 +421,24 @@ Aunque es independiente, mantiene los siguientes puntos de contacto mínimos:
 
 Submódulo del área educativa, bajo el feature flag `FEATURE_TUTORIAS` (Etapa 2). Es una
 **sesión grupal ligada a un curso** — el docente la programa para los alumnos inscriptos, no es
-una cita 1:1 (ese modelo queda reservado para el módulo futuro `FEATURE_MENTORIA`, §7). Sin
-flujo de pago: es un beneficio incluido para el alumno ya inscripto. *(ver Addendum 05)*
+una cita 1:1 (ese modelo queda reservado para el módulo futuro `FEATURE_MENTORIA`, §7). Para el
+**alumno INCADE** sigue sin flujo de pago: es un beneficio incluido en la matrícula. *(ver
+Addendum 05)*
+
+**Actualización v3.7 (Etapa 3, T13) — add-on pago para usuario Comunidad:** un usuario
+`comunidad` que compró o se suscribió a un curso (§8, apertura pública) accede al contenido del
+curso pero **no** a sus tutorías por default — tutorías nunca estuvo incluido en ese precio.
+El Admin puede habilitar un add-on pago por curso (`courses.precio_tutorias_addon`, default 0 =
+no se vende) para que ese usuario pague aparte y desbloquee las tutorías de ese curso puntual,
+vía MercadoPago con el mismo criterio que el resto del sistema (webhook como única fuente de
+verdad, `payment.approved` = acceso). No aplica a `alumno` (sigue gratis, sin cambios) ni a
+`docente`/`coordinador`/`admin` (roles internos, no pagan por acceder a contenido). Ver
+migración `038_tutoria_addon.sql`.
 
 - [ ] Docente programa tutorías virtuales (link Meet/Zoom pegado a mano) para sus cursos
 - [ ] Docente programa tutorías presenciales — bloquea automáticamente un aula de Coworking (requiere `FEATURE_COWORKING=true`), sin flujo de pago
-- [ ] Alumno inscripto ve el calendario de tutorías de sus cursos y se une (link o aula)
+- [ ] Alumno inscripto ve el calendario de tutorías de sus cursos y se une (link o aula), sin costo
+- [ ] Usuario Comunidad con curso comprado/suscripto paga el add-on por curso (si el Admin lo habilitó) para acceder a esas tutorías
 - [ ] Recordatorio automático 24hs y 1hs antes por Email + in-app, a alumno y docente (WhatsApp diferido — falta un campo de teléfono de perfil, ver Addendum 05)
 - [ ] Auto-completado: cron pasa la tutoría a `realizada` cuando termina
 - [ ] Docente registra asistencia por alumno y carga el link de grabación post-sesión

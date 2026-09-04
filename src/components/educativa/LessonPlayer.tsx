@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { saveLessonProgressAction } from "@/app/(dashboard)/cursos/actions/lessonProgressActions";
+import { saveLessonProgressAction } from "@/app/(dashboard)/(protected)/cursos/actions/lessonProgressActions";
 
 const SAVE_INTERVAL_MS = 10_000;
 

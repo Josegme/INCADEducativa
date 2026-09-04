@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FeatureFlag } from "@/lib/flags";
-import { setFeatureFlagAction } from "@/app/(dashboard)/admin/actions/featureFlagActions";
+import { setFeatureFlagAction } from "@/app/(dashboard)/(protected)/admin/actions/featureFlagActions";
 
 interface FeatureFlagToggleProps {
   flag: FeatureFlag;

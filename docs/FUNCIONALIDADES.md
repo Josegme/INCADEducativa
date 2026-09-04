@@ -17,28 +17,28 @@
 - [ ] Un solo perfil unificado para coworking + educativa — sin cambios, el módulo coworking todavía no existe (Etapa 2)
 - [x] Asignación de rol al momento de creación de cuenta — la importación CSV asigna `role='alumno'` al crear el perfil; roles distintos se asignan después vía conversión de rol (Admin)
 - [x] Logout con limpieza de sesión — verificado en navegador
-- [ ] Perfil de usuario: nombre, foto, carrera/área, historial
+- [x] Perfil de usuario: nombre, foto, carrera/área, historial — página `/perfil`: avatar subido a bucket privado (`avatars`, RLS dueño+admin), nombre/apellido/carrera de solo lectura (la carrera la asigna el Admin, regla #12), historial de puntos (últimos 8 movimientos del ledger) y resumen de cursos inscriptos/certificados obtenidos. Verificado con script funcional autenticado (login real, upload, RLS cruzada bloqueada) — sin verificación visual en navegador (extensión sin conectar esta sesión)
 
 ### 1.2 Notificaciones Automáticas
 
 - [x] Reserva coworking confirmada → Email + WhatsApp · inmediato · `E2` — webhook de MP (Sprint 13-14), nunca corrido con token real
-- [ ] Comprobante de pago → Email · inmediato · `E2`
+- [x] Comprobante de pago → Email · inmediato · `E2` — webhook de MP, segundo `notifyUsers()` (`tipo=pago`) además del email de "reserva confirmada" ya existente, con monto/fecha/referencia MP. Código verificado con DoD (tsc/lint/test/build), **no probado con un pago real** (mismo motivo que el resto del webhook — sin token de MP en este entorno)
 - [x] Recordatorio turno coworking 24hs antes → Email + WhatsApp · `E2` — `/api/cron/coworking` (Sprint 17-18), **verificado en esta sesión** con un script que crea una reserva a +24hs y llama la ruta por HTTP: `remindersSent:1`, `recordatorio_enviado` pasó a `true`, notificación in-app insertada con el texto correcto. Solo el disparo automático real por `pg_cron`+`pg_net` queda pendiente de deploy (ver §2.2 Check-in) — la ruta en sí ya está probada de punta a punta
 - [x] No-show detectado (15 min sin check-in) → Email · usuario + admin · `E2` — **verificado en esta sesión** con el mismo método (`noShowsNotified:1`, `no_show_notificado` a `true`, notificación in-app correcta); el admin lo ve en el tile de `/admin/coworking/ocupacion`, sin email aparte (decisión documentada, ya lo tenía en pantalla desde Sprint 15-16)
 - [x] Cancelación por admin → Email · inmediato · `E2` — `cancelBookingAction` (Sprint 15-16), solo email, sin WhatsApp todavía
 - [x] Cancelación por usuario → Email · al admin · `E2` — `cancelMyBookingAction` (Sprint 17-18)
-- [ ] Nueva reserva recibida → Email · al admin · `E2`
-- [ ] Resumen diario coworking 08:00 AM → Email · admin · `E2`
-- [ ] Informe tiempos ociosos lunes 09:00 AM → Email · admin · `E2`
-- [ ] Inscripción a curso confirmada → Email · inmediato · `E1`
+- [x] Nueva reserva recibida → Email · al admin · `E2` — `notifyAdminsNewBooking()` en `createBookingAction` (ambas ramas: pago online y canje de crédito), dispara apenas se crea la reserva, sin esperar el webhook
+- [x] Resumen diario coworking 08:00 AM → Email · admin · `E2` — `/api/cron/coworking`, gate por hora Argentina (dispara una vez por día dado que el cron corre cada ~10 min). Código verificado con DoD; **el disparo automático real depende del deploy** (mismo motivo que el resto de este cron, `pg_net` no llega a `localhost`)
+- [x] Informe tiempos ociosos lunes 09:00 AM → Email · admin · `E2` — mismo cron, gate lunes+hora, ranking de espacios por % de ocupación semanal (sin motor de recomendaciones — ese ítem, más abajo, sigue diferido a propósito)
+- [x] Inscripción a curso confirmada → Email · inmediato · `E1` — `notifyUsers()` en `enrollUserAction` (in-app + email al propio alumno, `tipo=sistema`), sin RLS nueva (el alumno se notifica a sí mismo, ya permitido por `notifications_own`)
 - [x] Recordatorio tutoría 24hs y 1hs → Email + in-app · alumno + docente · `E2` — `/api/cron/tutorias`, mismo patrón que `/api/cron/coworking`. WhatsApp diferido (ver Addendum 05 — `users` no tiene campo de teléfono de perfil todavía)
-- [ ] Contenido enviado a revisión → Email · al admin · `E1`
+- [x] Contenido enviado a revisión → Email · al admin · `E1` — migración 025 (`notify_admins_course_submitted`, SECURITY DEFINER) inserta notificación in-app a todos los admins y devuelve sus emails; `submitForReviewAction` envía el email vía Resend. **Migración aplicada** (confirmado con `supabase migration list`, junto con toda la 001-026)
 - [x] Contenido aprobado o rechazado → Email · al docente · `E1`
 - [x] Anuncio del docente al grupo (`ANNOUNCEMENT`) → In-app (Realtime) + Email · alumnos inscriptos · `E1`
-- [ ] Comunicado institucional masivo del admin → In-app + Email · cursos/carreras seleccionados · `E1`
-- [ ] TP o pregunta abierta corregida → In-app + Email · al alumno · `E1`
-- [ ] Cambio de rol / conversión de cuenta → In-app + Email · al usuario convertido · `E1`
-- [ ] Secuencia de nurturing post-taller gratuito días 1, 3 y 7 → Email · lead · `E3`
+- [x] Comunicado institucional masivo del admin → In-app + Email · cursos/carreras seleccionados · `E1` — `/admin/comunicados`, `BroadcastComposer` + `broadcastAnnouncementAction`, reusa `notifyUsers()` (sin schema nuevo, no persiste en `announcements` porque esa tabla es de un solo curso — el comunicado no queda en el feed de ningún curso puntual)
+- [x] TP o pregunta abierta corregida → In-app + Email · al alumno · `E1` — `correctionActions.ts` (`correctAttemptAction`) ya llama `notifyUsers()` con `emailSubject`
+- [x] Cambio de rol / conversión de cuenta → In-app + Email · al usuario convertido · `E1` — `notifyUsers()` en `convertUserRoleAction`, el admin ya tiene `is_admin()` para notificar a cualquier `user_id`
+- [x] Secuencia de nurturing post-taller gratuito días 1, 3 y 7 → Email · lead · `E3` — `/api/cron/nurturing` (migración 037, mismo patrón que Coworking/Tutorías), lógica pura en `src/modules/comunicacion/nurturing.ts` cubierta por unit tests. Copy borrador documentado en `COMPONENTS.md` §65, **pendiente de aprobación del usuario**. Sin probar contra Resend real en esta pasada (`RESEND_API_KEY` ya tiene valor local — riesgo de mail real, ver nota en COMPONENTS.md). Migración sin aplicar contra ninguna DB
 
 ### 1.4 Fundación Visual — Design System v2.0 · `E1`
 
@@ -57,7 +57,7 @@
 - [x] Componentes base tematizados: `Button` (primary/outline/destructive/ghost), `Card`, `Input`
 - [x] Componentes de estado LMS: `Badge` (6 estados: active/completed/pending/error/locked/gold)
 - [x] `Progress` con gradiente `--inc-violet → --inc-magenta`
-- [ ] `CertificateCard` con tokens dorado (`--edu-gold`) exclusivos — diferido a Sprint 9–10 (no está en el checklist de `PRIMEROS_PASOS.md` Paso 4; ver nota de consistencia entregada al usuario)
+- [x] `CertificateCard` con tokens dorado (`--edu-gold`) exclusivos — `src/components/educativa/CertificateCard.tsx` usa `text-[--edu-gold]` en el ícono `Award` y `Badge state="gold"`
 - [x] Banners de notificación: info/success/warning/danger con tokens semánticos
 - [x] Página `/design-preview` con muestra de todos los componentes base
 - [x] QA visual: contraste WCAG AA verificado — texto blanco sobre `--edu-bg` ≈ 19.6:1; texto blanco sobre `--inc-violet` (CTA primario) ≈ 4.93:1 (AA normal-text ≥ 4.5:1)
@@ -96,13 +96,13 @@
 - [x] CRUD completo de sedes físicas — `/admin/coworking/sedes`, `LocationModal`/`LocationActiveToggle`, verificado en navegador (alta/edición/activar/desactivar)
 - [x] CRUD completo de espacios por sede (hot desks, salas, aulas) — `/admin/coworking/espacios`, `SpaceModal`/`SpaceActiveToggle`, verificado en navegador
 - [x] Configurar precios públicos y % de descuento institucional por rol — precio/hora por espacio (`SpaceModal`) + descuento vía `get_user_discount()` (ya definida en la 002, 30% para alumno/docente/coordinador), aplicado en la landing pública
-- [ ] Configurar cupones de descuento y campañas de early bird — `E2`, sin sprint asignado todavía
+- [x] Configurar cupones de descuento y campañas de early bird — `E2` — tabla `coupons` ya existía desde la migración 002 sin usarse; esta pasada la conectó: `/admin/coworking/cupones` (CRUD), input opcional en `BookingForm`, validación + canje atómico (`increment_coupon_usage()`, RPC nueva de la migración 030) en `createBookingAction`. Un cupón gana por sobre el descuento institucional automático, no se acumulan
 - [x] Ver disponibilidad de todos los espacios en tiempo real — `/admin/coworking/ocupacion`, `OccupancyDashboard`, Realtime sobre `bookings` + polling 20s
 - [x] Ver, modificar y cancelar cualquier reserva del sistema — `/admin/coworking/reservas`, filtros estado/fecha/espacio/tipo (modificar = cancelar por ahora; reprogramar queda diferido)
 - [x] Crear reservas manuales sin pago online (`tipo_descuento = manual`, acuerdos directos) — `ManualBookingModal`, `createManualBookingAction`
 - [x] Bloquear aula automáticamente al agendarse una tutoría presencial (uso institucional) — `createTutoriaAction` inserta una reserva `institucional` en `bookings` (sin fila en `payments`, mismo criterio que las reservas en lote de Coordinador), ver Addendum 05
 - [x] Cancelar reserva con generación automática de notificación al usuario — `cancelBookingAction` + `notifyUsers()` (tipo `reserva`, migración 014). El botón "Cancelar" de la UI usa `window.confirm()`, que la herramienta de automatización de navegador tiene prohibido disparar — se verificó reproduciendo la lógica exacta de la acción (update `estado='cancelada'` + insert en `notifications` tipo `reserva`) con un script puntual contra la DB de dev tras confirmar que el usuario corrió la migración 014: booking de prueba pasó a `cancelada` y la notificación se insertó sin error. Falta solo el click manual del usuario en su propio navegador para confirmar la UI en sí (no la lógica).
-- [ ] Registrar incidencias de mantenimiento por espacio. Historial visible — schema ya existe (`maintenance_incidents`, migración 002), sin UI todavía, diferido a una pasada de pulido
+- [x] Registrar incidencias de mantenimiento por espacio. Historial visible — `/admin/coworking/mantenimiento`, reportar + marcar resuelta (`maintenance_incidents`, schema ya existía desde la 002, RLS sigue admin-only, no se abrió a otros roles)
 - [x] Gestionar membresías: alta (planes) — `/admin/coworking/membresias`, CRUD de `membership_plans` (mensual/anual, precio, créditos incluidos), **verificado en navegador** (alta de "Membresía Mensual QA", $15000, 10 créditos). Baja/renovación/ajuste fino de una membresía activa individual quedan para una pasada de pulido
 
 #### Check-in
@@ -138,8 +138,8 @@
 
 ### 2.4 Plataforma Abierta — Admin · `E3`
 
-- [ ] Gestionar leads: ver base de datos, filtrar por área de interés
-- [ ] Exportar base de marketing (leads + usuarios comunidad)
+- [x] Gestionar leads: ver base de datos, filtrar por área de interés — `/admin/leads`. "Área de interés" no es un campo de texto libre en el registro (no estaba definida una taxonomía) — se infiere de los talleres a los que se anotó cada lead, mostrado por fila; no hay todavía un dropdown de filtro sobre esa columna, solo se ve
+- [x] Exportar base de marketing (leads + usuarios comunidad) — `CsvExportButton` en `/admin/leads` (reusa `buildCsv()`, ya genérica). Solo cubre `leads` en esta pasada, no `comunidad` (esa base recién tiene sentido una vez que exista autoregistro general de comunidad — E3, no construido todavía)
 - [ ] Configurar suscripciones y precios para usuarios externos
 - [ ] Configurar secuencias de nurturing por email
 
@@ -153,13 +153,13 @@
 - [x] Reservar el mismo espacio durante N semanas consecutivas (reservas en lote) — `/coordinador/reservas/[spaceId]`, `createBatchBookingAction`, sin pago online (uso institucional, `tipo_descuento='institucional'`, no genera fila en `payments`). **Verificado en navegador** con un usuario convertido a `coordinador`: 3 reservas creadas ($840 c/u con el 30% de descuento institucional), confirmadas como "Institucional" en `/admin/coworking/reservas` y ausentes de `/admin/coworking/ingresos`
 - [x] Cancelar reservas propias — `cancelMyBookingAction` (mismo botón que alumno/comunidad en `BookingConfirmation`), sin política de cancelación configurable todavía (cancelación libre)
 - [x] Ver historial de sus reservas y estados de pago — `/servicios/coworking/mis-reservas`
-- [ ] Ver y descargar comprobante QR de cada reserva — el QR ya se genera en `BookingConfirmation` (Sprint 13-14), falta un botón de descarga explícito (hoy es solo visual en pantalla)
+- [x] Ver y descargar comprobante QR de cada reserva — botón "Descargar QR" (`<a download>` sobre la data URL ya generada, sin JS/componente nuevo)
 - [ ] Recibir notificaciones de confirmación, recordatorio y cancelación — recordatorio real vía `/api/cron/coworking` (Sprint 17-18); confirmación depende del webhook de MP (sin token real todavía, ver arriba)
 
 ### 3.2 Educativo · `E1` (requiere permiso habilitado por Admin)
 
-- [ ] Cargar materiales y contenidos en cursos asignados
-- [ ] Ver progreso y asistencia de alumnos en sus cursos
+- [x] Cargar materiales y contenidos en cursos asignados — migración 028 (`course_coordinadores` + `can_coordinate_course()`), admin asigna desde `/admin/cursos` (`CourseCoordinadoresModal`), coordinador carga desde `/coordinador/cursos/[id]` reusando `LessonAttachmentsManager` (adjuntos, no puede crear/editar clases ni evaluaciones). Solo funciona sobre cursos ya **publicados** — no se agregó policy de select nueva para `lessons`/`courses` en borrador, no era el caso de uso real
+- [x] Ver progreso y asistencia de alumnos en sus cursos — vista `course_students` (021) extendida en la 028 para incluir `can_coordinate_course()`. Solo progreso (`progreso_pct`); asistencia no incluida en esta pasada (es un concepto de Tutorías/E2, no de clases regulares)
 
 ---
 
@@ -172,9 +172,9 @@
 - [x] Diseñar la estructura del programa: módulos, clases, orden — `CourseEditor` (§27),
       reordenar módulos y clases con drag (`@dnd-kit`)
 - [x] Subir videos y textos por clase (estado: BORRADOR) — `LessonUploader` (§28) para
-      video/documento, textarea directo para texto. **Materiales descargables *adjuntos*
-      (attachments aparte del contenido principal de la clase) siguen diferidos**, no hay
-      columna/tabla para eso todavía (ver §8.1)
+      video/documento, textarea directo para texto. Materiales descargables *adjuntos*
+      (attachments aparte del contenido principal de la clase) — tabla `lesson_attachments`
+      (migración 027) + `LessonAttachmentsManager` en `LessonModal` (ver §8.1)
 - [x] Enviar contenido a revisión del Admin (estado: EN REVISIÓN) — botón "Enviar a
       revisión" en `CourseEditor`, requiere al menos un módulo cargado
 - [x] Recibir feedback del Admin sobre contenido rechazado — banner en `CourseEditor` con
@@ -232,15 +232,15 @@
 
 ### 5.1 Onboarding
 
-- [ ] Recibir email de activación con link
-- [ ] Activar cuenta y establecer contraseña
-- [ ] Completar perfil inicial
+- [x] Recibir email de activación con link — `confirmImportAction` llama `admin.auth.admin.inviteUserByEmail()` al importar CSV
+- [x] Activar cuenta y establecer contraseña — `/activar-cuenta` (`SetPasswordForm`) + `setPasswordAction`
+- [x] Completar perfil inicial — `setPasswordAction` redirige a `/perfil?onboarding=1` si todavía no tiene `avatar_url` (nombre/apellido/DNI/carrera ya vienen del import CSV del admin, no hace falta que el alumno los cargue); banner de bienvenida con opción "Continuar sin foto"
 
 ### 5.2 Coworking · `E2`
 
 - [x] Ver catálogo de espacios con descuento institucional aplicado automáticamente — `/servicios/coworking`, `get_user_discount()`
 - [x] Reservar espacios con tarifa preferencial por matrícula activa — `BookingForm`, verificado en navegador con `alumno.test` (30% aplicado, $1200→$840)
-- [ ] Ver y descargar comprobante QR de cada reserva — **parcial**: `BookingConfirmation` genera el QR on-the-fly cuando `estado='confirmada'` (código verificado, nunca ejecutado con un pago real — depende del webhook de MP, sin token en este entorno)
+- [x] Ver y descargar comprobante QR de cada reserva — ver nota de arriba (botón de descarga agregado); el QR en sí sigue sin probarse con un pago real (depende del webhook de MP, sin token en este entorno)
 - [x] Cancelar reservas propias — `cancelMyBookingAction` + botón en `BookingConfirmation`, sin política de cancelación configurable todavía (cancelación libre)
 - [x] Ver historial de reservas — `/servicios/coworking/mis-reservas`, **verificado en navegador**. Suscribirse a una membresía y ver créditos restantes — `/servicios/coworking/membresia` + `MembershipStatus` en `/dashboard`, **flujo verificado en navegador de punta a punta** (sin token de MP: la membresía queda `pendiente` con el aviso correcto, mismo criterio de degradación que `BookingConfirmation`). **Consumo de créditos de *membresía* en una reserva sigue sin implementar** — lo que sí se implementó en Sprint 19-20 es el canje de *puntos* por créditos (ver abajo), un saldo distinto
 - [x] Canjear puntos por horas de coworking · `E1` — Sprint 19-20: `RedeemPointsCard` en `/dashboard` (50 puntos = 1 crédito, `redeemPointsForCreditAction`), consumo real al reservar (`BookingForm` + rama nueva en `createBookingAction`: `tipo_descuento='canje'`, sin pasar por MercadoPago, sin fila en `payments`)
@@ -261,7 +261,7 @@
 - [ ] Ver historial de logros: certificados, cursos aprobados, carreras completadas
       (`/certificados` lista certificados; historial unificado con cursos/carreras
       queda pendiente, no requiere schema nuevo)
-- [ ] Ver mapa visual de carrera con nodos bloqueados/desbloqueados según progreso
+- [x] Ver mapa visual de carrera con nodos bloqueados/desbloqueados según progreso — `CareerMap.tsx` (timeline vertical, estados completado/activo/bloqueado según `enrollments.progreso_pct`)
 - [x] Acumular puntos por módulo completado y examen aprobado (taller es `E2`,
       sin producir puntos todavía)
 - [x] Canjear puntos por beneficios en coworking · `E2` — ver §5.2, `RedeemPointsCard`
@@ -281,7 +281,7 @@
 - [x] Ver el link virtual del taller una vez inscripto — sección "Mis talleres"
 - [x] Desinscribirse antes del evento — `desinscribirseTallerAction`
 - [x] Ver la grabación después del evento, cuando el Admin la carga — mismo taller, sin ruta aparte
-- [ ] Registro público de Lead/Comunidad al taller gratuito, nurturing post-taller — diferido a `E3` (`FEATURE_PUBLICA`), fuera de esta pasada a propósito (ADR-18)
+- [x] Registro público de Lead al taller gratuito — `/talleres` accesible sin sesión (`src/middleware.ts`) SOLO cuando `FEATURE_PUBLICA` está activo (ADR-18 respetado — hasta entonces sigue "alcance interno", igual que antes), registro inline nombre+email+contraseña en `TallerCard` (segunda excepción acotada a CLAUDE.md regla #2, mismo patrón que Coworking CU-06), crea `role='lead'`. **Nurturing post-taller sigue diferido** (es 3d en el plan de esta sesión, necesita el copy de los emails aprobado — no se construye en esta pasada)
 - [ ] Puntos por asistir a un taller — diferido, sin fecha (no otorga puntos todavía)
 
 ### 5.6 Reserva de Coworking desde la Plataforma Educativa · `E2`
@@ -327,29 +327,38 @@
 > Registro libre por email + contraseña. Catálogo educativo abierto en E3. Reserva de Coworking a precio público desde E2 (sin descuento institucional).
 
 - [ ] Reservar Coworking a precio público con registro mínimo · `E2`
-- [ ] Registrarse con email y contraseña
-- [ ] Ver catálogo público de cursos sin login
-- [ ] Comprar cursos individuales (flujo MercadoPago)
-- [ ] Suscribirse mensualmente para acceso a catálogo
-- [ ] Acceder a contenido tras confirmación de pago
-- [ ] Completar clases, cuestionarios y examen final
-- [ ] Obtener certificado digital con QR verificable
-- [ ] Acceder a tutorías como add-on pago según el curso contratado
-- [ ] Participar en talleres en vivo
-- [ ] Ver carreras como vitrina (descripción, materias, salida laboral) pero **sin opción de compra** — CTA "Inscribite en el Instituto" → admisiones presenciales (CU-T02, ADR-15) · `E1`
-- [ ] Ser convertido a Alumno INCADE por el Admin tras matrícula presencial (conversión aditiva, conserva historial — CU-T04) · `E1`
+- [x] Registrarse con email y contraseña — sin página `/registro` standalone (no la pide el spec): registro inline nombre+email+contraseña en el mismo paso de compra (`purchaseCourseAction`) o suscripción (`createCatalogSubscriptionAction`), gateado por `FEATURE_PUBLICA`, crea `role='comunidad'` directo (regla #2)
+- [x] Ver catálogo público de cursos sin login — `/cursos` y `/cursos/[slug]` ya manejaban `user === null` en todos lados (no hizo falta tocar las páginas), el bloqueo real era `src/middleware.ts` (nunca las dejaba pasar sin sesión). Gateado por `FEATURE_PUBLICA` (apagado por default) — con el flag apagado el comportamiento no cambia respecto a antes de esta pasada
+- [x] Comprar cursos individuales (flujo MercadoPago) — migración 035 (`compras_curso`), `purchaseCourseAction` + `createCoursePreference()`, branch `curso:` del webhook (`handleCoursePurchaseWebhook`). Verificado funcionalmente contra producción en la sesión anterior (`verify-compra-suscripcion-tmp.js`)
+- [x] Suscribirse mensualmente para acceso a catálogo — migración 036 (`catalogo_suscripciones`/`catalogo_planes`), `createCatalogSubscriptionAction` + `createCourseSubscription()` (PreApproval MP), branch `subscription_preapproval` del webhook (`handleCourseSubscriptionWebhook`). Verificado funcionalmente contra producción en la sesión anterior
+- [x] Acceder a contenido tras confirmación de pago — `handleCoursePurchaseWebhook` inserta en `enrollments` al aprobarse el pago; acceso por suscripción vía inscripción perezosa (`enrollViaSubscriptionAction`, gateada por `has_active_course_subscription()`)
+- [x] Completar clases, cuestionarios y examen final — mismo mecanismo genérico de `enrollments`/`lessons_select`/`lp_own` que usa `alumno`, sin restricción de rol en las RLS (verificado leyendo `001_educativa_core.sql`)
+- [x] Obtener certificado digital con QR verificable — mismo `checkAndIssueCertificate()` genérico, no distingue rol
+- [x] Acceder a tutorías como add-on pago según el curso contratado — migración 038
+  (`courses.precio_tutorias_addon`, tabla `tutoria_addon_compras`,
+  `has_tutoria_addon_access()`), branch `tutoria-addon:` del webhook,
+  `purchaseTutoriaAddonAction` + `TutoriaAddonPurchaseCard`. Gate por rol en
+  `cursos/[slug]/page.tsx`: solo `comunidad` paga, `alumno` sigue gratis sin
+  cambios (Addendum 05). Spec v3.7 actualizada primero (§6.4) por la
+  contradicción con la versión anterior ("sin flujo de pago"). Lógica de
+  gracia del webhook (`approved` → acceso) cubierta por unit tests. **Sin
+  probar un pago real de punta a punta** (regla no negociable: la prueba
+  real la corre el usuario, mismo criterio que T8/T10)
+- [x] Participar en talleres en vivo — `inscribirseTallerAction` es "sin restricción de rol — cualquier autenticado puede inscribirse" (comentario propio del código)
+- [x] Ver carreras como vitrina (descripción, materias, salida laboral) pero **sin opción de compra** — CTA "Inscribite en el Instituto" → admisiones presenciales (CU-T02, ADR-15) · `E1` — `CareerBlockedCTA` (ya andaba para roles logueados no-alumno); esta pasada arregló 2 bugs reales: `/carreras` estaba atrás de login sin excepción (movido fuera de `(dashboard)/(protected)`, migración 029 abre `careers_select` a anon) y el botón CTA no tenía `href` (ahora linkea a incade.edu.ar — falta el número de WhatsApp de admisiones, no está en el repo)
+- [x] Ser convertido a Alumno INCADE por el Admin tras matrícula presencial (conversión aditiva, conserva historial — CU-T04) · `E1` — `convertUserRoleAction` + `ConvertRoleModal`, wireado en `/admin/usuarios`
 
 ---
 
 ## 7. ROL: LEAD / VISITANTE · `E2`/`E3`
 
-- [ ] Reservar Coworking a precio público con registro mínimo · `E2`
-- [ ] Registrarse para acceder a un taller gratuito · `E3`
-- [ ] Quedar registrado en la base de marketing de INCADE con área de interés
-- [ ] Acceder al taller gratuito de forma inmediata tras registro
-- [ ] Ver carreras como vitrina con CTA a admisiones presenciales (no comprable — CU-T02, ADR-15) · `E1`
-- [ ] Recibir secuencia de nurturing por email días 1, 3 y 7
-- [ ] Convertirse en Usuario Comunidad Online al pagar su primer curso (automático por webhook MP — CU-T03) · `E3`
+- [x] Reservar Coworking a precio público con registro mínimo · `E2` — CU-06, `createBookingAction`, registro inline nombre+email+contraseña
+- [x] Registrarse para acceder a un taller gratuito · `E3` — ver nota de arriba (§2.4/§5), gateado por `FEATURE_PUBLICA`
+- [x] Quedar registrado en la base de marketing de INCADE con área de interés — visible en `/admin/leads` (área de interés inferida de los talleres, no un campo propio)
+- [x] Acceder al taller gratuito de forma inmediata tras registro — `inscribirseTallerAction` inscribe en el mismo request que crea la cuenta, sin paso intermedio
+- [x] Ver carreras como vitrina con CTA a admisiones presenciales (no comprable — CU-T02, ADR-15) · `E1` — ver nota arriba, mismo fix (`/carreras` público + CTA con `href`). **Corrección:** la sesión que hizo este fix originalmente movió las rutas y el layout pero se olvidó de `src/middleware.ts` (tiene su propio gate de auth independiente) — quedó sin efecto real hasta la Fase 3, que lo completó
+- [x] Recibir secuencia de nurturing por email días 1, 3 y 7 — ver §1.2, mismo mecanismo (`/api/cron/nurturing`). El copy está hardcodeado en código, no es editable por el Admin todavía (ver §2.4, sigue sin marcar)
+- [x] Convertirse en Usuario Comunidad Online al pagar su primer curso (automático por webhook MP — CU-T03) · `E3` — `promote_lead_on_course_payment()` (migración 035, SECURITY DEFINER), llamada desde `handleCoursePurchaseWebhook` cuando `profile.role === 'lead'`. Idempotente, auditado en `role_history` (`by: 'system:compra_curso'`). Verificado funcionalmente contra producción (incluido el reintento idempotente) en la sesión anterior
 - [ ] Ser convertido directamente a Alumno INCADE por el Admin tras matrícula presencial (CU-T05) · `E1`
 
 ---
@@ -360,10 +369,12 @@
 
 - [x] Reproductor de video embebido — `LessonPlayer`, video servido desde Storage
       (`contenido-cursos`) con URL firmada
-- [ ] Materiales descargables *adjuntos* por clase (además del contenido principal) —
-      **sigue diferido**: `LessonUploader` (§28 de COMPONENTS.md, Sprint 7a) ya sube el
-      contenido principal de una clase `tipo='documento'`, pero un adjunto *extra* sobre una
-      clase de video necesitaría una tabla propia (`lessons` no tiene columna para eso)
+- [x] Materiales descargables *adjuntos* por clase (además del contenido principal) —
+      tabla `lesson_attachments` (migración 027, RLS con `can_teach_course()`), bucket
+      `contenido-cursos` reusado (`{course_id}/adjuntos/{lesson_id}/...`). Docente
+      sube/borra desde `LessonAttachmentsManager` (dentro de `LessonModal`); alumno los ve
+      como links de descarga con URL firmada (`LessonAttachments`) en la página de la clase,
+      sin importar el `tipo` de la clase (video/texto/documento)
 - [x] Texto/transcripción de la clase — `ContentViewer` (`tipo='texto'`)
 - [x] Desbloqueo progresivo: la clase siguiente se habilita al completar la anterior
 - [x] Registro de `lesson_progress` al completar cada clase — guardado debounced (~10s) +
@@ -401,7 +412,7 @@
       `lessonProgressActions.ts` — el Addendum/checklist decía "módulos", pero
       `LIFECYCLE_PLAN.md` y `CLAUDE.md` definen la regla por **lección**, no por
       módulo completo; se implementó como está especificado ahí)
-- [ ] Acumulación automática al aprobar talleres · `E2`
+- [x] Acumulación automática al aprobar talleres · `E2` — no había ningún concepto de "asistió" en `taller_inscripciones` (migración 030 agregó la columna); el admin marca asistencia desde `TallerInscriptosModal` (`/admin/talleres`), otorga 20 puntos (`awardPoints`) solo la primera vez que pasa a `true` (guardia contra duplicados si se destildea y se vuelve a tildar)
 - [x] Acumulación automática al aprobar examen final (+25 — cubierto de forma
       genérica para cualquier evaluación aprobada, no solo examen final)
 - [x] Canje de puntos por horas de coworking · `E2` — Sprint 19-20, ver §5.2/§2.2 (`RedeemPointsCard`, `redeemPointsForCreditAction`)
@@ -437,8 +448,8 @@
 ### 8.6 Integración Cross-Módulo
 
 - [ ] Descuento coworking aplicado automáticamente al detectar matrícula activa
-- [ ] Coworking muestra cursos disponibles en INCADEducativa (promoción cruzada)
-- [ ] INCADEducativa destaca espacios coworking disponibles para estudiar
+- [x] Coworking muestra cursos disponibles en INCADEducativa (promoción cruzada) — card "¿Ya conocés nuestros cursos?" en `/servicios/coworking`
+- [x] INCADEducativa destaca espacios coworking disponibles para estudiar — card "Conocé Coworking INCADE" en `/dashboard`, visible cuando `flags.coworking` está activo
 - [x] Puntos canjeables entre módulo educativo y módulo coworking — Sprint 19-20, ver §5.2/§2.2 (`coworking_creditos_canje`, independiente de créditos de membresía)
 
 ---
@@ -448,18 +459,22 @@
 ### 9.1 Tests
 
 - [x] E2E Etapa 1 (Playwright): inscripción → progreso → examen → certificado — `tests/e2e/critical-path.spec.ts`, QA Etapa 1 (2026-07-19). Fixture propio (curso/módulo/lección/examen, se crea y se borra en cada corrida), cuenta QA fija reutilizable (ledger de puntos es append-only, no se puede borrar). Encontró y corrigió un bug real: `startAttemptAction` bloqueaba con error la revisión de una evaluación ya aprobada en vez de mostrarla en modo lectura.
-- [ ] E2E Etapa 2 (Playwright): reserva coworking → pago → lista del día → check-in manual → no-show
+- [ ] E2E Etapa 2 (Playwright): reserva coworking → pago → lista del día → check-in manual → no-show —
+      spec escrito en `tests/e2e/coworking-critical-path.spec.ts` (tsc/lint verdes), pendiente de
+      confirmar que corre de punta a punta: la corrida se cortó por conectividad inestable de la
+      máquina (no un bug del test) antes de completar el flujo. Simula "pago aprobado" replicando
+      las escrituras del webhook de MP (sin sandbox real disponible en el proyecto)
 - [x] Unit tests (Vitest): lógica de negocio crítica — `tests/unit/gradeAttempt.test.ts` (corrección automática de los 5 tipos de pregunta), QA Etapa 1 (2026-07-19)
 
 ### 9.2 Infraestructura
 
-- [ ] Deploy en Vercel con GitHub Actions (CI/CD)
-- [ ] Preview automático por Pull Request
-- [ ] Monitoreo de errores en producción (Sentry)
-- [ ] Analytics de performance (Vercel Analytics)
-- [ ] RLS (Row-Level Security) activo en Supabase para todos los roles
-- [ ] Jobs cron: detección no-show cada 5 min, recordatorios 24hs, resumen diario
-- [ ] PWA instalable en mobile (iOS y Android)
+- [ ] Deploy en Vercel con GitHub Actions (CI/CD) — BLOCKED-ESPERANDO-HUMANO, sin proyecto Vercel vinculado todavía (0 proyectos vía MCP, sin `.vercel/project.json`)
+- [ ] Preview automático por Pull Request — depende del ítem anterior
+- [x] Monitoreo de errores en producción (Sentry) — `@sentry/nextjs` instalado vía wizard oficial, DSN por env var (`SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN`, nunca hardcodeado), evento de prueba confirmado en el dashboard de sentry.io (org `josegme-dev`, proyecto `javascript-nextjs`)
+- [ ] Analytics de performance (Vercel Analytics) — depende del deploy en Vercel
+- [ ] RLS (Row-Level Security) activo en Supabase para todos los roles — políticas ya existen desde la migración 001 en adelante, pero no se re-auditó "todos los roles" de punta a punta en esta pasada; dejar sin marcar hasta esa verificación explícita
+- [ ] Jobs cron: detección no-show cada 5 min, recordatorios 24hs, resumen diario — `pg_cron` (no-show, migración 016) y las rutas `/api/cron/*` están implementadas y verificadas con `curl`/scripts puntuales (ver §1.2, §2.2 Check-in), pero el disparo real vía `pg_net` no se puede probar en vivo hasta que haya un deploy accesible por Supabase (no llega a `localhost`)
+- [x] PWA instalable en mobile (iOS y Android) — `public/manifest.json` (display standalone, colores del DS), `public/sw.js` (cache-first assets estáticos, network-first navegación), íconos 192/512 (any+maskable) + apple-icon, `ServiceWorkerRegister` montado en `layout.tsx`. Lighthouse PWA no se corrió explícitamente en esta pasada — verificar antes de darlo por 100% "installable"
 
 ### 9.3 Accesibilidad (Lighthouse)
 

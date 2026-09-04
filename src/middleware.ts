@@ -10,6 +10,21 @@ function isPublicPath(pathname: string) {
   // Coworking es un servicio público desde E2 (Addendum 03 §2.1) — la landing
   // y el catálogo se ven sin login; el login recién se pide al reservar.
   if (pathname.startsWith("/servicios/coworking")) return true;
+  // Carreras como vitrina pública (CU-T02, ADR-15) — un visitante sin
+  // sesión también tiene que poder verlas, no solo comunidad/lead logueados.
+  if (pathname.startsWith("/carreras")) return true;
+  // Catálogo de cursos — vitrina pública de E3, gateada por FEATURE_PUBLICA
+  // más abajo (moduleRouteFor), no acá: si el flag está apagado el gate de
+  // módulo redirige antes de llegar a este chequeo.
+  if (pathname.startsWith("/cursos")) return true;
+  // Talleres — punto de entrada de captura de lead, pero SOLO cuando
+  // FEATURE_PUBLICA está activo (ADR-18: el consumo Lead/Comunidad de
+  // Talleres estaba etiquetado E3 en el spec original, acotado a alcance
+  // interno hasta que se prenda ese flag — ver moduleRouteFor más abajo,
+  // que hace el chequeo real; esto solo lo excluye del redirect genérico
+  // "sin sesión → /login" para que ese chequeo de flag pueda correr).
+  // No incluye /admin/talleres (nunca debe ser público).
+  if (pathname === "/talleres") return true;
   // Webhooks de servicios externos (MercadoPago) llegan sin sesión de usuario
   // — la seguridad la da la verificación de x-signature dentro del route
   // handler (CLAUDE.md regla #9), no el middleware de auth.
@@ -17,7 +32,7 @@ function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.includes(pathname);
 }
 
-function moduleRouteFor(pathname: string): "coworking" | "talleres" | "tutorias" | null {
+function moduleRouteFor(pathname: string): "coworking" | "talleres" | "tutorias" | "publica" | null {
   if (
     pathname.startsWith("/servicios/coworking") ||
     pathname.startsWith("/admin/coworking") ||
@@ -30,6 +45,12 @@ function moduleRouteFor(pathname: string): "coworking" | "talleres" | "tutorias"
   }
   if (pathname.startsWith("/docente/cursos/") && pathname.includes("/tutorias")) {
     return "tutorias";
+  }
+  // Catálogo público (E3) — solo gatea el acceso SIN sesión; un usuario
+  // logueado (alumno/docente/admin/etc.) sigue viendo /cursos como hoy,
+  // sin importar el flag (es su catálogo normal, no la vitrina pública).
+  if (pathname.startsWith("/cursos")) {
+    return "publica";
   }
   return null;
 }
@@ -45,16 +66,32 @@ export async function middleware(request: NextRequest) {
     const { data: flagRows } = await supabase
       .from("feature_flags")
       .select("flag, activo")
-      .in("flag", ["coworking", "talleres", "tutorias"]);
+      .in("flag", ["coworking", "talleres", "tutorias", "publica"]);
     const overrides = new Map((flagRows ?? []).map((row) => [row.flag as string, row.activo as boolean]));
-    const envFallback: Record<"coworking" | "talleres" | "tutorias", boolean> = {
+    const envFallback: Record<"coworking" | "talleres" | "tutorias" | "publica", boolean> = {
       coworking: process.env.FEATURE_COWORKING === "true",
       talleres: process.env.FEATURE_TALLERES === "true",
       tutorias: process.env.FEATURE_TUTORIAS === "true",
+      publica: process.env.FEATURE_PUBLICA === "true",
     };
     const moduleActive = overrides.get(moduleRoute) ?? envFallback[moduleRoute];
+    const publicaActive = overrides.get("publica") ?? envFallback.publica;
 
-    if (!moduleActive) {
+    // "publica" (/cursos) solo gatea el acceso SIN sesión a la vitrina —
+    // un usuario logueado sigue viendo /cursos como su catálogo normal de
+    // siempre, sin importar el flag.
+    //
+    // "talleres" (/talleres) sin sesión es además un punto de captura de
+    // lead (ADR-18) — acotado a FEATURE_PUBLICA, no solo FEATURE_TALLERES.
+    // Con sesión, el comportamiento no cambia (solo depende de talleres).
+    const blocked =
+      moduleRoute === "publica"
+        ? !user && !publicaActive
+        : moduleRoute === "talleres" && !user
+          ? !moduleActive || !publicaActive
+          : !moduleActive;
+
+    if (blocked) {
       return NextResponse.redirect(new URL(user ? "/dashboard" : "/", request.url));
     }
   }
@@ -101,5 +138,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // manifest.json/sw.js/icons quedan afuera del auth gate: son los assets que
+  // el browser pide para evaluar instalabilidad PWA (Lighthouse, "Agregar a
+  // pantalla de inicio") ANTES de que haya sesión — si el middleware los
+  // redirige a /login, el manifest nunca carga y la app deja de ser instalable
+  // para cualquier visitante sin sesión.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|icons/).*)"],
 };

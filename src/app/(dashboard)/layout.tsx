@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import {
   Award,
   BookOpen,
@@ -8,21 +7,28 @@ import {
   ClipboardList,
   CreditCard,
   DoorOpen,
+  Megaphone,
   GraduationCap,
   LayoutDashboard,
   LayoutGrid,
   Presentation,
   Settings,
+  Tag,
+  UserPlus,
+  Wrench,
+  UserCircle,
   Users,
   Video,
   Wallet,
 } from "lucide-react";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PublicHeaderShell } from "@/components/layout/PublicHeaderShell";
 import type { SidebarSection } from "@/components/layout/Sidebar";
 import type { TopbarRole } from "@/components/layout/Topbar";
 import { getFlags, type FeatureFlag } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
+import { getSignedAvatarUrl } from "@/lib/supabase/storage";
 
 const ICON_CLASS = "h-[18px] w-[18px]";
 
@@ -56,13 +62,21 @@ function sectionsForRole(
     });
   }
 
-  if (role === "coordinador" && flags.coworking) {
-    sections.push({
-      label: "Coordinador",
-      items: [
-        { label: "Reservas en lote", href: "/coordinador/reservas", icon: <CalendarPlus className={ICON_CLASS} aria-hidden /> },
-      ],
+  if (role === "coordinador") {
+    const coordinadorItems: SidebarSection["items"] = [];
+    if (flags.coworking) {
+      coordinadorItems.push({
+        label: "Reservas en lote",
+        href: "/coordinador/reservas",
+        icon: <CalendarPlus className={ICON_CLASS} aria-hidden />,
+      });
+    }
+    coordinadorItems.push({
+      label: "Mis cursos",
+      href: "/coordinador/cursos",
+      icon: <Presentation className={ICON_CLASS} aria-hidden />,
     });
+    sections.push({ label: "Coordinador", items: coordinadorItems });
   }
 
   if (role === "admin") {
@@ -72,6 +86,8 @@ function sectionsForRole(
       { label: "Carreras", href: "/admin/carreras", icon: <GraduationCap className={ICON_CLASS} aria-hidden /> },
       { label: "Métricas", href: "/admin/metricas", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
       { label: "Certificados", href: "/admin/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
+      { label: "Comunicados", href: "/admin/comunicados", icon: <Megaphone className={ICON_CLASS} aria-hidden /> },
+      { label: "Leads", href: "/admin/leads", icon: <UserPlus className={ICON_CLASS} aria-hidden /> },
     ];
 
     if (flags.coworking) {
@@ -81,7 +97,9 @@ function sectionsForRole(
         { label: "Ocupación Coworking", href: "/admin/coworking/ocupacion", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
         { label: "Reservas Coworking", href: "/admin/coworking/reservas", icon: <CalendarDays className={ICON_CLASS} aria-hidden /> },
         { label: "Ingresos Coworking", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> },
-        { label: "Membresías Coworking", href: "/admin/coworking/membresias", icon: <CreditCard className={ICON_CLASS} aria-hidden /> }
+        { label: "Membresías Coworking", href: "/admin/coworking/membresias", icon: <CreditCard className={ICON_CLASS} aria-hidden /> },
+        { label: "Cupones Coworking", href: "/admin/coworking/cupones", icon: <Tag className={ICON_CLASS} aria-hidden /> },
+        { label: "Mantenimiento Coworking", href: "/admin/coworking/mantenimiento", icon: <Wrench className={ICON_CLASS} aria-hidden /> }
       );
     }
 
@@ -96,6 +114,11 @@ function sectionsForRole(
 
     sections.push({ label: "Administración", items: adminItems });
   }
+
+  sections.push({
+    label: "Cuenta",
+    items: [{ label: "Perfil", href: "/perfil", icon: <UserCircle className={ICON_CLASS} aria-hidden /> }],
+  });
 
   return sections;
 }
@@ -117,21 +140,26 @@ export default async function DashboardGroupLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Sin sesión: la única rama que llega hasta acá es /carreras (pública,
+  // vitrina CU-T02/ADR-15 — el resto vive bajo (protected), que sí exige
+  // sesión). Shell mínimo, no el DashboardLayout completo (asume usuario).
   if (!user) {
-    redirect("/login");
+    return <PublicHeaderShell>{children}</PublicHeaderShell>;
   }
 
   const [{ data: profile }, flags] = await Promise.all([
-    supabase.from("users").select("nombre, apellido, role, can_teach").eq("id", user.id).single(),
+    supabase.from("users").select("nombre, apellido, role, can_teach, avatar_url").eq("id", user.id).single(),
     getFlags(),
   ]);
 
   const role = (profile?.role ?? "alumno") as TopbarRole;
+  const avatarUrl = profile?.avatar_url ? await getSignedAvatarUrl(supabase, profile.avatar_url) : null;
 
   return (
     <DashboardLayout
       sidebarSections={sectionsForRole(role, profile?.can_teach ?? false, flags)}
       userInitials={initialsFor(profile?.nombre, profile?.apellido, user.email)}
+      avatarUrl={avatarUrl}
       role={role}
       userId={user.id}
     >
