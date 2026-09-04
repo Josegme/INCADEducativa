@@ -1,120 +1,69 @@
-# Session Handoff — 2026-09-04 (T11 — checklist E3 + fix real de flag de compra/suscripción — MODO NORMAL)
+# Session Handoff — 2026-09-04 (T11 cerrada — checklist E3 + fix de flag de compra/suscripción, pusheado — MODO NORMAL)
 
 ## MODO: NORMAL
 
-## T11 — EN CURSO (checklist actualizado + 1 bug real cerrado, sin commitear)
+## ESTADO ACTUAL
+- Rama activa: `fix/db-search-path-024`
+- Último commit: `605a210` (pusheado — `origin/fix/db-search-path-024`
+  en sync, 0 ahead / 0 behind, confirmado con
+  `git log origin/fix/db-search-path-024 --oneline -1`).
+- PR #1: OPEN, MERGEABLE (`gh pr view`, reconsultado esta pasada). El
+  `statusCheckRollup` que devuelve `gh pr view` ahora mismo sigue
+  siendo el del HEAD anterior (`8112e87`) — Actions todavía no corrió
+  sobre `605a210` (recién pusheado), confirmar en la próxima sesión.
 
-Tras `/recap` (gates verdes sobre HEAD `8112e87`, PR MERGEABLE, 36
-migraciones Remote=Local) y `/continuar`, se tomó T11 de la cola
-(`resolver_loop1.md`).
-
-1. **Checklist actualizado** (`docs/FUNCIONALIDADES.md` §6 y §7): se
-   verificó en código (no se confió en el estado previo del doc) que ya
-   funcionan: compra individual de curso (migración 035,
+## T11 CERRADA — checklist E3 + fix de flag de compra/suscripción
+1. Checklist actualizado en `docs/FUNCIONALIDADES.md` §6/§7 con lo que
+   ya funciona en código (verificado ahí, no en la memoria de sesiones
+   previas): compra individual de curso (migración 035,
    `purchaseCourseAction`, branch `curso:` del webhook), suscripción
    mensual (migración 036, `createCatalogSubscriptionAction`, branch
    `subscription_preapproval`), acceso a contenido tras pago
-   (`enrollments` insert en el webhook), clases/evaluaciones/certificado
-   para `comunidad` (mismo mecanismo genérico sin restricción de rol en
-   las RLS), talleres para `comunidad` (`inscribirseTallerAction` "sin
-   restricción de rol"), y `promote_lead_on_course_payment()` (CU-T03,
-   idempotente, auditado en `role_history`). Sigue sin marcar: tutorías
-   add-on pago (T13, no implementado).
-
-2. **Bug real encontrado y corregido**: la compra individual y la
+   (`enrollments` insert en el webhook), clases/evaluaciones/
+   certificado y talleres para `comunidad` (mismo mecanismo genérico
+   sin restricción de rol en las RLS), `promote_lead_on_course_payment()`
+   (CU-T03, idempotente, auditado en `role_history`). Sigue sin marcar:
+   tutorías add-on pago (T13, no implementado).
+2. Bug real encontrado y corregido: la compra individual y la
    suscripción de cursos estaban gateadas por `flags.comunidad`
-   (`FEATURE_COMUNIDAD`, el flag del foro — E3 pero módulo distinto, ni
-   siquiera construido todavía, T14) en vez de `flags.publica`
-   (`FEATURE_PUBLICA`, el flag real de "apertura pública" que ya gatea
-   `/cursos` en `middleware.ts` y que la propia CLAUDE.md describe como
-   paraguas de "catálogo abierto, suscripciones, leads"). Efecto real:
-   si el Admin togglea `FEATURE_PUBLICA=true` (como dice la tabla de
-   decisiones de `resolver_loop1.md`) pero deja `FEATURE_COMUNIDAD=false`
-   (foro sin construir, sin motivo para prenderlo), el botón de compra/
-   suscripción seguía mostrando "disponible próximamente" — el flag
-   correcto no habilitaba la feature que se supone que abre. El script
-   de verificación de la sesión anterior (`verify-compra-suscripcion-tmp.js`)
-   nunca lo detectó porque bypassea la UI/action y escribe directo contra
-   la DB. Corregido en 4 puntos + 2 comentarios desactualizados:
-   `cursos/[slug]/page.tsx`, `cursos/suscripcion/page.tsx`,
+   (`FEATURE_COMUNIDAD`, el flag del foro — módulo distinto, sin
+   construir, T14) en vez de `flags.publica` (`FEATURE_PUBLICA`, el
+   flag real de "apertura pública" que ya gatea `/cursos` en
+   `middleware.ts`). Efecto real: togglear `FEATURE_PUBLICA=true` (como
+   indica la tabla de decisiones de `resolver_loop1.md`) sin
+   `FEATURE_COMUNIDAD=true` (foro sin construir, sin motivo para
+   prenderlo) dejaba el botón de compra/suscripción mostrando
+   "disponible próximamente". El script de verificación de la sesión
+   anterior (`verify-compra-suscripcion-tmp.js`) no lo detectó porque
+   bypassea la UI/action y escribe directo contra la DB. Corregido en 6
+   archivos: `cursos/[slug]/page.tsx`, `cursos/suscripcion/page.tsx`,
    `purchaseCourseActions.ts`, `subscriptionActions.ts`,
    `CoursePurchaseForm.tsx`, `SubscribeForm.tsx`.
+3. UI admin de precios ya existía (`/admin/suscripciones` CRUD de
+   planes, `/admin/cursos` campo `precio`) — no hizo falta nada nuevo.
+4. Commit `605a210`, aprobado y pusheado en esta sesión.
 
-3. **DoD verificado**: `npx tsc --noEmit` OK, `npm run lint` OK (mismo
-   warning preexistente de `jsx-a11y/alt-text`), `npm run test:unit` OK
-   (17/17). `npm run build` no se corrió en esta pasada.
-
-4. **Pendiente de esta sesión**: diff mostrado al usuario, esperando
-   aprobación explícita para `git commit` (regla no negociable, nunca
-   automático). No se tocó el resto del alcance de T11 (UI admin de
-   precios ya existía — `/admin/suscripciones` con CRUD de planes,
-   `/admin/cursos` con campo `precio` — no hacía falta nada nuevo ahí).
-
-## ESTADO PREVIO (2026-09-03, T10 cerrada)
-
-La tarea bloqueante de FREEZE quedó resuelta: 034, 035 y 036 aplicadas
-contra producción y verificadas funcionalmente. La cola está al día
-(T1-T10 DONE o BLOCKED-ESPERANDO-HUMANO según corresponda; T11-T15
-son las slices nuevas de Etapa 3, ver `resolver_loop1.md`). Se puede
-seguir con desarrollo normal desde la cola.
-
-## T10 CERRADA — desbloqueo de DB (compra/suscripción de cursos)
-
-1. El fix de `034_coupon_redeem_atomic.sql` ya estaba commiteado
-   (`18e1414`) desde antes.
-2. Se detectó un segundo bug del mismo origen al intentar aplicar:
-   `035_compras_curso.sql` y `036_catalogo_suscripciones.sql` usaban
-   `uuid_generate_v4()` sin calificar — mismo bug ya resuelto antes en
-   la migración 022 (`db58f37`): `supabase db push` no incluye
-   `extensions` en el `search_path` de la sesión. Corregido en
-   `1567e35`/`dd66235` (calificado como `extensions.uuid_generate_v4()`),
-   commiteado y pusheado.
-3. El usuario corrió `supabase db push --yes` en su propia terminal (el
-   classifier de Auto mode volvió a bloquearlo dos veces desde acá) —
-   aplicó 034+035+036 sin error.
-4. `supabase migration list` confirmado el 2026-09-03: Remote = Local
-   en las 36 migraciones.
-5. Verificación funcional contra producción con
-   `verify-compra-suscripcion-tmp.js` (script temporal, sin commitear,
-   mismo criterio que `verify-fase3-tmp.js`): compra individual de
-   curso (guard de idempotencia del webhook, enrollment,
-   `promote_lead_on_course_payment()`, `role_history`, notificación de
-   bienvenida, reintento idempotente) y suscripción mensual (RLS de
-   auto-alta, `has_active_course_subscription()` antes/después de
-   activar, RLS que bloquea la reedición propia una vez activa,
-   inscripción perezosa vía suscripción) — **todos los checks en
-   verde**. Fixtures de prueba limpiados y confirmados sin residuo
-   (`courses`/`catalogo_planes`/`compras_curso`/`catalogo_suscripciones`
-   verificados vacíos de datos de QA tras la corrida).
-
-## ESTADO ACTUAL
-- Rama activa: `fix/db-search-path-024`
-- Último commit: `dd66235` (pusheado — `origin/fix/db-search-path-024`
-  en sync, 0 ahead / 0 behind).
-- PR #1: OPEN. `mergeable` no reconsultado en esta pasada — ver nota de
-  la sesión anterior en "Handoffs anteriores" antes de asumir
-  "MERGEABLE" sin volver a chequear.
-- `docs/addenda/resolver_loop1.md` tiene T10-T15 nuevas (slices de la
-  propuesta de campaña reformuladas, ver commit `93b59f5`). T10 ahora
-  DONE, T11-T15 siguen sin arrancar.
-
-## RESULTADO DE LOS GATES DE CI (verificado 2026-09-02, sobre HEAD `7992b22` — sin cambios de código desde entonces, solo docs + SQL)
+## RESULTADO DE LOS GATES DE CI (verificado 2026-09-04, sobre HEAD `605a210`)
 - `npx tsc --noEmit` → OK, sin errores
 - `npm run lint` → OK, 0 errores (1 warning preexistente
   `jsx-a11y/alt-text` en `src/lib/certificatePdf.tsx`, no bloqueante)
 - `npm run test:unit` → OK, 17/17 passed (3 archivos)
-- GitHub Actions, run `33523997424` (2026-09-01T15:10 UTC): job
-  `quality` → SUCCESS. Job `e2e` → FAILURE, pero tiene
-  `continue-on-error: true` en `ci.yml`, no bloquea el gate real.
 - `npm run build` no se corrió en esta pasada.
+- GitHub Actions sobre este HEAD exacto: no corrido todavía (recién
+  pusheado) — confirmar con `gh pr checks` o `gh run list --branch
+  fix/db-search-path-024` en la próxima sesión.
 
 ## PRÓXIMA TAREA SUGERIDA (vía /continuar)
-1. T11 (checklist real de E3 en `FUNCIONALIDADES.md`) — buen punto de
-   partida, bajo riesgo.
-2. T12-T14 (nurturing, tutorías pago, foro) — cada una con su propio
-   checkpoint según la tabla de decisiones de `resolver_loop1.md`.
-3. T6 (rotar service role key) y T7 (Supabase staging, 36 migraciones a
-   replicar) siguen 100% manuales/BLOCKED, sin cambios.
+1. T12 (nurturing de leads días 1/3/7) — primera AUTO disponible sin
+   arrancar.
+2. T13 (tutorías add-on pago, código AUTO / prueba real GATE) y T14
+   (comunidad/foro) — cada una con su checkpoint según la tabla de
+   decisiones de `resolver_loop1.md`.
+3. T15 (deuda funcional chica: `FUNCIONALIDADES.md:462` desactualizado
+   sobre Vercel, comentario obsoleto en `layout.tsx:143-145`, limpiar
+   demos de Sentry).
+4. T4/T5/T6/T7/T8/T9 siguen GATE/manuales, sin cambios — ver detalle en
+   `resolver_loop1.md`.
 
 ## PENDIENTES SIN RESOLVER (arrastrados)
 - `verify-fase3-tmp.js` y `verify-compra-suscripcion-tmp.js` sin
@@ -129,16 +78,50 @@ seguir con desarrollo normal desde la cola.
 - `docs/FUNCIONALIDADES.md:462` sigue describiendo el deploy de Vercel
   como "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto,
   parte del alcance de T15
-- Corrección de T8 (env vars productivas) del handoff 2026-09-02 sigue
-  vigente sin cambios: `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`,
-  `MP_WEBHOOK_SECRET`, `TWILIO_*` siguen sin valor en `.env.local`
+- T8 (env vars productivas) sigue vigente sin cambios:
+  `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
+  `TWILIO_*` siguen sin valor en `.env.local`
 
 ## RESUELTO DESDE EL HANDOFF ANTERIOR
-- Migraciones 034, 035 y 036 aplicadas contra producción y verificadas
-  funcionalmente (ver T10 arriba) — cierra la tarea bloqueante que tenía
-  el proyecto en MODO FREEZE desde el 2026-09-01.
+- T11 cerrada: checklist E3 actualizado + bug real de flags corregido
+  (ver arriba), commiteado y pusheado.
 
 ## Handoffs anteriores
+
+### Session Handoff — 2026-09-03/04 (T10 cerrada — 034-036 aplicadas; T11 iniciada — checklist E3)
+
+#### T10 CERRADA — desbloqueo de DB (compra/suscripción de cursos)
+1. El fix de `034_coupon_redeem_atomic.sql` ya estaba commiteado (`18e1414`) desde antes.
+2. Segundo bug del mismo origen detectado al aplicar: `035_compras_curso.sql` y
+   `036_catalogo_suscripciones.sql` usaban `uuid_generate_v4()` sin calificar — mismo bug
+   ya resuelto en la migración 022 (`db58f37`). Corregido en `dd66235`
+   (`extensions.uuid_generate_v4()`), commiteado y pusheado.
+3. El usuario corrió `supabase db push --yes` en su propia terminal (el classifier de
+   Auto mode volvió a bloquearlo dos veces desde acá) — aplicó 034+035+036 sin error.
+4. `supabase migration list` confirmado el 2026-09-03: Remote = Local en las 36 migraciones.
+5. Verificación funcional contra producción con `verify-compra-suscripcion-tmp.js`
+   (script temporal, sin commitear): compra individual de curso (guard de idempotencia
+   del webhook, enrollment, `promote_lead_on_course_payment()`, `role_history`,
+   notificación de bienvenida, reintento idempotente) y suscripción mensual (RLS de
+   auto-alta, `has_active_course_subscription()` antes/después de activar, RLS que
+   bloquea la reedición propia una vez activa, inscripción perezosa) — todos los checks
+   en verde. Fixtures de prueba limpiados y confirmados sin residuo.
+
+#### ESTADO EN ESE MOMENTO
+- Rama activa: `fix/db-search-path-024`. Último commit: `dd66235` (pusheado, 0 ahead/0 behind).
+- PR #1: OPEN. `mergeable` no reconsultado en esa pasada.
+- Gates verificados sobre HEAD `7992b22` (sin cambios de código desde entonces, solo
+  docs+SQL): `tsc`/`lint`/`test:unit` OK. GitHub Actions run `33523997424`: `quality` →
+  SUCCESS, `e2e` → FAILURE con `continue-on-error: true`, no bloquea.
+
+#### PENDIENTES ARRASTRADOS DESDE ESE MOMENTO
+- `verify-fase3-tmp.js` y `verify-compra-suscripcion-tmp.js` sin trackear, deliberado.
+- Demos del wizard de Sentry sin limpiar (parte de T15).
+- Comentario desactualizado en `src/app/(dashboard)/layout.tsx:143-145` (parte de T15).
+- `docs/FUNCIONALIDADES.md:462` desactualizado sobre Vercel (parte de T15) — **sigue
+  sin resolver**, T11 solo tocó §6/§7 (compra/suscripción de cursos), no §9.2.
+- T8 (env vars productivas): `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
+  `TWILIO_*` sin valor en `.env.local` — seguía vigente.
 
 ### Session Handoff — 2026-09-03 (puesta a punto tras /recap — MODO FREEZE, previo a aplicar 034-036)
 
