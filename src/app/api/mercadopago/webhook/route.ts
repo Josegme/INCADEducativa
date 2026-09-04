@@ -7,6 +7,7 @@ import { notifyUsers } from "@/lib/notifications";
 import { sendEmail } from "@/lib/resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsapp } from "@/lib/twilio";
+import { resolveTutoriaAddonEstado } from "@/modules/educativa/tutoriaAddon";
 
 /**
  * Única fuente de verdad del estado de pago (CLAUDE.md regla #9). Nunca
@@ -71,6 +72,18 @@ export async function POST(request: NextRequest) {
   // el external_reference pelado, exactamente como antes.
   if (payment.externalReference.startsWith("curso:")) {
     return handleCoursePurchaseWebhook(admin, payment, payment.externalReference.slice("curso:".length));
+  }
+
+  // Add-on de tutorías (T13, Etapa 3) — prefijo `tutoria-addon:`. Distinto
+  // de `curso:`: no toca `enrollments` (el usuario ya está inscripto),
+  // solo aprueba la fila de `tutoria_addon_compras` que lee
+  // has_tutoria_addon_access().
+  if (payment.externalReference.startsWith("tutoria-addon:")) {
+    return handleTutoriaAddonPurchaseWebhook(
+      admin,
+      payment,
+      payment.externalReference.slice("tutoria-addon:".length)
+    );
   }
 
   const bookingId = payment.externalReference;
@@ -195,6 +208,57 @@ async function handleCoursePurchaseWebhook(
         },
       ],
       emailSubject: "Compra confirmada — INCADEducativa",
+    });
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+/**
+ * Add-on de tutorías por curso (T13, Etapa 3). El usuario ya está
+ * inscripto (compró o se suscribió al curso) — este handler solo aprueba
+ * la fila de `tutoria_addon_compras`; `has_tutoria_addon_access()` la lee
+ * directo, no hace falta tocar `enrollments` ni ninguna otra tabla.
+ */
+async function handleTutoriaAddonPurchaseWebhook(
+  admin: ReturnType<typeof createAdminClient>,
+  payment: MpPaymentInfo,
+  compraId: string
+) {
+  const estado = resolveTutoriaAddonEstado(payment.status);
+
+  const { data: compra } = await admin
+    .from("tutoria_addon_compras")
+    .update({ mp_payment_id: payment.id, estado, webhook_payload: payment.raw as object })
+    .eq("id", compraId)
+    .eq("estado", "pendiente")
+    .select("id, user_id, course_id, monto")
+    .maybeSingle();
+
+  if (!compra || estado !== "aprobado") {
+    return NextResponse.json({ received: true });
+  }
+
+  const [{ data: profile }, { data: course }] = await Promise.all([
+    admin.from("users").select("email, nombre").eq("id", compra.user_id).single(),
+    admin.from("courses").select("titulo").eq("id", compra.course_id).single(),
+  ]);
+
+  if (profile?.email) {
+    await notifyUsers(admin, {
+      tipo: "pago",
+      referenciaId: compra.id,
+      courseId: compra.course_id,
+      titulo: `Add-on de tutorías activado — ${course?.titulo ?? "tu curso"}`,
+      cuerpo: `Pagaste $${compra.monto} por el add-on de tutorías de "${course?.titulo}". Ya podés acceder a las tutorías de ese curso.`,
+      recipients: [
+        {
+          userId: compra.user_id,
+          email: profile.email as string,
+          emailHtml: `<p>Hola ${profile.nombre ?? ""},</p><p>Tu compra del add-on de tutorías de <strong>${course?.titulo}</strong> quedó confirmada. Monto: $${compra.monto}. Referencia de pago (MercadoPago): ${payment.id}.</p>`,
+        },
+      ],
+      emailSubject: "Add-on de tutorías activado — INCADEducativa",
     });
   }
 

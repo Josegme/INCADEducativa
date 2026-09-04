@@ -131,3 +131,70 @@ export async function createCoursePreference(
 
   return { preferenceId: result.id, initPoint: result.init_point };
 }
+
+export interface CreateTutoriaAddonPreferenceInput {
+  compraId: string;
+  courseSlug: string;
+  courseTitle: string;
+  unitPrice: number;
+  payerEmail: string;
+}
+
+export interface TutoriaAddonPreferenceResult {
+  preferenceId: string;
+  initPoint: string;
+}
+
+/**
+ * Crea la preferencia de checkout para el add-on de tutorías de un curso
+ * (T13, Etapa 3). `external_reference` lleva el prefijo `tutoria-addon:`
+ * para que el webhook lo distinga de `curso:` y del flujo de Coworking sin
+ * tocar ninguno de los dos. Devuelve null si MP_ACCESS_TOKEN no está
+ * configurada — el llamador debe dejar la compra en `pendiente` sin
+ * preferencia asociada en vez de fallar.
+ */
+export async function createTutoriaAddonPreference(
+  input: CreateTutoriaAddonPreferenceInput
+): Promise<TutoriaAddonPreferenceResult | null> {
+  const client = getMercadoPagoClient();
+  if (!client) {
+    console.warn(
+      `[mercadopago] MP_ACCESS_TOKEN vacía — no se creó preferencia para el add-on de tutorías ${input.compraId}`
+    );
+    return null;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const returnUrl = `${appUrl}/cursos/${input.courseSlug}`;
+
+  const preference = new Preference(client);
+  const result = await preference.create({
+    body: {
+      items: [
+        {
+          id: input.compraId,
+          title: `Add-on tutorías — ${input.courseTitle}`,
+          quantity: 1,
+          unit_price: input.unitPrice,
+          currency_id: "ARS",
+        },
+      ],
+      payer: { email: input.payerEmail },
+      external_reference: `tutoria-addon:${input.compraId}`,
+      notification_url: `${appUrl}/api/mercadopago/webhook`,
+      back_urls: {
+        success: returnUrl,
+        pending: returnUrl,
+        failure: returnUrl,
+      },
+      auto_return: "approved",
+    },
+  });
+
+  if (!result.id || !result.init_point) {
+    console.error(`[mercadopago] Preferencia creada sin id/init_point para el add-on de tutorías ${input.compraId}`);
+    return null;
+  }
+
+  return { preferenceId: result.id, initPoint: result.init_point };
+}

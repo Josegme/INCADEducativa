@@ -42,6 +42,7 @@ function parseCourseFormData(formData: FormData) {
     duracionHs: formData.get("duracionHs") || undefined,
     esGratuito: formData.get("esGratuito") === "true",
     precio: formData.get("precio") || 0,
+    precioTutoriasAddon: formData.get("precioTutoriasAddon") || 0,
   });
 }
 
@@ -53,7 +54,8 @@ export async function createCourseAction(formData: FormData): Promise<CourseForm
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
-  const { titulo, slug, descripcion, carreraId, docenteId, nivel, duracionHs, esGratuito, precio } = parsed.data;
+  const { titulo, slug, descripcion, carreraId, docenteId, nivel, duracionHs, esGratuito, precio, precioTutoriasAddon } =
+    parsed.data;
 
   const { data: created, error } = await supabase
     .from("courses")
@@ -67,6 +69,7 @@ export async function createCourseAction(formData: FormData): Promise<CourseForm
       duracion_hs: duracionHs ?? null,
       es_gratuito: esGratuito,
       precio: esGratuito ? 0 : precio,
+      precio_tutorias_addon: precioTutoriasAddon,
     })
     .select("id")
     .single();
@@ -95,7 +98,8 @@ export async function updateCourseAction(formData: FormData): Promise<CourseForm
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
-  const { id, titulo, slug, descripcion, carreraId, docenteId, nivel, duracionHs, esGratuito, precio } = parsed.data;
+  const { id, titulo, slug, descripcion, carreraId, docenteId, nivel, duracionHs, esGratuito, precio, precioTutoriasAddon } =
+    parsed.data;
   if (!id) {
     return { error: "Falta el id del curso a editar" };
   }
@@ -112,6 +116,7 @@ export async function updateCourseAction(formData: FormData): Promise<CourseForm
       duracion_hs: duracionHs ?? null,
       es_gratuito: esGratuito,
       precio: esGratuito ? 0 : precio,
+      precio_tutorias_addon: precioTutoriasAddon,
     })
     .eq("id", id);
 

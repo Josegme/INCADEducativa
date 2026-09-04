@@ -386,8 +386,17 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
 > verificó la lógica de elegibilidad con tests puros. Un test contra
 > Resend real con destinatario propio queda pendiente de que el
 > usuario lo confirme explícitamente. 3 gates verdes (tsc/lint/
-> test:unit, 25/25); `npm run build` no corrido. Sin commitear —
-> esperando aprobación explícita del usuario.
+> test:unit, 25/25); `npm run build` no corrido. Commit `e28e1e0`,
+> aprobado por el usuario (sin pushear todavía).
+>
+> ACTUALIZACIÓN (2026-09-04): usuario pidió explícitamente aplicar la
+> migración 037 contra producción. `supabase db push --yes` corrido,
+> sin error (`pg_cron`/`pg_net` ya existían, skip). `supabase migration
+> list` confirma Remote=Local en 037. El job `nurturing-notify` queda
+> programado pero **no funcional** hasta reemplazar `<APP_URL>` y
+> `<CRON_SECRET>` por los valores reales tras el deploy — mismo patrón
+> que 016/018, no se completó automáticamente porque requeriría escribir
+> el secreto en texto plano.
 
 [T13 · AUTO (código) / GATE (prueba real)] Tutorías add-on pago
 - Precio fijo por curso (decisión ya tomada por el usuario): campo en
@@ -402,6 +411,23 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
   momento — no se simulan tokens de pago.
 - DoD: 4 gates en verde; branch del webhook cubierto por test unitario
   de la lógica de gracia (approved → acceso, resto → sin acceso).
+
+> ESTADO VERIFICADO (2026-09-04): HECHA, SIN COMMITEAR. Contradicción real
+> encontrada con el spec (§6.4 decía "sin flujo de pago", previo a que
+> existiera compra/suscripción de curso) — resuelta actualizando el spec
+> primero (v3.6 → v3.7, regla #7 de CLAUDE.md) antes de tocar código:
+> alumno sigue gratis, comunidad paga un add-on por curso. Migración 038
+> (`precio_tutorias_addon` + `tutoria_addon_compras` +
+> `has_tutoria_addon_access()`, sin aplicar contra ninguna DB), branch
+> `tutoria-addon:` del webhook, `purchaseTutoriaAddonAction` +
+> `TutoriaAddonPurchaseCard`, gate por rol en `cursos/[slug]/page.tsx`
+> (solo `comunidad`, `alumno` sin cambios). Campo de precio agregado al
+> `CourseModal` de admin (0 = no se vende). Lógica de gracia del webhook
+> cubierta por 6 unit tests nuevos (`resolveTutoriaAddonEstado`/
+> `grantsTutoriaAddonAccess`). 3 gates verdes (tsc/lint/test:unit, 31/31);
+> `npm run build` no corrido. **Sin probar un pago real** — la prueba real
+> la corre el usuario, mismo criterio que T8/T10. Sin commitear —
+> esperando aprobación explícita del usuario.
 
 [T14 · AUTO] Comunidad / foro (`FEATURE_COMUNIDAD`)
 - MVP: foros por carrera + feed institucional. Flag en DB + fallback

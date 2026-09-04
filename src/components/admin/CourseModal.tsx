@@ -43,6 +43,9 @@ export function CourseModal({ course, careers, docentes, trigger }: CourseModalP
   const [duracionHs, setDuracionHs] = React.useState(course?.duracion_hs?.toString() ?? "");
   const [esGratuito, setEsGratuito] = React.useState(course?.es_gratuito ?? true);
   const [precio, setPrecio] = React.useState(course?.precio?.toString() ?? "0");
+  const [precioTutoriasAddon, setPrecioTutoriasAddon] = React.useState(
+    course?.precio_tutorias_addon?.toString() ?? "0"
+  );
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -57,6 +60,7 @@ export function CourseModal({ course, careers, docentes, trigger }: CourseModalP
     setDuracionHs(course?.duracion_hs?.toString() ?? "");
     setEsGratuito(course?.es_gratuito ?? true);
     setPrecio(course?.precio?.toString() ?? "0");
+    setPrecioTutoriasAddon(course?.precio_tutorias_addon?.toString() ?? "0");
     setError(null);
   }
 
@@ -76,6 +80,7 @@ export function CourseModal({ course, careers, docentes, trigger }: CourseModalP
     formData.set("duracionHs", duracionHs);
     formData.set("esGratuito", String(esGratuito));
     formData.set("precio", precio);
+    formData.set("precioTutoriasAddon", precioTutoriasAddon);
 
     const result = course ? await updateCourseAction(formData) : await createCourseAction(formData);
     setIsLoading(false);
@@ -268,6 +273,23 @@ export function CourseModal({ course, careers, docentes, trigger }: CourseModalP
               />
             </div>
           ) : null}
+
+          <div>
+            <label
+              htmlFor="precioTutoriasAddon"
+              className="mb-1 block text-[12px] font-medium text-[--edu-text-muted]"
+            >
+              Add-on de tutorías (comunidad) — 0 = no se vende
+            </label>
+            <Input
+              id="precioTutoriasAddon"
+              type="number"
+              min={0}
+              step="0.01"
+              value={precioTutoriasAddon}
+              onChange={(e) => setPrecioTutoriasAddon(e.target.value)}
+            />
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isLoading} onClick={() => setOpen(false)}>

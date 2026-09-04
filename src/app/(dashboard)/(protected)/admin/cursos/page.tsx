@@ -19,7 +19,9 @@ export default async function AdminCursosPage() {
   const [{ data: courses }, { data: careers }, { data: docentes }, { data: coordinadores }] = await Promise.all([
     supabase
       .from("courses")
-      .select("id, titulo, slug, descripcion, carrera_id, docente_id, estado, precio, duracion_hs, nivel, es_gratuito")
+      .select(
+        "id, titulo, slug, descripcion, carrera_id, docente_id, estado, precio, precio_tutorias_addon, duracion_hs, nivel, es_gratuito"
+      )
       .order("created_at", { ascending: false }),
     supabase.from("careers").select("id, nombre").order("orden", { ascending: true }),
     supabase.from("users").select("id, nombre, apellido").or("role.eq.docente,can_teach.eq.true"),

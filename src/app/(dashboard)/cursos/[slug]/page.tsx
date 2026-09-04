@@ -6,6 +6,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { EnrollButton } from "@/components/educativa/EnrollButton";
 import { CoursePurchaseForm } from "@/components/educativa/CoursePurchaseForm";
 import { SubscriptionAccessButton } from "@/components/educativa/SubscriptionAccessButton";
+import { TutoriaAddonPurchaseCard } from "@/components/educativa/TutoriaAddonPurchaseCard";
 import { AnnouncementList } from "@/components/educativa/AnnouncementList";
 import { TutoriaAlumnoList, type AlumnoTutoriaRow } from "@/components/educativa/TutoriaAlumnoList";
 import { getFlags } from "@/lib/flags";
@@ -44,7 +45,9 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, slug, titulo, descripcion, nivel, duracion_hs, es_gratuito, precio, carrera:careers(nombre)")
+    .select(
+      "id, slug, titulo, descripcion, nivel, duracion_hs, es_gratuito, precio, precio_tutorias_addon, carrera:careers(nombre)"
+    )
     .eq("slug", params.slug)
     .eq("estado", "publicado")
     .single();
@@ -120,6 +123,14 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
     ? await supabase.rpc("has_active_course_subscription")
     : { data: false };
   const hasActiveSubscription = hasSubscriptionData === true;
+
+  // Add-on de tutorías (T13, Spec v3.7 §6.4): solo comunidad paga — alumno
+  // sigue con acceso gratis incluido (Addendum 05, sin cambios).
+  const requiresTutoriaAddon = profile?.role === "comunidad";
+  const { data: hasTutoriaAddonData } =
+    user && requiresTutoriaAddon ? await supabase.rpc("has_tutoria_addon_access", { p_course_id: course.id }) : { data: true };
+  const hasTutoriaAddonAccess = hasTutoriaAddonData === true;
+  const canSeeTutorias = isEnrolled && flags.tutorias && (!requiresTutoriaAddon || hasTutoriaAddonAccess);
 
   const { data: progressRows } =
     user && isEnrolled && flatLessons.length > 0
@@ -249,7 +260,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
   const readAnnouncementIds = (readRows ?? []).map((r) => r.announcement_id as string);
 
   const { data: tutoriaRows } =
-    isEnrolled && flags.tutorias
+    canSeeTutorias
       ? await supabase
           .from("tutorias")
           .select("id, modalidad, fecha_inicio, estado, link_virtual, grabacion_url, space:spaces(nombre)")
@@ -441,10 +452,15 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
         </div>
       ) : null}
 
-      {isEnrolled && flags.tutorias ? (
+      {canSeeTutorias ? (
         <div>
           <h2 className="mb-2 text-[13px] font-semibold text-[--edu-text]">Tutorías</h2>
           <TutoriaAlumnoList tutorias={tutorias} />
+        </div>
+      ) : isEnrolled && flags.tutorias && requiresTutoriaAddon && course.precio_tutorias_addon > 0 ? (
+        <div>
+          <h2 className="mb-2 text-[13px] font-semibold text-[--edu-text]">Tutorías</h2>
+          <TutoriaAddonPurchaseCard courseId={course.id} precio={course.precio_tutorias_addon} />
         </div>
       ) : null}
 

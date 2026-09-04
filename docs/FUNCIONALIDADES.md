@@ -334,7 +334,16 @@
 - [x] Acceder a contenido tras confirmación de pago — `handleCoursePurchaseWebhook` inserta en `enrollments` al aprobarse el pago; acceso por suscripción vía inscripción perezosa (`enrollViaSubscriptionAction`, gateada por `has_active_course_subscription()`)
 - [x] Completar clases, cuestionarios y examen final — mismo mecanismo genérico de `enrollments`/`lessons_select`/`lp_own` que usa `alumno`, sin restricción de rol en las RLS (verificado leyendo `001_educativa_core.sql`)
 - [x] Obtener certificado digital con QR verificable — mismo `checkAndIssueCertificate()` genérico, no distingue rol
-- [ ] Acceder a tutorías como add-on pago según el curso contratado — no implementado (T13)
+- [x] Acceder a tutorías como add-on pago según el curso contratado — migración 038
+  (`courses.precio_tutorias_addon`, tabla `tutoria_addon_compras`,
+  `has_tutoria_addon_access()`), branch `tutoria-addon:` del webhook,
+  `purchaseTutoriaAddonAction` + `TutoriaAddonPurchaseCard`. Gate por rol en
+  `cursos/[slug]/page.tsx`: solo `comunidad` paga, `alumno` sigue gratis sin
+  cambios (Addendum 05). Spec v3.7 actualizada primero (§6.4) por la
+  contradicción con la versión anterior ("sin flujo de pago"). Lógica de
+  gracia del webhook (`approved` → acceso) cubierta por unit tests. **Sin
+  probar un pago real de punta a punta** (regla no negociable: la prueba
+  real la corre el usuario, mismo criterio que T8/T10)
 - [x] Participar en talleres en vivo — `inscribirseTallerAction` es "sin restricción de rol — cualquier autenticado puede inscribirse" (comentario propio del código)
 - [x] Ver carreras como vitrina (descripción, materias, salida laboral) pero **sin opción de compra** — CTA "Inscribite en el Instituto" → admisiones presenciales (CU-T02, ADR-15) · `E1` — `CareerBlockedCTA` (ya andaba para roles logueados no-alumno); esta pasada arregló 2 bugs reales: `/carreras` estaba atrás de login sin excepción (movido fuera de `(dashboard)/(protected)`, migración 029 abre `careers_select` a anon) y el botón CTA no tenía `href` (ahora linkea a incade.edu.ar — falta el número de WhatsApp de admisiones, no está en el repo)
 - [x] Ser convertido a Alumno INCADE por el Admin tras matrícula presencial (conversión aditiva, conserva historial — CU-T04) · `E1` — `convertUserRoleAction` + `ConvertRoleModal`, wireado en `/admin/usuarios`
