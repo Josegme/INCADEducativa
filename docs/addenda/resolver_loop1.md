@@ -452,6 +452,21 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
 - DoD: 4 gates en verde; flag confirmado apagado por default; ruta
   nueva no rompe nada de `(protected)/`.
 
+> ESTADO VERIFICADO (2026-09-06): DONE (código). Migración
+> `039_comunidad_foro.sql` (tabla `foro_publicaciones`, `carrera_id`
+> null = feed institucional; función `mi_carrera_id()` security
+> definer con `search_path` fijo desde el vamos) — **sin aplicar contra
+> ninguna DB**, queda para confirmación explícita del usuario. Ruta
+> `/comunidad` con `notFound()` si `flags.comunidad` está apagado
+> (`FEATURE_COMUNIDAD=false` sigue siendo el default). RLS: lectura
+> para cualquier autenticado (oculta filtrada salvo autor/Admin),
+> escritura solo en la propia carrera o el feed institucional,
+> moderación (ocultar/reactivar) solo Admin — sin edición de contenido,
+> sin borrado de filas. Lógica espejo en `src/modules/comunidad/foro.ts`
+> cubierta por 6 unit tests nuevos. 3 gates verdes (tsc/lint/test:unit,
+> 37/37); `npm run build` no corrido. Commit `3045ff3`, aprobado y
+> pusheado.
+
 [T15 · AUTO] Deuda funcional chica + calidad
 - Historial unificado de logros en `/certificados` (cursos aprobados +
   carreras), sin schema nuevo si no hace falta.

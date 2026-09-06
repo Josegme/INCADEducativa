@@ -1,6 +1,84 @@
-# Session Handoff — 2026-09-06 (puesta a punto tras /recap — MODO NORMAL)
+# Session Handoff — 2026-09-06 (T14 DONE, código pusheado, migración 039 sin aplicar — MODO NORMAL)
 
 ## MODO: NORMAL
+
+## ESTADO ACTUAL (cierre de sesión)
+- Rama activa: `fix/db-search-path-024`
+- Último commit: `3045ff3` (T14) — **pusheado**,
+  `origin/fix/db-search-path-024` en sync, 0 ahead / 0 behind.
+- PR #1: OPEN, MERGEABLE (confirmado antes de este commit, no
+  revalidado sobre este HEAD exacto).
+- Gates sobre HEAD `3045ff3`: `npx tsc --noEmit` OK, `npm run lint` OK
+  (0 errores, warning preexistente de siempre en `certificatePdf.tsx`),
+  `npm run test:unit` OK (37/37, 6 archivos — 6 tests nuevos de
+  `foro.test.ts`). `npm run build` no corrido. CI de Actions sobre este
+  HEAD sin confirmar todavía.
+
+## T14 CERRADA — Comunidad/Foro (`FEATURE_COMUNIDAD`)
+1. MVP mínimo según `resolver_loop1.md`: foros por carrera + feed
+   institucional, sin likes/DMs/edición de contenido. Migración
+   `039_comunidad_foro.sql` (tabla `foro_publicaciones`, función
+   `mi_carrera_id()` security definer con `search_path` fijo desde el
+   vamos — a diferencia de 036/038 que quedaron sin fijarlo, ver
+   pendiente abajo) — **sin aplicar contra ninguna DB**, queda para
+   cuando el usuario lo confirme explícitamente (mismo criterio que
+   toda migración nueva).
+2. Ruta `/comunidad` (`(dashboard)/(protected)/comunidad/page.tsx`),
+   404 (`notFound()`) si `flags.comunidad` está apagado — más estricto
+   que el patrón existente de Talleres/Coworking (que solo esconden el
+   ítem de sidebar sin bloquear la ruta). `FEATURE_COMUNIDAD=false`
+   sigue siendo el default confirmado en `.env.local`/`.env.example`.
+3. Lógica espejo de la RLS en `src/modules/comunidad/foro.ts`
+   (`puedePublicarEnCarrera`, `puedeVerPublicacion`), cubierta por 6
+   unit tests nuevos (`tests/unit/foro.test.ts`).
+4. `docs/FUNCIONALIDADES.md` §8.7 y `docs/design/COMPONENTS.md` §66
+   actualizados. Commit `3045ff3`, aprobado y pusheado.
+
+## PRÓXIMA TAREA SUGERIDA (vía /continuar)
+1. Aplicar la migración `039_comunidad_foro.sql` contra producción
+   cuando el usuario lo confirme explícitamente (requisito no
+   negociable, cambio de schema).
+2. T15 (deuda funcional chica) — parcialmente resuelta (demos de
+   Sentry ya no existen, ver handoff anterior); sigue pendiente:
+   comentario obsoleto en `layout.tsx:143-145`, línea 471 de
+   `FUNCIONALIDADES.md`, historial unificado de logros, perfil
+   unificado, tests e2e/vitest adicionales.
+3. T4/T5/T6/T7/T8/T9 siguen GATE/manuales, sin cambios — ver detalle en
+   `resolver_loop1.md`.
+
+## PENDIENTES SIN RESOLVER (arrastrados)
+- `verify-fase3-tmp.js` y `verify-compra-suscripcion-tmp.js` sin
+  trackear en la raíz del repo — deliberado.
+- Migración `039_comunidad_foro.sql` sin aplicar contra ninguna DB.
+- Comentario desactualizado en
+  `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega
+  hasta acá es /carreras") — cosmético, parte del alcance de T15.
+- `docs/FUNCIONALIDADES.md:471` (antes línea 462, el archivo creció)
+  sigue describiendo el deploy de Vercel como
+  "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto, parte
+  del alcance de T15.
+- T8 (env vars productivas) sigue vigente sin cambios:
+  `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
+  `TWILIO_*` siguen sin valor en `.env.local`.
+- Copy de nurturing (T12) pendiente de aprobación del usuario — ver
+  `COMPONENTS.md` §65.
+- Job `nurturing-notify` (pg_cron, migración 037 ya aplicada) sigue con
+  placeholders `<APP_URL>`/`<CRON_SECRET>` sin reemplazar — no dispara
+  de verdad hasta el deploy.
+- T13: sin probar un pago real de punta a punta del add-on de tutorías.
+- Deuda menor detectada en T14: las funciones `has_active_course_subscription()`
+  (036) y `has_tutoria_addon_access()` (038) quedaron sin `search_path`
+  fijo (regresión respecto al patrón de 024-035) — no se tocó (no se
+  puede editar una migración ya aplicada), candidato a una migración
+  nueva chica si se quiere cerrar.
+
+## RESUELTO DESDE EL HANDOFF ANTERIOR
+- T14 completa: código + tests + docs, commiteado y pusheado
+  (`3045ff3`). Migración 039 lista, sin aplicar.
+
+## Handoffs anteriores
+
+### Session Handoff — 2026-09-06 (puesta a punto tras /recap — MODO NORMAL)
 
 ## ESTADO ACTUAL (tras /recap + /poner-a-punto)
 - Rama activa: `fix/db-search-path-024`
@@ -39,44 +117,12 @@
   Vercel vinculado"), pero corrió de la línea 462 a la 471 — sigue
   siendo parte del alcance de T15.
 
-## PRÓXIMA TAREA SUGERIDA (vía /continuar)
-1. T14 (comunidad/foro, `FEATURE_COMUNIDAD`) — no iniciada.
-2. T15 (deuda funcional chica) — parcialmente resuelta (ver hallazgo de
-   Sentry arriba); sigue pendiente: comentario obsoleto en
-   `layout.tsx:143-145`, línea 471 de `FUNCIONALIDADES.md`, historial
-   unificado de logros, perfil unificado, tests e2e/vitest
-   adicionales.
-3. T4/T5/T6/T7/T8/T9 siguen GATE/manuales, sin cambios — ver detalle en
-   `resolver_loop1.md`.
-
-## PENDIENTES SIN RESOLVER (arrastrados)
-- `verify-fase3-tmp.js` y `verify-compra-suscripcion-tmp.js` sin
-  trackear en la raíz del repo — deliberado.
-- Comentario desactualizado en
-  `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega
-  hasta acá es /carreras") — cosmético, parte del alcance de T15.
-- `docs/FUNCIONALIDADES.md:471` (antes línea 462, el archivo creció)
-  sigue describiendo el deploy de Vercel como
-  "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto, parte
-  del alcance de T15.
-- T8 (env vars productivas) sigue vigente sin cambios:
-  `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
-  `TWILIO_*` siguen sin valor en `.env.local`.
-- Copy de nurturing (T12) pendiente de aprobación del usuario — ver
-  `COMPONENTS.md` §65.
-- Job `nurturing-notify` (pg_cron, migración 037 ya aplicada) sigue con
-  placeholders `<APP_URL>`/`<CRON_SECRET>` sin reemplazar — no dispara
-  de verdad hasta el deploy.
-- T13: sin probar un pago real de punta a punta del add-on de tutorías.
-
 ## RESUELTO DESDE EL HANDOFF ANTERIOR
 - CI de Actions confirmado verde (`quality`) sobre el HEAD exacto
   `6fe822c` (antes pendiente de confirmar en el handoff del 09-04).
 - Hallazgo documentado: los demos de Sentry (`sentry-example-api`,
   `sentry-example-page`) ya no existen en el árbol — parte de T15 que
   ya estaba resuelta pero no anotada.
-
-## Handoffs anteriores
 
 ### Session Handoff — 2026-09-04 (cierre de sesión — T10-T13 DONE, todo pusheado + migraciones 037/038 aplicadas — MODO NORMAL)
 
