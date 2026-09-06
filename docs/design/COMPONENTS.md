@@ -1807,4 +1807,67 @@ mismo archivo.
 
 ---
 
-*INCADEducativa · Design System v2.1 — COMPONENTS v1.10 · Septiembre 2026*
+## 66. Módulo Comunidad/Foro — ComunidadPage / PublicacionForm / PublicacionList / ForoFilterBar (T14)
+
+MVP mínimo (`docs/addenda/resolver_loop1.md` T14): foros por carrera + feed
+institucional, gateado por `FEATURE_COMUNIDAD`. Sin likes, sin DMs, sin
+edición de contenido por el autor — el único control de moderación es
+ocultar/reactivar por Admin (soft-hide, nunca se borra la fila).
+
+```
+ComunidadPage (server) — src/app/(dashboard)/(protected)/comunidad/page.tsx
+├── notFound() si !flags.comunidad (mismo criterio de gateo que el resto
+│   del sistema, más estricto que Talleres/Coworking que solo ocultan el
+│   ítem de sidebar sin bloquear la ruta en sí — acá si se bloquea)
+├── Trae perfil (role, carrera_id) + lista de carreras + publicaciones
+│   (join a users!foro_publicaciones_autor_id_fkey y careers, mismo
+│   patrón que AnnouncementList/§ de anuncios)
+└── Filtro por querystring ?carrera=<id|institucional|todas>
+
+PublicacionForm ("use client") — src/components/comunidad/PublicacionForm.tsx
+├── Textarea (nuevo primitivo en src/components/ui/textarea.tsx, mismo
+│   estilo que Input — no existía en el catálogo hasta esta pasada)
+├── Radio institucional/carrera — solo se ofrece elegir carrera si el
+│   usuario pertenece a una o es Admin (mismo corte que la RLS de
+│   insert, ver `puedePublicarEnCarrera()` en
+│   src/modules/comunidad/foro.ts)
+└── crearPublicacionAction (src/app/(dashboard)/(protected)/comunidad/
+    actions.ts)
+
+ForoFilterBar ("use client") — src/components/comunidad/ForoFilterBar.tsx
+└── Mismo patrón que FilterBar de /cursos (§?): chips que escriben el
+    querystring vía useRouter/useSearchParams
+
+PublicacionList ("use client") — src/components/comunidad/PublicacionList.tsx
+├── Card por publicación: autor, badge de carrera o "Institucional",
+│   badge "Oculta" si `oculto` (solo la ve el autor o el Admin, RLS lo
+│   filtra para el resto)
+└── Botón Ocultar/Reactivar solo si `isAdmin` → ocultarPublicacionAction
+```
+
+Migración `039_comunidad_foro.sql`: tabla `foro_publicaciones`
+(`carrera_id` null = feed institucional), función `mi_carrera_id()`
+(security definer stable, mismo patrón que `get_user_discount()`) para
+resolver la carrera del usuario autenticado sin subquery directa a
+`public.users` en la policy. RLS: lectura para cualquier autenticado
+(oculta filtrada salvo autor/Admin), escritura solo de la fila propia y
+solo a una carrera a la que se pertenece (o el feed institucional, sin
+restricción), moderación (`update`) solo Admin.
+
+Lógica espejo en `src/modules/comunidad/foro.ts`
+(`puedePublicarEnCarrera`, `puedeVerPublicacion`) cubierta por
+`tests/unit/foro.test.ts` — documentado como espejo de la RLS real, no
+como reemplazo: la fuente de verdad de la autorización sigue siendo la
+policy de Postgres.
+
+Rutas nuevas: `/comunidad` (todo rol autenticado). Sidebar:
+`(dashboard)/layout.tsx`, ítem "Comunidad" en Plataforma, gateado por
+`flags.comunidad` (mismo bloque que Coworking/Talleres).
+
+**Fuera de alcance de esta pasada** (ver `resolver_loop1.md` T14 y spec
+§8.3): red de egresados, likes, mensajes directos, notificaciones de
+nueva publicación, edición de contenido por el autor.
+
+---
+
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.11 · Septiembre 2026*

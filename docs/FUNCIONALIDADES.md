@@ -452,6 +452,16 @@
 - [x] INCADEducativa destaca espacios coworking disponibles para estudiar — card "Conocé Coworking INCADE" en `/dashboard`, visible cuando `flags.coworking` está activo
 - [x] Puntos canjeables entre módulo educativo y módulo coworking — Sprint 19-20, ver §5.2/§2.2 (`coworking_creditos_canje`, independiente de créditos de membresía)
 
+### 8.7 Comunidad / Foro · `E3` (T14)
+
+- [x] Feed institucional (publicaciones sin carrera asociada) visible para cualquier usuario autenticado — `/comunidad`, migración `039_comunidad_foro.sql`
+- [x] Foro por carrera — solo un usuario de esa carrera (`users.carrera_id`) o el Admin pueden publicar ahí; la lectura no está restringida por carrera (RLS `foro_publicaciones_insert`/`_select`)
+- [x] Admin puede ocultar una publicación (soft-hide, `oculto`/`oculto_por`/`oculto_at`) — nunca se borra la fila, mismo criterio que el resto del sistema. Sin edición de contenido por parte del autor
+- [x] Sin anónimos: gate de sesión heredado de `(protected)/layout.tsx` + policy RLS `auth.uid() is not null`
+- [x] Sin likes ni DMs, alcance mínimo a propósito (fuera de alcance de T14, ver `resolver_loop1.md`)
+- [x] Gateado por `FEATURE_COMUNIDAD`, apagado por default — ruta responde 404 (`notFound()`) si el flag está apagado, ítem de sidebar oculto en `(dashboard)/layout.tsx`
+- [ ] Red de egresados (mencionada en el spec §8.3 como parte de "Módulo de comunidad") — no implementada, fuera del alcance mínimo de T14
+
 ---
 
 ## 9. OPERACIONES Y CALIDAD

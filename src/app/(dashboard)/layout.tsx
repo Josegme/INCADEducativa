@@ -8,6 +8,7 @@ import {
   CreditCard,
   DoorOpen,
   Megaphone,
+  MessageSquare,
   GraduationCap,
   LayoutDashboard,
   LayoutGrid,
@@ -51,6 +52,10 @@ function sectionsForRole(
 
   if (flags.talleres) {
     platformItems.push({ label: "Talleres", href: "/talleres", icon: <Video className={ICON_CLASS} aria-hidden /> });
+  }
+
+  if (flags.comunidad) {
+    platformItems.push({ label: "Comunidad", href: "/comunidad", icon: <MessageSquare className={ICON_CLASS} aria-hidden /> });
   }
 
   const sections: SidebarSection[] = [{ label: "Plataforma", items: platformItems }];
