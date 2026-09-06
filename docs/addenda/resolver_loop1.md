@@ -209,6 +209,14 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > (`035_compras_curso.sql`, `036_catalogo_suscripciones.sql` se sumaron
 > después del 09-01). Actualizar a 36 antes de ejecutar esta tarea.
 
+> ESTADO VERIFICADO (2026-09-06): sigue DESCONOCIDO/sin staging — mismo
+> `supabase projects list` de hoy solo lista `INCADEducativa`
+> (producción, linkeado) y los dos proyectos ajenos (`A-English`,
+> `Planning Pro`). El número de migraciones a replicar volvió a quedar
+> obsoleto otra vez: hoy hay 38 (`037_lead_nurturing.sql`,
+> `038_tutoria_addon.sql` se sumaron después del 09-02). Actualizar a 38
+> antes de ejecutar esta tarea.
+
 [T8 · GATE] RESEND_API_KEY / MP_ACCESS_TOKEN / TWILIO_* productivos
 - 100% manual (cuentas de terceros). Para cada uno dame: link exacto al
   dashboard de la key productiva, variable de .env.example que le
@@ -462,6 +470,17 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
   suscripción/tutoría).
 - DoD: 4 gates en verde al cierre; sin `console.log` ni hex hardcodeado
   en UI nueva.
+
+> ESTADO VERIFICADO (2026-09-06): PARCIAL, avanzó sin que quedara
+> registrado antes. Los demos del wizard de Sentry
+> (`sentry-example-api`, `sentry-example-page`) ya NO existen en el
+> árbol — ese punto del alcance está resuelto. `global-error.tsx` sigue
+> existiendo (revisar si es boilerplate puro del wizard o ya tiene
+> lógica propia antes de tocarlo). El resto del alcance (comentario
+> obsoleto en `layout.tsx:143-145`, línea 471 de `FUNCIONALIDADES.md`
+> sobre Vercel — antes línea 462, el archivo creció —, historial
+> unificado de logros, perfil unificado, tests e2e/vitest adicionales)
+> sigue sin empezar.
 
 FUERA DE ALCANCE (no implementar en T10-T15, mismo criterio del draft
 original): bolsa de trabajo, mentoría 1:1, eventos, biblioteca,

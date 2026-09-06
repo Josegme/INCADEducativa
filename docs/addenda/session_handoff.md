@@ -1,6 +1,84 @@
-# Session Handoff — 2026-09-04 (cierre de sesión — T10-T13 DONE, todo pusheado + migraciones 037/038 aplicadas — MODO NORMAL)
+# Session Handoff — 2026-09-06 (puesta a punto tras /recap — MODO NORMAL)
 
 ## MODO: NORMAL
+
+## ESTADO ACTUAL (tras /recap + /poner-a-punto)
+- Rama activa: `fix/db-search-path-024`
+- Último commit de código/docs previo: `6fe822c` — pusheado,
+  `origin/fix/db-search-path-024` en sync exacto, 0 ahead / 0 behind
+  (confirmado con `git rev-parse HEAD` vs `git rev-parse
+  origin/fix/db-search-path-024`, ambos iguales).
+- PR #1: OPEN, MERGEABLE (reconfirmado hoy con `gh pr view`).
+- CI de Actions confirmado sobre el HEAD exacto `6fe822c` (run
+  `33842554592`, `headSha` coincide): job `quality` (tsc+lint+vitest) →
+  SUCCESS; job `e2e` → FAILURE con `continue-on-error: true`, no
+  bloquea. Esto cierra el pendiente que dejaba el handoff anterior
+  ("CI sin confirmar sobre beaf569/6fe822c").
+- Gates locales corridos hoy sobre ese mismo HEAD: `npx tsc --noEmit`
+  OK, `npm run lint` OK (0 errores, warning preexistente de siempre en
+  `certificatePdf.tsx`), `npm run test:unit` OK (31/31, 5 archivos).
+  `npm run build` no corrido (no pedido esta sesión).
+- 38 migraciones en `supabase/migrations/`, última
+  `038_tutoria_addon.sql`. Remote=Local en producción confirmado en
+  sesiones previas.
+- `supabase projects list`: solo `INCADEducativa` (producción,
+  linkeada) + 2 proyectos ajenos (`A-English`, `Planning Pro`). Sigue
+  sin existir un staging separado (T7).
+- `.env.local`: siguen sin valor `ANTHROPIC_API_KEY`,
+  `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `TWILIO_ACCOUNT_SID`,
+  `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` (T8 sigue
+  BLOCKED-ESPERANDO-HUMANO). `CRON_SECRET` tiene valor local pero no
+  está declarada en `.env.example`.
+- **Hallazgo nuevo:** los archivos demo del wizard de Sentry
+  (`sentry-example-api`, `sentry-example-page`) YA NO EXISTEN en el
+  árbol — se borraron en algún momento sin que quedara registrado en
+  los docs. `global-error.tsx` sigue existiendo (no asumir que es solo
+  boilerplate del wizard, revisar antes de tocarlo en T15).
+- El texto obsoleto sobre Vercel en `docs/FUNCIONALIDADES.md` sigue ahí
+  (contenido sin cambios: "BLOCKED-ESPERANDO-HUMANO, sin proyecto
+  Vercel vinculado"), pero corrió de la línea 462 a la 471 — sigue
+  siendo parte del alcance de T15.
+
+## PRÓXIMA TAREA SUGERIDA (vía /continuar)
+1. T14 (comunidad/foro, `FEATURE_COMUNIDAD`) — no iniciada.
+2. T15 (deuda funcional chica) — parcialmente resuelta (ver hallazgo de
+   Sentry arriba); sigue pendiente: comentario obsoleto en
+   `layout.tsx:143-145`, línea 471 de `FUNCIONALIDADES.md`, historial
+   unificado de logros, perfil unificado, tests e2e/vitest
+   adicionales.
+3. T4/T5/T6/T7/T8/T9 siguen GATE/manuales, sin cambios — ver detalle en
+   `resolver_loop1.md`.
+
+## PENDIENTES SIN RESOLVER (arrastrados)
+- `verify-fase3-tmp.js` y `verify-compra-suscripcion-tmp.js` sin
+  trackear en la raíz del repo — deliberado.
+- Comentario desactualizado en
+  `src/app/(dashboard)/layout.tsx:143-145` ("la única rama que llega
+  hasta acá es /carreras") — cosmético, parte del alcance de T15.
+- `docs/FUNCIONALIDADES.md:471` (antes línea 462, el archivo creció)
+  sigue describiendo el deploy de Vercel como
+  "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto, parte
+  del alcance de T15.
+- T8 (env vars productivas) sigue vigente sin cambios:
+  `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
+  `TWILIO_*` siguen sin valor en `.env.local`.
+- Copy de nurturing (T12) pendiente de aprobación del usuario — ver
+  `COMPONENTS.md` §65.
+- Job `nurturing-notify` (pg_cron, migración 037 ya aplicada) sigue con
+  placeholders `<APP_URL>`/`<CRON_SECRET>` sin reemplazar — no dispara
+  de verdad hasta el deploy.
+- T13: sin probar un pago real de punta a punta del add-on de tutorías.
+
+## RESUELTO DESDE EL HANDOFF ANTERIOR
+- CI de Actions confirmado verde (`quality`) sobre el HEAD exacto
+  `6fe822c` (antes pendiente de confirmar en el handoff del 09-04).
+- Hallazgo documentado: los demos de Sentry (`sentry-example-api`,
+  `sentry-example-page`) ya no existen en el árbol — parte de T15 que
+  ya estaba resuelta pero no anotada.
+
+## Handoffs anteriores
+
+### Session Handoff — 2026-09-04 (cierre de sesión — T10-T13 DONE, todo pusheado + migraciones 037/038 aplicadas — MODO NORMAL)
 
 ## ESTADO ACTUAL (cierre de sesión, continuar mañana)
 - Rama activa: `fix/db-search-path-024`
