@@ -145,9 +145,11 @@ export default async function DashboardGroupLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Sin sesión: la única rama que llega hasta acá es /carreras (pública,
-  // vitrina CU-T02/ADR-15 — el resto vive bajo (protected), que sí exige
-  // sesión). Shell mínimo, no el DashboardLayout completo (asume usuario).
+  // Sin sesión: las ramas que llegan hasta acá son /carreras (pública,
+  // vitrina CU-T02/ADR-15), /cursos* (vitrina E3 gateada por
+  // FEATURE_PUBLICA) y /talleres (captura de lead, ADR-18, misma flag)
+  // — ver middleware.ts. El resto vive bajo (protected), que sí exige
+  // sesión. Shell mínimo, no el DashboardLayout completo (asume usuario).
   if (!user) {
     return <PublicHeaderShell>{children}</PublicHeaderShell>;
   }

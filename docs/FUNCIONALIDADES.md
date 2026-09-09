@@ -478,10 +478,10 @@
 
 ### 9.2 Infraestructura
 
-- [ ] Deploy en Vercel con GitHub Actions (CI/CD) — BLOCKED-ESPERANDO-HUMANO, sin proyecto Vercel vinculado todavía (0 proyectos vía MCP, sin `.vercel/project.json`)
-- [ ] Preview automático por Pull Request — depende del ítem anterior
+- [x] Deploy en Vercel (CI/CD vía integración Git nativa, no un workflow de GitHub Actions) — proyecto `josegmescobar-2036s-projects/incadeducativa` linkeado y funcionando: cada push al PR dispara un deployment real (confirmado en `gh pr checks`, status `Vercel` = SUCCESS con URL de deployment). Dominio custom `incadeducativa.com` (DNS) y carga de envs por los 3 ambientes (production/preview/development) siguen sin confirmar desde este entorno — requieren acceso al dashboard de Vercel
+- [x] Preview automático por Pull Request — mismo mecanismo que el ítem anterior: cada push genera su propio deployment de preview con URL única, confirmado en los checks del PR #1
 - [x] Monitoreo de errores en producción (Sentry) — `@sentry/nextjs` instalado vía wizard oficial, DSN por env var (`SENTRY_DSN`/`NEXT_PUBLIC_SENTRY_DSN`, nunca hardcodeado), evento de prueba confirmado en el dashboard de sentry.io (org `josegme-dev`, proyecto `javascript-nextjs`)
-- [ ] Analytics de performance (Vercel Analytics) — depende del deploy en Vercel
+- [ ] Analytics de performance (Vercel Analytics) — el deploy ya existe (ver ítem arriba), pero `@vercel/analytics` no está en `package.json` ni importado en el código: falta instalarlo, no es un bloqueo del deploy
 - [ ] RLS (Row-Level Security) activo en Supabase para todos los roles — políticas ya existen desde la migración 001 en adelante, pero no se re-auditó "todos los roles" de punta a punta en esta pasada; dejar sin marcar hasta esa verificación explícita
 - [ ] Jobs cron: detección no-show cada 5 min, recordatorios 24hs, resumen diario — `pg_cron` (no-show, migración 016) y las rutas `/api/cron/*` están implementadas y verificadas con `curl`/scripts puntuales (ver §1.2, §2.2 Check-in), pero el disparo real vía `pg_net` no se puede probar en vivo hasta que haya un deploy accesible por Supabase (no llega a `localhost`)
 - [x] PWA instalable en mobile (iOS y Android) — `public/manifest.json` (display standalone, colores del DS), `public/sw.js` (cache-first assets estáticos, network-first navegación), íconos 192/512 (any+maskable) + apple-icon, `ServiceWorkerRegister` montado en `layout.tsx`. Lighthouse PWA no se corrió explícitamente en esta pasada — verificar antes de darlo por 100% "installable"
