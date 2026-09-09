@@ -513,6 +513,20 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
 > unificado de logros, perfil unificado, tests e2e/vitest adicionales)
 > sigue sin empezar.
 
+> ESTADO VERIFICADO (2026-09-09, vía /continuar): PARCIAL, dos ítems más
+> cerrados. Comentario obsoleto de `layout.tsx:148` corregido (ya no
+> dice que `/carreras` es la única rama pública sin sesión — ahora
+> documenta también `/cursos*` y `/talleres`, verificado contra
+> `middleware.ts`). `docs/FUNCIONALIDADES.md:481-484` actualizado:
+> deploy en Vercel y preview por PR pasan a `[x]` (confirmado con
+> `gh pr checks`, deployment real en cada push, ya no
+> "BLOCKED-ESPERANDO-HUMANO"); línea de Vercel Analytics corregida
+> (falta instalar `@vercel/analytics`, confirmado con grep — no
+> "depende del deploy"). 3 gates verdes (tsc/lint/test:unit, 37/37).
+> Commit `e2b533a`, aprobado y pusheado. Sigue sin empezar:
+> `global-error.tsx` (revisar si es boilerplate del wizard), historial
+> unificado de logros, perfil unificado, tests e2e/vitest adicionales.
+
 FUERA DE ALCANCE (no implementar en T10-T15, mismo criterio del draft
 original): bolsa de trabajo, mentoría 1:1, eventos, biblioteca,
 certificaciones externas, motor de recomendaciones, puntos por taller,

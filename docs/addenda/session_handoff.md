@@ -2,50 +2,54 @@
 
 ## MODO: NORMAL
 
-## ESTADO ACTUAL (tras /recap + /poner-a-punto)
+## ESTADO ACTUAL (tras /continuar — T15 parcial)
 - Rama activa: `fix/db-search-path-024`
-- Último commit de código: `36e833b` (docs, T14 closing) — **pusheado**,
+- Último commit: `e2b533a` (T15, docs/comentario) — **pusheado**,
   `origin/fix/db-search-path-024` en sync exacto, 0 ahead / 0 behind
   (confirmado con `git log @{u}..` vacío).
-- PR #1: OPEN, MERGEABLE (reconfirmado hoy con `gh pr view`).
-- CI de Actions confirmado sobre el HEAD exacto `36e833b` (run
-  `34061374909`, `headSha` coincide): job `quality` (tsc+lint+vitest) →
-  SUCCESS; job `e2e` → FAILURE con `continue-on-error: true`, no
-  bloquea. Esto cierra el pendiente que dejaba el handoff anterior
-  ("CI sin confirmar sobre este HEAD todavía").
-- Gates locales corridos hoy sobre ese mismo HEAD: `npx tsc --noEmit`
-  OK, `npm run lint` OK (0 errores, warning preexistente de siempre en
-  `certificatePdf.tsx`), `npm run test:unit` OK (37/37, 6 archivos).
-  `npm run build` no corrido (no pedido esta sesión).
+- PR #1: OPEN, MERGEABLE.
+- Gates sobre HEAD `e2b533a`: `npx tsc --noEmit` OK, `npm run lint` OK
+  (0 errores, warning preexistente de siempre en `certificatePdf.tsx`),
+  `npm run test:unit` OK (37/37, 6 archivos). `npm run build` no
+  corrido. CI de Actions sobre este HEAD exacto sin confirmar todavía
+  (sí estaba confirmado sobre `36e833b`, un commit antes).
 - 39 migraciones en `supabase/migrations/`, última
   `039_comunidad_foro.sql`. `supabase migration list`: Remote=Local en
-  001-038, `039` solo en Local — **sin aplicar contra producción**,
-  queda para confirmación explícita del usuario.
+  001-038, `039` solo en Local — **sin aplicar contra producción**.
 - `supabase projects list`: solo `INCADEducativa` (producción,
-  linkeada) + 2 proyectos ajenos (`A-English`, `Planning Pro`). Sigue
-  sin existir un staging separado (T7).
+  linkeada) + 2 proyectos ajenos. Sigue sin staging separado (T7).
 - `.env.local`: siguen sin valor `ANTHROPIC_API_KEY`,
   `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `TWILIO_ACCOUNT_SID`,
   `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` (T8 sigue
-  BLOCKED-ESPERANDO-HUMANO). `CRON_SECRET` tiene valor local pero no
-  está declarada en `.env.example`.
-- Sin hallazgos nuevos de código en esta pasada — solo reconciliación
-  de docs contra el recap fresco.
+  BLOCKED-ESPERANDO-HUMANO).
+
+## T15 — AVANCE PARCIAL (vía /continuar)
+1. Comentario obsoleto de `layout.tsx:148` corregido: ya no dice que
+   `/carreras` es la única rama pública — ahora documenta también
+   `/cursos*` (FEATURE_PUBLICA) y `/talleres` (ADR-18), verificado
+   contra `middleware.ts`.
+2. `docs/FUNCIONALIDADES.md` §9.2 actualizado: deploy en Vercel y
+   preview por PR pasan a `[x]` (confirmado con `gh pr checks`,
+   deployment real disparado en cada push) — ya no dice
+   "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado". Línea de Vercel
+   Analytics corregida: falta instalar `@vercel/analytics`, no
+   "depende del deploy".
+3. Commit `e2b533a`, aprobado y pusheado.
+4. Sigue sin empezar del alcance de T15: historial unificado de logros
+   en `/certificados`, perfil unificado coworking+educativa, limpiar/
+   confirmar `global-error.tsx` (si es boilerplate puro del wizard de
+   Sentry), y sumar tests e2e/vitest de T11-T14.
 
 ## RESUELTO DESDE EL HANDOFF ANTERIOR
-- CI de Actions confirmado verde (`quality`) sobre el HEAD exacto
-  `36e833b` (antes pendiente de confirmar).
-- Conteo de migraciones actualizado a 39 (antes 38 en la nota de T7 de
-  `resolver_loop1.md`).
+- Comentario obsoleto de `layout.tsx:148` y línea de Vercel en
+  `FUNCIONALIDADES.md:481` (ambos parte del alcance de T15) — cerrados.
 
 ## PRÓXIMA TAREA SUGERIDA (vía /continuar)
-1. Aplicar la migración `039_comunidad_foro.sql` contra producción
+1. Seguir con el resto del alcance de T15 (historial unificado de
+   logros, perfil unificado, tests e2e/vitest adicionales).
+2. Aplicar la migración `039_comunidad_foro.sql` contra producción
    cuando el usuario lo confirme explícitamente (requisito no
    negociable, cambio de schema).
-2. T15 (deuda funcional chica) — sigue pendiente: comentario obsoleto
-   en `layout.tsx:148`, línea 481 de `FUNCIONALIDADES.md` (Vercel
-   obsoleto), historial unificado de logros, perfil unificado, tests
-   e2e/vitest adicionales.
 3. T4/T5/T6/T7/T8/T9 siguen GATE/manuales, sin cambios — ver detalle en
    `resolver_loop1.md`.
 
@@ -53,12 +57,8 @@
 - `verify-fase3-tmp.js` y `verify-compra-suscripcion-tmp.js` sin
   trackear en la raíz del repo — deliberado.
 - Migración `039_comunidad_foro.sql` sin aplicar contra ninguna DB.
-- Comentario desactualizado en
-  `src/app/(dashboard)/layout.tsx:148` ("la única rama que llega
-  hasta acá es /carreras") — cosmético, parte del alcance de T15.
-- `docs/FUNCIONALIDADES.md:481` sigue describiendo el deploy de Vercel
-  como "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto,
-  parte del alcance de T15.
+- T15: historial unificado de logros, perfil unificado, revisar
+  `global-error.tsx`, tests e2e/vitest adicionales — ver arriba.
 - T8 (env vars productivas) sigue vigente sin cambios:
   `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
   `TWILIO_*` siguen sin valor en `.env.local`.
