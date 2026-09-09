@@ -217,6 +217,14 @@ de escribir el ALTER, no la copies de acá a ciegas):
 > `038_tutoria_addon.sql` se sumaron después del 09-02). Actualizar a 38
 > antes de ejecutar esta tarea.
 
+> ESTADO VERIFICADO (2026-09-09): sigue DESCONOCIDO/sin staging — mismo
+> `supabase projects list` de hoy solo lista `INCADEducativa`
+> (producción, linkeado) y los dos proyectos ajenos. Número de
+> migraciones obsoleto otra vez: hoy hay 39 (`039_comunidad_foro.sql`
+> se sumó el 09-06, todavía sin aplicar contra producción — Remote=38/
+> Local=39 según `supabase migration list`). Actualizar a 39 antes de
+> ejecutar esta tarea.
+
 [T8 · GATE] RESEND_API_KEY / MP_ACCESS_TOKEN / TWILIO_* productivos
 - 100% manual (cuentas de terceros). Para cada uno dame: link exacto al
   dashboard de la key productiva, variable de .env.example que le
@@ -466,6 +474,14 @@ Ningún slice hace `git commit`/`git push` sin aprobación explícita
 > cubierta por 6 unit tests nuevos. 3 gates verdes (tsc/lint/test:unit,
 > 37/37); `npm run build` no corrido. Commit `3045ff3`, aprobado y
 > pusheado.
+>
+> ACTUALIZACIÓN (2026-09-09): CI de Actions confirmado sobre el HEAD
+> exacto `36e833b` (un commit de docs después de `3045ff3`, sin cambios
+> de código) — cierra el pendiente que dejaba la nota anterior de
+> "CI sin confirmar todavía". Run `34061374909`: `quality` → SUCCESS,
+> `e2e` → FAILURE con `continue-on-error: true` (no bloquea, mismo
+> patrón de siempre). Migración `039` sigue sin aplicar contra
+> producción.
 
 [T15 · AUTO] Deuda funcional chica + calidad
 - Historial unificado de logros en `/certificados` (cursos aprobados +

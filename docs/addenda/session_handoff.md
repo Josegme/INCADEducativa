@@ -1,4 +1,82 @@
-# Session Handoff — 2026-09-06 (T14 DONE, código pusheado, migración 039 sin aplicar — MODO NORMAL)
+# Session Handoff — 2026-09-09 (puesta a punto tras /recap — MODO NORMAL)
+
+## MODO: NORMAL
+
+## ESTADO ACTUAL (tras /recap + /poner-a-punto)
+- Rama activa: `fix/db-search-path-024`
+- Último commit de código: `36e833b` (docs, T14 closing) — **pusheado**,
+  `origin/fix/db-search-path-024` en sync exacto, 0 ahead / 0 behind
+  (confirmado con `git log @{u}..` vacío).
+- PR #1: OPEN, MERGEABLE (reconfirmado hoy con `gh pr view`).
+- CI de Actions confirmado sobre el HEAD exacto `36e833b` (run
+  `34061374909`, `headSha` coincide): job `quality` (tsc+lint+vitest) →
+  SUCCESS; job `e2e` → FAILURE con `continue-on-error: true`, no
+  bloquea. Esto cierra el pendiente que dejaba el handoff anterior
+  ("CI sin confirmar sobre este HEAD todavía").
+- Gates locales corridos hoy sobre ese mismo HEAD: `npx tsc --noEmit`
+  OK, `npm run lint` OK (0 errores, warning preexistente de siempre en
+  `certificatePdf.tsx`), `npm run test:unit` OK (37/37, 6 archivos).
+  `npm run build` no corrido (no pedido esta sesión).
+- 39 migraciones en `supabase/migrations/`, última
+  `039_comunidad_foro.sql`. `supabase migration list`: Remote=Local en
+  001-038, `039` solo en Local — **sin aplicar contra producción**,
+  queda para confirmación explícita del usuario.
+- `supabase projects list`: solo `INCADEducativa` (producción,
+  linkeada) + 2 proyectos ajenos (`A-English`, `Planning Pro`). Sigue
+  sin existir un staging separado (T7).
+- `.env.local`: siguen sin valor `ANTHROPIC_API_KEY`,
+  `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `TWILIO_ACCOUNT_SID`,
+  `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` (T8 sigue
+  BLOCKED-ESPERANDO-HUMANO). `CRON_SECRET` tiene valor local pero no
+  está declarada en `.env.example`.
+- Sin hallazgos nuevos de código en esta pasada — solo reconciliación
+  de docs contra el recap fresco.
+
+## RESUELTO DESDE EL HANDOFF ANTERIOR
+- CI de Actions confirmado verde (`quality`) sobre el HEAD exacto
+  `36e833b` (antes pendiente de confirmar).
+- Conteo de migraciones actualizado a 39 (antes 38 en la nota de T7 de
+  `resolver_loop1.md`).
+
+## PRÓXIMA TAREA SUGERIDA (vía /continuar)
+1. Aplicar la migración `039_comunidad_foro.sql` contra producción
+   cuando el usuario lo confirme explícitamente (requisito no
+   negociable, cambio de schema).
+2. T15 (deuda funcional chica) — sigue pendiente: comentario obsoleto
+   en `layout.tsx:148`, línea 481 de `FUNCIONALIDADES.md` (Vercel
+   obsoleto), historial unificado de logros, perfil unificado, tests
+   e2e/vitest adicionales.
+3. T4/T5/T6/T7/T8/T9 siguen GATE/manuales, sin cambios — ver detalle en
+   `resolver_loop1.md`.
+
+## PENDIENTES SIN RESOLVER (arrastrados)
+- `verify-fase3-tmp.js` y `verify-compra-suscripcion-tmp.js` sin
+  trackear en la raíz del repo — deliberado.
+- Migración `039_comunidad_foro.sql` sin aplicar contra ninguna DB.
+- Comentario desactualizado en
+  `src/app/(dashboard)/layout.tsx:148` ("la única rama que llega
+  hasta acá es /carreras") — cosmético, parte del alcance de T15.
+- `docs/FUNCIONALIDADES.md:481` sigue describiendo el deploy de Vercel
+  como "BLOCKED-ESPERANDO-HUMANO, sin proyecto vinculado" — obsoleto,
+  parte del alcance de T15.
+- T8 (env vars productivas) sigue vigente sin cambios:
+  `ANTHROPIC_API_KEY`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
+  `TWILIO_*` siguen sin valor en `.env.local`.
+- Copy de nurturing (T12) pendiente de aprobación del usuario — ver
+  `COMPONENTS.md` §65.
+- Job `nurturing-notify` (pg_cron, migración 037 ya aplicada) sigue con
+  placeholders `<APP_URL>`/`<CRON_SECRET>` sin reemplazar — no dispara
+  de verdad hasta el deploy.
+- T13: sin probar un pago real de punta a punta del add-on de tutorías.
+- Deuda menor detectada en T14: las funciones `has_active_course_subscription()`
+  (036) y `has_tutoria_addon_access()` (038) quedaron sin `search_path`
+  fijo (regresión respecto al patrón de 024-035) — no se tocó (no se
+  puede editar una migración ya aplicada), candidato a una migración
+  nueva chica si se quiere cerrar.
+
+## Handoffs anteriores
+
+### Session Handoff — 2026-09-06 (T14 DONE, código pusheado, migración 039 sin aplicar — MODO NORMAL)
 
 ## MODO: NORMAL
 
@@ -75,8 +153,6 @@
 ## RESUELTO DESDE EL HANDOFF ANTERIOR
 - T14 completa: código + tests + docs, commiteado y pusheado
   (`3045ff3`). Migración 039 lista, sin aplicar.
-
-## Handoffs anteriores
 
 ### Session Handoff — 2026-09-06 (puesta a punto tras /recap — MODO NORMAL)
 
