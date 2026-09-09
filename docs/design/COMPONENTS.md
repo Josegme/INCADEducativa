@@ -1728,4 +1728,146 @@ la 001 con columna `user_id` y RLS admin-only. Ver §61, corregido.
 
 ---
 
-*INCADEducativa · Design System v2.1 — COMPONENTS v1.9 · Agosto 2026*
+## 64. Materiales adjuntos por clase — LessonAttachmentsManager / LessonAttachments
+
+Deuda funcional E1 (§3.4/§8.1): adjuntos *extra* por clase (ej. una guía de
+ejercicios sobre una clase de video), separados del contenido principal
+(`lessons.contenido_url`). Tabla propia `lesson_attachments` (migración 027)
+— reusa el bucket `contenido-cursos` existente, ruta
+`{course_id}/adjuntos/{lesson_id}/{archivo}`. RLS con `can_teach_course()`
+(004) para cubrir también el rol dual, mismo patrón que `lessons_write`.
+
+```
+LessonAttachmentsManager ("use client", src/components/docente/)
+├── Dentro de LessonModal (§?), solo visible al editar una clase existente
+│   (necesita lesson.id — en "Nueva clase" hay que guardar primero)
+├── Mismo patrón de subida que LessonUploader (§28): cliente de browser,
+│   sin progress bar (archivos de adjunto suelen ser chicos)
+└── Lista con borrar (Trash2) — addLessonAttachmentAction /
+    deleteLessonAttachmentAction (docente/actions/lessonAttachmentActions.ts)
+
+LessonAttachments (server, src/components/educativa/)
+├── En la página de clase del alumno, debajo de LessonPlayer/ContentViewer,
+│   sin importar el tipo de la clase
+└── Lista de links de descarga con URL firmada (getSignedLessonContentUrl,
+    mismo helper que el contenido principal) — no se renderiza si no hay
+    adjuntos
+```
+
+---
+
+## 65. Nurturing de leads días 1/3/7 (T12) — copy pendiente de aprobación
+
+**⚠️ Este copy es un borrador — no está aprobado tácitamente. Revisar y
+ajustar antes de un envío real contra leads reales.**
+
+Secuencia de 3 emails cortos, tono institucional INCADE ES/AR, disparados
+por `/api/cron/nurturing` (migración 037) según días desde el alta como
+`role='lead'` (post-registro a un taller gratuito, ver §5.5 de
+`FUNCIONALIDADES.md`). Lógica de elegibilidad en
+`src/modules/comunicacion/nurturing.ts` (`isNurturingDue`, cubierta por
+`tests/unit/nurturing.test.ts`); copy en `nurturingEmailContent()` del
+mismo archivo.
+
+**Día 1 — bienvenida al taller**
+> Asunto: *Gracias por sumarte al taller — INCADE*
+> Gracias por registrarte en nuestro taller gratuito. Esperamos que te
+> haya sido útil. Si te interesó, en INCADE tenés cursos y carreras
+> completas para seguir formándote. Cuando quieras, date una vuelta por
+> nuestro catálogo.
+
+**Día 3 — vitrina de cursos**
+> Asunto: *Cursos que te pueden interesar — INCADE*
+> Te dejamos algunos de los cursos más elegidos de nuestro catálogo
+> educativo, por si querés seguir aprendiendo con nosotros. Podés verlos
+> completos en incadeducativa.com/cursos.
+
+**Día 7 — CTA comunidad**
+> Asunto: *¿Seguimos en contacto? — INCADE*
+> Esperamos que el taller te haya servido. Si querés seguir cerca de
+> INCADE, sumate a nuestra comunidad: te avisamos de nuevos talleres,
+> cursos y contenido. Nos encontrás en incadeducativa.com cuando quieras.
+
+**Decisiones de esta pasada:**
+- Sin herramientas nuevas (Resend, ya en uso — nada de Twilio/Mailchimp/
+  Brevo).
+- Envío in-app (bandeja de notificaciones) + email, mismo `notifyUsers()`
+  que el resto del sistema, `tipo='sistema'` (no hay un tipo dedicado de
+  "nurturing" en el enum — no se justificaba agregar uno para 3 mails).
+- **No se corrió un envío real contra Resend en esta sesión** —
+  `RESEND_API_KEY` ya tiene valor cargado localmente, así que una prueba
+  mal acotada mandaría mail de verdad a una dirección real (regla
+  explícita de `resolver_loop1.md` T12). La lógica de elegibilidad
+  (quién está due, qué día, deduplicación) está cubierta por unit tests
+  puros, sin red. Un test contra Resend real queda para cuando el
+  usuario lo confirme explícitamente, con un destinatario de prueba
+  propio.
+- Migración 037 (columnas de flag + `pg_cron`) sin aplicar contra
+  ninguna DB — mismo criterio que toda migración nueva.
+
+---
+
+## 66. Módulo Comunidad/Foro — ComunidadPage / PublicacionForm / PublicacionList / ForoFilterBar (T14)
+
+MVP mínimo (`docs/addenda/resolver_loop1.md` T14): foros por carrera + feed
+institucional, gateado por `FEATURE_COMUNIDAD`. Sin likes, sin DMs, sin
+edición de contenido por el autor — el único control de moderación es
+ocultar/reactivar por Admin (soft-hide, nunca se borra la fila).
+
+```
+ComunidadPage (server) — src/app/(dashboard)/(protected)/comunidad/page.tsx
+├── notFound() si !flags.comunidad (mismo criterio de gateo que el resto
+│   del sistema, más estricto que Talleres/Coworking que solo ocultan el
+│   ítem de sidebar sin bloquear la ruta en sí — acá si se bloquea)
+├── Trae perfil (role, carrera_id) + lista de carreras + publicaciones
+│   (join a users!foro_publicaciones_autor_id_fkey y careers, mismo
+│   patrón que AnnouncementList/§ de anuncios)
+└── Filtro por querystring ?carrera=<id|institucional|todas>
+
+PublicacionForm ("use client") — src/components/comunidad/PublicacionForm.tsx
+├── Textarea (nuevo primitivo en src/components/ui/textarea.tsx, mismo
+│   estilo que Input — no existía en el catálogo hasta esta pasada)
+├── Radio institucional/carrera — solo se ofrece elegir carrera si el
+│   usuario pertenece a una o es Admin (mismo corte que la RLS de
+│   insert, ver `puedePublicarEnCarrera()` en
+│   src/modules/comunidad/foro.ts)
+└── crearPublicacionAction (src/app/(dashboard)/(protected)/comunidad/
+    actions.ts)
+
+ForoFilterBar ("use client") — src/components/comunidad/ForoFilterBar.tsx
+└── Mismo patrón que FilterBar de /cursos (§?): chips que escriben el
+    querystring vía useRouter/useSearchParams
+
+PublicacionList ("use client") — src/components/comunidad/PublicacionList.tsx
+├── Card por publicación: autor, badge de carrera o "Institucional",
+│   badge "Oculta" si `oculto` (solo la ve el autor o el Admin, RLS lo
+│   filtra para el resto)
+└── Botón Ocultar/Reactivar solo si `isAdmin` → ocultarPublicacionAction
+```
+
+Migración `039_comunidad_foro.sql`: tabla `foro_publicaciones`
+(`carrera_id` null = feed institucional), función `mi_carrera_id()`
+(security definer stable, mismo patrón que `get_user_discount()`) para
+resolver la carrera del usuario autenticado sin subquery directa a
+`public.users` en la policy. RLS: lectura para cualquier autenticado
+(oculta filtrada salvo autor/Admin), escritura solo de la fila propia y
+solo a una carrera a la que se pertenece (o el feed institucional, sin
+restricción), moderación (`update`) solo Admin.
+
+Lógica espejo en `src/modules/comunidad/foro.ts`
+(`puedePublicarEnCarrera`, `puedeVerPublicacion`) cubierta por
+`tests/unit/foro.test.ts` — documentado como espejo de la RLS real, no
+como reemplazo: la fuente de verdad de la autorización sigue siendo la
+policy de Postgres.
+
+Rutas nuevas: `/comunidad` (todo rol autenticado). Sidebar:
+`(dashboard)/layout.tsx`, ítem "Comunidad" en Plataforma, gateado por
+`flags.comunidad` (mismo bloque que Coworking/Talleres).
+
+**Fuera de alcance de esta pasada** (ver `resolver_loop1.md` T14 y spec
+§8.3): red de egresados, likes, mensajes directos, notificaciones de
+nueva publicación, edición de contenido por el autor.
+
+---
+
+*INCADEducativa · Design System v2.1 — COMPONENTS v1.11 · Septiembre 2026*

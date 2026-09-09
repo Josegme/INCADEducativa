@@ -19,8 +19,13 @@ export function CareerBlockedCTA({ career }: CareerBlockedCTAProps) {
         inscripción a módulos están disponibles solo para alumnos INCADE.
       </NotificationBanner>
 
-      <Button variant="primary" className="w-fit">
-        Inscribite en el Instituto
+      {/* Addendum 04 / ADR-15: CTA a admisiones presenciales, no a compra —
+          no hay número de WhatsApp de admisiones cargado en el repo, se linkea
+          al sitio institucional (incade.edu.ar) hasta que se sume ese dato. */}
+      <Button variant="primary" className="w-fit" asChild>
+        <a href="https://incade.edu.ar" target="_blank" rel="noreferrer">
+          Inscribite en el Instituto
+        </a>
       </Button>
     </div>
   );

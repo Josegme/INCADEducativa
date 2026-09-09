@@ -22,12 +22,13 @@ const roleBadgeStyles: Record<TopbarRole, string> = {
 export interface TopbarProps {
   navItems?: TopbarNavItem[];
   userInitials?: string;
+  avatarUrl?: string | null;
   role?: TopbarRole;
   roleLabel?: string;
   userId?: string;
 }
 
-export function Topbar({ navItems = [], userInitials, role, roleLabel, userId }: TopbarProps) {
+export function Topbar({ navItems = [], userInitials, avatarUrl, role, roleLabel, userId }: TopbarProps) {
   return (
     <header className="flex h-[46px] items-center justify-between border-b-[0.5px] border-[--edu-border] bg-black/[0.55] px-4 backdrop-blur-[8px]">
       <div className="flex items-center gap-6">
@@ -64,10 +65,18 @@ export function Topbar({ navItems = [], userInitials, role, roleLabel, userId }:
             {roleLabel ?? role}
           </span>
         ) : null}
-        {userInitials ? (
-          <div className="flex h-7 w-7 items-center justify-center rounded-full border-[1.5px] border-[--inc-violet-border-strong] bg-[--inc-violet] text-[11px] font-semibold text-white">
-            {userInitials}
-          </div>
+        {userInitials || avatarUrl ? (
+          <Link
+            href="/perfil"
+            className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-[1.5px] border-[--inc-violet-border-strong] bg-[--inc-violet] text-[11px] font-semibold text-white"
+          >
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="Mi perfil" className="h-full w-full object-cover" />
+            ) : (
+              userInitials
+            )}
+          </Link>
         ) : null}
       </div>
     </header>

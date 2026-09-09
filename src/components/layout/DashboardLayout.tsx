@@ -7,6 +7,7 @@ export interface DashboardLayoutProps {
   sidebarSections: SidebarSection[];
   topbarNavItems?: TopbarNavItem[];
   userInitials?: string;
+  avatarUrl?: string | null;
   role?: TopbarRole;
   roleLabel?: string;
   userId?: string;
@@ -17,6 +18,7 @@ export function DashboardLayout({
   sidebarSections,
   topbarNavItems,
   userInitials,
+  avatarUrl,
   role,
   roleLabel,
   userId,
@@ -29,6 +31,7 @@ export function DashboardLayout({
         <Topbar
           navItems={topbarNavItems}
           userInitials={userInitials}
+          avatarUrl={avatarUrl}
           role={role}
           roleLabel={roleLabel}
           userId={userId}

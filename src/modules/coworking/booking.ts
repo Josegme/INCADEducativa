@@ -23,7 +23,7 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   no_show: "No se presentó",
 };
 
-export type DiscountType = "institucional" | "publico" | "manual" | "canje";
+export type DiscountType = "institucional" | "publico" | "manual" | "canje" | "cupon";
 
 export interface BookingRow {
   id: string;
@@ -54,6 +54,7 @@ export const bookingFormSchema = z.object({
     .min(6, "Ingresá un número válido")
     .optional()
     .or(z.literal("")),
+  cuponCodigo: z.string().trim().optional().or(z.literal("")),
 });
 
 export type BookingFormValues = z.infer<typeof bookingFormSchema>;

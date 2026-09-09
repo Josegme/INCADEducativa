@@ -28,6 +28,7 @@ export const courseFormSchema = z
     duracionHs: z.coerce.number().int().min(0).optional(),
     esGratuito: z.coerce.boolean().default(true),
     precio: z.coerce.number().min(0).default(0),
+    precioTutoriasAddon: z.coerce.number().min(0).default(0),
   })
   .refine((data) => data.esGratuito || data.precio > 0, {
     message: "Ingresá un precio mayor a 0 para un curso pago",
@@ -45,6 +46,7 @@ export interface CourseRow {
   docente_id: string | null;
   estado: CourseStatusValue;
   precio: number;
+  precio_tutorias_addon: number;
   duracion_hs: number | null;
   nivel: CourseLevelValue;
   es_gratuito: boolean;

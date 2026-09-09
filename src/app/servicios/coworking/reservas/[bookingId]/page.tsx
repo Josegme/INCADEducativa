@@ -92,6 +92,13 @@ export default async function BookingConfirmationPage({ params }: { params: { bo
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qrDataUrl} alt="Código QR de acceso a la reserva" className="h-40 w-40" />
           <p className="text-[12px] text-black/60">Mostrá este QR al ingresar</p>
+          <a
+            href={qrDataUrl}
+            download="reserva-coworking.png"
+            className="text-[12px] font-medium text-[--inc-violet] hover:underline"
+          >
+            Descargar QR
+          </a>
         </div>
       ) : null}
 

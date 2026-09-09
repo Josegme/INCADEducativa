@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import { LessonUploader } from "@/components/docente/LessonUploader";
+import { LessonAttachmentsManager } from "@/components/docente/LessonAttachmentsManager";
 import { LESSON_TYPES, LESSON_TYPE_LABEL, type EditableLesson } from "@/modules/docente/courseEditor";
 import type { LessonType } from "@/modules/educativa/lessons";
-import { createLessonAction, updateLessonAction } from "@/app/(dashboard)/docente/actions/lessonActions";
+import { createLessonAction, updateLessonAction } from "@/app/(dashboard)/(protected)/docente/actions/lessonActions";
 
 const SELECT_CLASS =
   "flex h-10 w-full rounded-md border-[0.5px] border-[--edu-border] bg-white/[0.06] px-3 py-2 text-sm text-[--edu-text] transition-colors focus-visible:border-[--edu-border-strong] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--inc-violet-border-strong]";
@@ -187,6 +188,10 @@ export function LessonModal({ courseId, moduleId, nextOrden, lesson, trigger }: 
               <LessonUploader courseId={courseId} value={contenidoUrl || null} onUploaded={setContenidoUrl} />
             </div>
           )}
+
+          {lesson ? (
+            <LessonAttachmentsManager lessonId={lesson.id} courseId={courseId} attachments={lesson.attachments} />
+          ) : null}
 
           <DialogFooter>
             <Button type="button" variant="outline" disabled={isLoading} onClick={() => setOpen(false)}>

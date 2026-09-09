@@ -9,7 +9,7 @@ import { NotificationBanner } from "@/components/ui/notification-banner";
 import {
   cargarGrabacionAction,
   registrarAsistenciaAction,
-} from "@/app/(dashboard)/docente/actions/tutoriaActions";
+} from "@/app/(dashboard)/(protected)/docente/actions/tutoriaActions";
 
 export interface AlumnoAsistencia {
   alumnoId: string;

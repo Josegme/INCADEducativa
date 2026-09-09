@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
-import { checkInBookingAction } from "@/app/(dashboard)/admin/actions/bookingAdminActions";
+import { checkInBookingAction } from "@/app/(dashboard)/(protected)/admin/actions/bookingAdminActions";
 
 const SCANNER_ELEMENT_ID = "coworking-checkin-qr-reader";
 

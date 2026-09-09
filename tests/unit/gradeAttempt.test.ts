@@ -59,8 +59,22 @@ describe("gradeAttempt", () => {
 
     expect(gradeAttempt([question], { q1: { seleccionadas: [0, 1] } }).scoreAuto).toBe(20);
     expect(gradeAttempt([question], { q1: { seleccionadas: [0] } }).scoreAuto).toBe(10);
-    expect(gradeAttempt([question], { q1: { seleccionadas: [0, 3] } }).scoreAuto).toBe(10);
+    expect(gradeAttempt([question], { q1: { seleccionadas: [0, 3] } }).scoreAuto).toBe(0);
     expect(gradeAttempt([question], { q1: { seleccionadas: [3] } }).scoreAuto).toBe(0);
+  });
+
+  it("opcion_multiple proporcional: marcar todas las opciones no da el peso completo", () => {
+    const question: QuestionOpcionMultiple = {
+      id: "q1",
+      tipo: "opcion_multiple",
+      enunciado: "¿?",
+      peso: 20,
+      opciones: ["a", "b", "c", "d"],
+      respuestas_correctas: [0, 1],
+      puntuacion: "proporcional",
+    };
+
+    expect(gradeAttempt([question], { q1: { seleccionadas: [0, 1, 2, 3] } }).scoreAuto).toBe(0);
   });
 
   it("vf_fundamentada: reparte 50/50 auto/manual y siempre pide revisión", () => {

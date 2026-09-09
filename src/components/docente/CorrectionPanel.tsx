@@ -7,7 +7,7 @@ import { Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NotificationBanner } from "@/components/ui/notification-banner";
-import { correctAttemptAction } from "@/app/(dashboard)/docente/actions/correctionActions";
+import { correctAttemptAction } from "@/app/(dashboard)/(protected)/docente/actions/correctionActions";
 import type { ManualAnswerDisplay } from "@/modules/educativa/evaluationAttempt";
 
 const TEXTAREA_CLASS =

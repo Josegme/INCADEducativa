@@ -13,6 +13,29 @@ export interface BookingActionState {
   success?: boolean;
 }
 
+/** "Nueva reserva recibida" al admin — dispara en ambas ramas (pago online
+ * y canje de crédito), apenas se crea la reserva, sin esperar confirmación
+ * de pago (a diferencia del comprobante, que sí espera el webhook). */
+async function notifyAdminsNewBooking(
+  admin: ReturnType<typeof createAdminClient>,
+  bookingId: string,
+  espacioNombre: string,
+  fecha: string,
+  usuarioNombre: string
+) {
+  const { data: admins } = await admin.from("users").select("id, email").eq("role", "admin");
+  if (!admins || admins.length === 0) return;
+
+  await notifyUsers(admin, {
+    tipo: "reserva",
+    referenciaId: bookingId,
+    titulo: `Nueva reserva — ${espacioNombre}`,
+    cuerpo: `${usuarioNombre} reservó ${espacioNombre} para el ${fecha}.`,
+    recipients: admins.map((a) => ({ userId: a.id as string, email: a.email as string })),
+    emailSubject: "Nueva reserva de Coworking",
+  });
+}
+
 /**
  * Registro mínimo + reserva en un solo paso (CU-06). El registro de
  * `comunidad` sin cuenta previa es una excepción acotada al flujo de
@@ -26,13 +49,14 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     horaInicio: formData.get("horaInicio"),
     duracionHoras: formData.get("duracionHoras"),
     telefonoContacto: formData.get("telefonoContacto") || undefined,
+    cuponCodigo: formData.get("cuponCodigo") || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
-  const { spaceId, fecha, horaInicio, duracionHoras, telefonoContacto } = parsed.data;
+  const { spaceId, fecha, horaInicio, duracionHoras, telefonoContacto, cuponCodigo } = parsed.data;
 
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -127,7 +151,7 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     const fechaFinCredito = new Date(fechaInicioCredito.getTime() + duracionHoras * 60 * 60 * 1000);
     const montoReferencia = Math.round(space.precio_hora * duracionHoras * 100) / 100;
 
-    const { data: booking, error: bookingError } = await supabase
+    const { data: booking, error: bookingError } = await admin
       .from("bookings")
       .insert({
         user_id: user.id,
@@ -155,13 +179,70 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
       .update({ coworking_creditos_canje: creditosDisponibles - duracionHoras })
       .eq("id", user.id);
 
+    await notifyAdminsNewBooking(
+      admin,
+      booking.id,
+      space.nombre,
+      fechaInicioCredito.toLocaleString("es-AR"),
+      user.email
+    );
+
     redirect(`/servicios/coworking/reservas/${booking.id}`);
   }
 
-  const { data: discountData } = await supabase.rpc("get_user_discount");
-  const descuentoPct = typeof discountData === "number" ? discountData : 0;
+  // Cupón (early bird/promoción) — si es válido, gana por sobre el
+  // descuento institucional automático (no se acumulan). select vía la
+  // sesión del usuario (coupons_select ya lo permite, 002); el canje
+  // (usos_actuales) va por RPC atómica porque la escritura directa es
+  // admin-only (coupons_admin).
+  let coupon: { id: string; descuento_pct: number } | null = null;
+  if (cuponCodigo) {
+    const hoy = new Date().toISOString().slice(0, 10);
+    const { data: foundCoupon } = await supabase
+      .from("coupons")
+      .select("id, descuento_pct, valido_desde, valido_hasta, usos_maximos, usos_actuales")
+      .eq("codigo", cuponCodigo.toUpperCase())
+      .eq("activo", true)
+      .maybeSingle();
 
-  const amount = computeBookingAmount(space.precio_hora, duracionHoras, descuentoPct);
+    if (
+      !foundCoupon ||
+      foundCoupon.valido_desde > hoy ||
+      foundCoupon.valido_hasta < hoy ||
+      (foundCoupon.usos_maximos !== null && foundCoupon.usos_actuales >= foundCoupon.usos_maximos)
+    ) {
+      return { error: "Ese cupón no es válido o ya no está disponible" };
+    }
+
+    coupon = { id: foundCoupon.id, descuento_pct: foundCoupon.descuento_pct };
+  }
+
+  let descuentoPctInstitucional = 0;
+  if (!coupon) {
+    const { data: discountData } = await supabase.rpc("get_user_discount");
+    descuentoPctInstitucional = typeof discountData === "number" ? discountData : 0;
+  }
+
+  const amount = coupon
+    ? {
+        montoOriginal: Math.round(space.precio_hora * duracionHoras * 100) / 100,
+        montoFinal: Math.round(space.precio_hora * duracionHoras * (1 - coupon.descuento_pct / 100) * 100) / 100,
+        descuentoPct: coupon.descuento_pct,
+        tipoDescuento: "cupon" as const,
+      }
+    : computeBookingAmount(space.precio_hora, duracionHoras, descuentoPctInstitucional);
+
+  // El canje se hace ANTES de insertar la reserva: increment_coupon_usage()
+  // ahora es atómico (chequea usos_maximos y suma en la misma sentencia,
+  // migración 034) para que dos reservas concurrentes con el mismo código no
+  // superen el límite. Si el insert de la reserva falla después, se libera
+  // el cupón con decrement_coupon_usage().
+  if (coupon) {
+    const { data: redeemed } = await supabase.rpc("increment_coupon_usage", { p_coupon_id: coupon.id });
+    if (!redeemed) {
+      return { error: "Ese cupón alcanzó su límite de usos. Probá sin cupón o con otro código." };
+    }
+  }
 
   const fechaInicio = new Date(`${fecha}T${String(horaInicio).padStart(2, "0")}:00:00`);
   const fechaFin = new Date(fechaInicio.getTime() + duracionHoras * 60 * 60 * 1000);
@@ -182,6 +263,9 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     .single();
 
   if (bookingError || !booking) {
+    if (coupon) {
+      await supabase.rpc("decrement_coupon_usage", { p_coupon_id: coupon.id });
+    }
     if (bookingError?.code === "23P01") {
       return { error: "Ese horario ya no está disponible — elegí otro" };
     }
@@ -202,6 +286,8 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     monto: amount.montoFinal,
     mp_preference_id: preference?.preferenceId ?? null,
   });
+
+  await notifyAdminsNewBooking(admin, booking.id, space.nombre, fechaInicio.toLocaleString("es-AR"), user.email);
 
   if (preference) {
     redirect(preference.initPoint);

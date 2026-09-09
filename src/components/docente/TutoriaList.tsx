@@ -8,7 +8,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { TutoriaEstado, TutoriaModalidad } from "@/modules/tutorias/tutorias";
 import { TUTORIA_ESTADO_LABEL } from "@/modules/tutorias/tutorias";
-import { cancelTutoriaAction } from "@/app/(dashboard)/docente/actions/tutoriaActions";
+import { cancelTutoriaAction } from "@/app/(dashboard)/(protected)/docente/actions/tutoriaActions";
 
 const ESTADO_BADGE: Record<TutoriaEstado, NonNullable<BadgeProps["state"]>> = {
   programada: "active",

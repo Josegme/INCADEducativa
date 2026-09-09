@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
-import { approveCourseAction, rejectCourseAction } from "@/app/(dashboard)/admin/actions/reviewActions";
+import { approveCourseAction, rejectCourseAction } from "@/app/(dashboard)/(protected)/admin/actions/reviewActions";
 
 interface ReviewActionsProps {
   courseId: string;

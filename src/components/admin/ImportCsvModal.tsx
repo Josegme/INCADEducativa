@@ -19,7 +19,7 @@ import { NotificationBanner } from "@/components/ui/notification-banner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { ImportPreviewRow, ImportRowStatus } from "@/modules/admin/importUsers";
-import { confirmImportAction, previewImportAction } from "@/app/(dashboard)/admin/actions/importUsersActions";
+import { confirmImportAction, previewImportAction } from "@/app/(dashboard)/(protected)/admin/actions/importUsersActions";
 
 const STATUS_BADGE: Record<ImportRowStatus, { state: "completed" | "pending" | "error"; label: string }> = {
   nuevo: { state: "completed", label: "Nuevo" },

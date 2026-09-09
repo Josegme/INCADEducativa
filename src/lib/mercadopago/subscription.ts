@@ -56,6 +56,59 @@ export async function createMembershipSubscription(
   return { preapprovalId: result.id, initPoint: result.init_point };
 }
 
+export interface CreateCourseSubscriptionInput {
+  suscripcionId: string;
+  payerEmail: string;
+  monto: number;
+  reason: string;
+}
+
+export interface CourseSubscriptionResult {
+  preapprovalId: string;
+  initPoint: string;
+}
+
+/**
+ * Crea la suscripción (preapproval) al catálogo educativo (Etapa 3). Mismo
+ * cuerpo que createMembershipSubscription, sin tocarla — cero riesgo para el
+ * flujo de Coworking. Devuelve null si MP_ACCESS_TOKEN no está configurada.
+ */
+export async function createCourseSubscription(
+  input: CreateCourseSubscriptionInput
+): Promise<CourseSubscriptionResult | null> {
+  const client = getMercadoPagoClient();
+  if (!client) {
+    console.warn(
+      `[mercadopago] MP_ACCESS_TOKEN vacía — no se creó suscripción para ${input.suscripcionId}`
+    );
+    return null;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const preApproval = new PreApproval(client);
+  const result = await preApproval.create({
+    body: {
+      reason: input.reason,
+      external_reference: input.suscripcionId,
+      payer_email: input.payerEmail,
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: "months",
+        transaction_amount: input.monto,
+        currency_id: "ARS",
+      },
+      back_url: `${appUrl}/cursos/suscripcion/estado/${input.suscripcionId}`,
+    },
+  });
+
+  if (!result.id || !result.init_point) {
+    console.error(`[mercadopago] Suscripción creada sin id/init_point para ${input.suscripcionId}`);
+    return null;
+  }
+
+  return { preapprovalId: result.id, initPoint: result.init_point };
+}
+
 export interface MpSubscriptionInfo {
   id: string;
   status: string;
