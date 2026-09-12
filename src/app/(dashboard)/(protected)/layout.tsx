@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 
 /**
  * Guard de sesión para todo lo que estaba antes directo bajo (dashboard) —
@@ -11,10 +11,7 @@ import { createClient } from "@/lib/supabase/server";
  * rama — acá solo se corta el paso si no hay sesión.
  */
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");

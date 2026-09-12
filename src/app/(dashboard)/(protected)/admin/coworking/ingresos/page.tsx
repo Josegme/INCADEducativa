@@ -35,7 +35,7 @@ export default async function AdminCoworkingIngresosPage({ searchParams }: PageP
     .order("periodo", { ascending: false });
 
   if (searchParams.locationId) query = query.eq("location_id", searchParams.locationId);
-  if (searchParams.tipoDescuento) query = query.eq("tipo_descuento", searchParams.tipoDescuento);
+  if (searchParams.tipoDescuento) query = query.eq("tipo_descuento", searchParams.tipoDescuento as "manual" | "institucional" | "publico" | "canje" | "cupon");
   if (mes) {
     // date_trunc('month', ...) en la vista coworking_revenue trunca en UTC (timezone
     // por defecto de Postgres en Supabase) — el límite del filtro tiene que calcularse

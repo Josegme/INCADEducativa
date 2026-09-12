@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      await admin.from("tutorias").update({ [flagColumn]: true }).eq("id", tutoria.id);
+      await admin.from("tutorias").update({ [flagColumn]: true } as never).eq("id", tutoria.id);
       if (hours === 24) reminders24h++;
       else reminders1h++;
     }

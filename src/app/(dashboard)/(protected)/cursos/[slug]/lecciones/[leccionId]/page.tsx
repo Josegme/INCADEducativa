@@ -8,6 +8,7 @@ import { LessonNav } from "@/components/educativa/LessonNav";
 import { LessonPlayer } from "@/components/educativa/LessonPlayer";
 import { ContentViewer } from "@/components/educativa/ContentViewer";
 import { LessonAttachments, type LessonAttachmentLink } from "@/components/educativa/LessonAttachments";
+import { LessonTabs } from "@/components/educativa/LessonTabs";
 import { createClient } from "@/lib/supabase/server";
 import { getSignedLessonContentUrl } from "@/lib/supabase/storage";
 import type { LessonRow, LessonState, ModuleWithLessons } from "@/modules/educativa/lessons";
@@ -191,24 +192,27 @@ export default async function LessonPage({ params }: LessonPageProps) {
         <div className="flex flex-1 flex-col gap-4">
           <h1 className="text-[18px] font-semibold text-white">{activeLesson.titulo}</h1>
 
-          {activeLesson.tipo === "video" && videoUrl ? (
-            <LessonPlayer
-              lessonId={activeLesson.id}
-              videoUrl={videoUrl}
-              tiempoVistoSeg={activeLesson.tiempoVistoSeg}
-              completed={activeLesson.completed}
-            />
-          ) : (
-            <ContentViewer
-              lessonId={activeLesson.id}
-              tipo={activeLesson.tipo}
-              contenidoText={activeLesson.contenido_text}
-              documentoUrl={documentoUrl}
-              completed={activeLesson.completed}
-            />
-          )}
-
-          <LessonAttachments attachments={attachments} />
+          <LessonTabs
+            content={
+              activeLesson.tipo === "video" && videoUrl ? (
+                <LessonPlayer
+                  lessonId={activeLesson.id}
+                  videoUrl={videoUrl}
+                  tiempoVistoSeg={activeLesson.tiempoVistoSeg}
+                  completed={activeLesson.completed}
+                />
+              ) : (
+                <ContentViewer
+                  lessonId={activeLesson.id}
+                  tipo={activeLesson.tipo}
+                  contenidoText={activeLesson.contenido_text}
+                  documentoUrl={documentoUrl}
+                  completed={activeLesson.completed}
+                />
+              )
+            }
+            resources={<LessonAttachments attachments={attachments} />}
+          />
 
           <LessonNav
             courseSlug={params.slug}

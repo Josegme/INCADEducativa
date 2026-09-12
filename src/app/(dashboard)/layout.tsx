@@ -27,6 +27,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PublicHeaderShell } from "@/components/layout/PublicHeaderShell";
 import type { SidebarSection } from "@/components/layout/Sidebar";
 import type { TopbarRole } from "@/components/layout/Topbar";
+import { getCurrentProfile, getCurrentUser } from "@/lib/auth/session";
 import { getFlags, type FeatureFlag } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
 import { getSignedAvatarUrl } from "@/lib/supabase/storage";
@@ -95,29 +96,34 @@ function sectionsForRole(
       { label: "Leads", href: "/admin/leads", icon: <UserPlus className={ICON_CLASS} aria-hidden /> },
     ];
 
-    if (flags.coworking) {
-      adminItems.push(
-        { label: "Sedes Coworking", href: "/admin/coworking/sedes", icon: <Building2 className={ICON_CLASS} aria-hidden /> },
-        { label: "Espacios Coworking", href: "/admin/coworking/espacios", icon: <DoorOpen className={ICON_CLASS} aria-hidden /> },
-        { label: "Ocupación Coworking", href: "/admin/coworking/ocupacion", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
-        { label: "Reservas Coworking", href: "/admin/coworking/reservas", icon: <CalendarDays className={ICON_CLASS} aria-hidden /> },
-        { label: "Ingresos Coworking", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> },
-        { label: "Membresías Coworking", href: "/admin/coworking/membresias", icon: <CreditCard className={ICON_CLASS} aria-hidden /> },
-        { label: "Cupones Coworking", href: "/admin/coworking/cupones", icon: <Tag className={ICON_CLASS} aria-hidden /> },
-        { label: "Mantenimiento Coworking", href: "/admin/coworking/mantenimiento", icon: <Wrench className={ICON_CLASS} aria-hidden /> }
-      );
-    }
-
     if (flags.talleres) {
       adminItems.push({ label: "Talleres", href: "/admin/talleres", icon: <Video className={ICON_CLASS} aria-hidden /> });
     }
 
     adminItems.push(
+      { label: "Suscripciones", href: "/admin/suscripciones", icon: <CreditCard className={ICON_CLASS} aria-hidden /> },
       { label: "Auditoría", href: "/admin/auditoria", icon: <ClipboardList className={ICON_CLASS} aria-hidden /> },
       { label: "Configuración", href: "/admin/configuracion", icon: <Settings className={ICON_CLASS} aria-hidden /> }
     );
 
     sections.push({ label: "Administración", items: adminItems });
+
+    if (flags.coworking) {
+      sections.push({
+        label: "Coworking",
+        collapsible: true,
+        items: [
+          { label: "Sedes", href: "/admin/coworking/sedes", icon: <Building2 className={ICON_CLASS} aria-hidden /> },
+          { label: "Espacios", href: "/admin/coworking/espacios", icon: <DoorOpen className={ICON_CLASS} aria-hidden /> },
+          { label: "Ocupación", href: "/admin/coworking/ocupacion", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
+          { label: "Reservas", href: "/admin/coworking/reservas", icon: <CalendarDays className={ICON_CLASS} aria-hidden /> },
+          { label: "Ingresos", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> },
+          { label: "Membresías", href: "/admin/coworking/membresias", icon: <CreditCard className={ICON_CLASS} aria-hidden /> },
+          { label: "Cupones", href: "/admin/coworking/cupones", icon: <Tag className={ICON_CLASS} aria-hidden /> },
+          { label: "Mantenimiento", href: "/admin/coworking/mantenimiento", icon: <Wrench className={ICON_CLASS} aria-hidden /> },
+        ],
+      });
+    }
   }
 
   sections.push({
@@ -141,9 +147,7 @@ export default async function DashboardGroupLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   // Sin sesión: las ramas que llegan hasta acá son /carreras (pública,
   // vitrina CU-T02/ADR-15), /cursos* (vitrina E3 gateada por
@@ -154,10 +158,7 @@ export default async function DashboardGroupLayout({
     return <PublicHeaderShell>{children}</PublicHeaderShell>;
   }
 
-  const [{ data: profile }, flags] = await Promise.all([
-    supabase.from("users").select("nombre, apellido, role, can_teach, avatar_url").eq("id", user.id).single(),
-    getFlags(),
-  ]);
+  const [profile, flags] = await Promise.all([getCurrentProfile(), getFlags()]);
 
   const role = (profile?.role ?? "alumno") as TopbarRole;
   const avatarUrl = profile?.avatar_url ? await getSignedAvatarUrl(supabase, profile.avatar_url) : null;

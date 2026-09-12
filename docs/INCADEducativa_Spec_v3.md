@@ -7,7 +7,7 @@
 | Campo | Detalle |
 |---|---|
 | **Proyecto** | INCADEducativa — Plataforma Educativa + Módulos de Servicio |
-| **Versión** | 3.7 — Add-on pago de Tutorías para Comunidad (§6.4, T13) |
+| **Versión** | 3.8 — Costuras académicas + seña coworking (ADR-19) |
 | **Autores** | Escobar, José Gustavo · Schwegler, Alan |
 | **Fecha** | Junio 2026 (v3.7: Septiembre 2026) |
 | **Metodología** | Spec-Driven Development (SDD) · Clean Architecture |
@@ -708,6 +708,7 @@ Empleador o tercero escanea el QR del certificado
 | **ADR-16** | Conversiones de rol aditivas + `role_history` + rol dual `can_teach` | Las transiciones nunca borran historial (solo suman beneficios); un email = un perfil. Cada cambio se audita en `role_history`. El rol docente para alumnos es un permiso granular por curso (`can_teach` + `courses.docente_id` vía `can_teach_course()`), no un rol global, evitando duplicar cuentas *(Addendum 04)*. |
 | **ADR-17** | Tutorías como sesión grupal ligada a curso, no cita 1:1 | El docente programa la tutoría para todo el curso (alumnos inscriptos), reusando la infraestructura de Coworking para el bloqueo de aula presencial. El modelo de cita 1:1 queda reservado para un módulo futuro y no relacionado (`FEATURE_MENTORIA`), evitando mezclar ambos dominios en el mismo schema *(Addendum 05)*. |
 | **ADR-18** | Talleres como contenido 100% autorado por Admin, alcance interno E2 | Ningún documento original le asigna un rol a Docente en Talleres — solo Admin publica. No aplica el flujo de curación de ADR-06 porque no hay autor previo que curar. El flag es E2 pero el consumo real documentado (Lead gratuito, Comunidad paga) estaba etiquetado E3 en el spec original; este ADR resuelve la ambigüedad acotando el alcance a consumo interno (Alumno INCADE ya logueado) hasta que se active `FEATURE_PUBLICA` *(Addendum 06)*. |
+| **ADR-19** | Costuras académicas abiertas, SGA no construido | `enrollments.periodo_id` y `course_careers` desbloquean recursar y planes N:M. Materia, comisión, correlativas, mesas, actas, escala 1–10 y rol bedelía quedan documentados y no se implementan hasta demanda real. Las carreras siguen no comprables (ADR-15); ahora también son gestionables como plan (campos nullable). |
 
 ---
 

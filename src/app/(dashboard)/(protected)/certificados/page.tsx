@@ -1,4 +1,8 @@
+import { Award } from "lucide-react";
+
 import { CertificateCard } from "@/components/educativa/CertificateCard";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { CERTIFICATE_BUCKET } from "@/lib/certificates";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,13 +71,19 @@ export default async function CertificadosPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <div>
-        <h1 className="text-[20px] font-semibold text-white">Mis certificados</h1>
-        <p className="text-sm text-[--edu-text-muted]">Certificados emitidos al completar un curso y todas sus evaluaciones.</p>
-      </div>
+      <PageHeader
+        title="Mis certificados"
+        description="Certificados emitidos al completar un curso. Compartí el enlace de verificación pública."
+      />
 
       {cards.length === 0 ? (
-        <p className="text-[13px] text-[--edu-text-muted]">Todavía no tenés certificados emitidos.</p>
+        <EmptyState
+          icon={Award}
+          title="Todavía no tenés certificados"
+          description="Completá un curso y sus evaluaciones para obtener un certificado con QR verificable."
+          actionHref="/cursos"
+          actionLabel="Ver cursos"
+        />
       ) : (
         <div className="flex flex-col gap-2">
           {cards.map((card) => (

@@ -33,7 +33,7 @@ export default async function AdminUsuariosPage() {
 
   const adminIds = new Set<string>();
   for (const user of users ?? []) {
-    for (const entry of (user.role_history ?? []) as RoleHistoryEntry[]) {
+    for (const entry of (user.role_history as unknown as RoleHistoryEntry[] | null) ?? []) {
       adminIds.add(entry.by);
     }
   }
@@ -112,7 +112,7 @@ export default async function AdminUsuariosPage() {
                     <UserActiveToggle userId={user.id} activo={Boolean(user.activo)} />
                     <RoleHistoryTimeline
                       userName={userName}
-                      entries={(user.role_history ?? []) as RoleHistoryEntry[]}
+                      entries={(user.role_history as unknown as RoleHistoryEntry[] | null) ?? []}
                       adminNameById={adminNameById}
                     />
                   </div>

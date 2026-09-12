@@ -1,6 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "INCADEducativa",
@@ -19,10 +30,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
-      <body>
-        {children}
-        <ServiceWorkerRegister />
+    <html lang="es" className={`dark ${inter.variable}`}>
+      <body className={inter.className}>
+        <TooltipProvider>
+          {children}
+          <Toaster />
+          <ServiceWorkerRegister />
+        </TooltipProvider>
       </body>
     </html>
   );

@@ -2,28 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/guards";
 import { notifyUsers } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("No autenticado");
-  }
-
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-
-  if (profile?.role !== "admin") {
-    throw new Error("Solo el administrador puede revisar cursos");
-  }
-
-  return { supabase, user };
-}
 
 export interface ReviewActionState {
   error?: string;

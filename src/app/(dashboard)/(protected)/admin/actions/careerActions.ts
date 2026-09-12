@@ -2,28 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/guards";
+import { fail, ok, toFormState } from "@/lib/actions/result";
 import { logAudit } from "@/lib/audit";
 import { careerFormSchema } from "@/modules/admin/careers";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("No autenticado");
-  }
-
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-
-  if (profile?.role !== "admin") {
-    throw new Error("Solo el administrador puede gestionar carreras");
-  }
-
-  return { supabase, adminId: user.id };
-}
 
 export interface CareerFormState {
   error?: string;
@@ -46,7 +28,7 @@ export async function createCareerAction(formData: FormData): Promise<CareerForm
 
   const parsed = parseCareerFormData(formData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+    return toFormState(fail(parsed.error.issues[0]?.message ?? "Datos inválidos"));
   }
 
   const { nombre, slug, descripcion, imagenUrl, activa } = parsed.data;
@@ -76,7 +58,7 @@ export async function createCareerAction(formData: FormData): Promise<CareerForm
   });
 
   revalidatePath("/admin/carreras");
-  return { success: true };
+  return toFormState(ok());
 }
 
 export async function updateCareerAction(formData: FormData): Promise<CareerFormState> {
@@ -84,7 +66,7 @@ export async function updateCareerAction(formData: FormData): Promise<CareerForm
 
   const parsed = parseCareerFormData(formData);
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+    return toFormState(fail(parsed.error.issues[0]?.message ?? "Datos inválidos"));
   }
 
   const { id, nombre, slug, descripcion, imagenUrl, activa } = parsed.data;
@@ -116,5 +98,5 @@ export async function updateCareerAction(formData: FormData): Promise<CareerForm
   });
 
   revalidatePath("/admin/carreras");
-  return { success: true };
+  return toFormState(ok());
 }

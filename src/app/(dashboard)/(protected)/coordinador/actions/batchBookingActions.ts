@@ -2,32 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireCoordinador } from "@/lib/auth/guards";
 
 export interface BatchBookingState {
   error?: string;
   success?: boolean;
   createdCount?: number;
   failedWeeks?: string[];
-}
-
-async function requireCoordinador() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("No autenticado");
-  }
-
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-
-  if (profile?.role !== "coordinador" && profile?.role !== "admin") {
-    throw new Error("Solo coordinadores pueden hacer reservas en lote");
-  }
-
-  return { supabase, userId: user.id };
 }
 
 /**

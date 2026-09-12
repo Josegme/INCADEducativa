@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NotificationBanner } from "@/components/ui/notification-banner";
 import { CancelMyBookingButton } from "@/components/coworking/CancelMyBookingButton";
+import { PayBalanceButton } from "@/components/coworking/PayBalanceButton";
 import { createClient } from "@/lib/supabase/server";
 import { BOOKING_STATUS_LABEL, type BookingStatus } from "@/modules/coworking/booking";
 
 const STATUS_BADGE: Record<BookingStatus, "pending" | "completed" | "locked" | "error"> = {
   pendiente: "pending",
+  senada: "pending",
   confirmada: "completed",
   en_uso: "completed",
   completada: "completed",
@@ -31,7 +33,7 @@ export default async function BookingConfirmationPage({ params }: { params: { bo
 
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, space_id, fecha_inicio, fecha_fin, estado, monto, tipo_descuento")
+    .select("id, space_id, fecha_inicio, fecha_fin, estado, monto, monto_pagado, tipo_descuento, sena_vence_at")
     .eq("id", params.bookingId)
     .single();
 
@@ -41,7 +43,7 @@ export default async function BookingConfirmationPage({ params }: { params: { bo
 
   const [{ data: space }, { data: payment }] = await Promise.all([
     supabase.from("spaces").select("nombre, location_id").eq("id", booking.space_id).single(),
-    supabase.from("payments").select("mp_preference_id, estado").eq("booking_id", booking.id).maybeSingle(),
+    supabase.from("payments").select("mp_preference_id, estado").eq("booking_id", booking.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   const { data: location } = space
@@ -68,10 +70,28 @@ export default async function BookingConfirmationPage({ params }: { params: { bo
         <p className="text-[13px] text-[--edu-text-muted]">{location?.nombre}</p>
         <p className="mt-2 text-sm text-[--edu-text]">{fechaLabel}</p>
         <p className="mt-1 text-sm text-[--edu-text-muted]">
-          Monto: <span className="font-semibold text-white">${booking.monto}</span>
+          Total: <span className="font-semibold text-white">${booking.monto}</span>
+          {booking.monto_pagado ? ` · Pagado: $${booking.monto_pagado}` : ""}
           {booking.tipo_descuento === "institucional" ? " (con descuento institucional)" : ""}
         </p>
       </div>
+
+      {estado === "senada" ? (
+        <NotificationBanner type="warning">
+          Recibimos tu seña. Completá el saldo para confirmar el ingreso
+          {booking.sena_vence_at
+            ? ` antes del ${new Date(booking.sena_vence_at).toLocaleString("es-AR")}`
+            : ""}
+          .
+        </NotificationBanner>
+      ) : null}
+
+      {estado === "senada" ? (
+        <PayBalanceButton
+          bookingId={booking.id}
+          saldo={Math.round((Number(booking.monto) - Number(booking.monto_pagado ?? 0)) * 100) / 100}
+        />
+      ) : null}
 
       {estado === "pendiente" && payment?.mp_preference_id ? (
         <NotificationBanner type="warning">

@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { gradeAttempt, type Respuestas } from "@/modules/educativa/evaluationAttempt";
+import type { EvaluationQuestion } from "@/modules/docente/evaluationEditor";
+import { asJson } from "@/lib/supabase/json";
 import { checkAndIssueCertificate } from "@/lib/certificates";
 import { awardPoints } from "@/lib/points";
 
@@ -137,7 +139,7 @@ export async function submitAttemptAction(attemptId: string, respuestas: Respues
     return { error: "La evaluación no existe" };
   }
 
-  const grading = gradeAttempt(evaluation.preguntas, respuestas);
+  const grading = gradeAttempt(evaluation.preguntas as unknown as EvaluationQuestion[], respuestas);
 
   const willBeApproved = !grading.needsManualReview && grading.scoreAuto >= evaluation.nota_minima;
 
@@ -148,7 +150,7 @@ export async function submitAttemptAction(attemptId: string, respuestas: Respues
   const { data: updated, error } = await admin
     .from("evaluation_attempts")
     .update({
-      respuestas,
+      respuestas: asJson(respuestas),
       score_auto: grading.scoreAuto,
       nota: grading.needsManualReview ? null : grading.scoreAuto,
       aprobado: grading.needsManualReview ? null : willBeApproved,
@@ -170,7 +172,7 @@ export async function submitAttemptAction(attemptId: string, respuestas: Respues
 
   if (willBeApproved) {
     await awardPoints(user.id, 25, "evaluacion_aprobada", attempt.evaluation_id);
-    await checkAndIssueCertificate(admin, user.id, evaluation.course_id);
+    await checkAndIssueCertificate(admin, user.id, evaluation.course_id ?? "");
   }
 
   revalidatePath(`/cursos`, "layout");

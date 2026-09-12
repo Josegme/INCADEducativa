@@ -8,7 +8,7 @@ import { createCourseSubscription } from "@/lib/mercadopago/subscription";
 import { notifyUsers } from "@/lib/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { registerFieldsSchema } from "@/modules/coworking/booking";
+import { registerFieldsSchema } from "@/modules/identity";
 
 export interface SubscriptionActionState {
   error?: string;

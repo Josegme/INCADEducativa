@@ -1,27 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/guards";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notifications";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("No autenticado");
-  }
-
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-
-  if (profile?.role !== "admin") {
-    throw new Error("Solo el administrador puede enviar comunicados");
-  }
-
-  return { supabase, adminId: user.id };
-}
 
 export interface BroadcastAnnouncementState {
   error?: string;

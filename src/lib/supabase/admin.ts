@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
+import type { Database } from "@/lib/supabase/database.types";
+
 /**
  * Cliente con `service_role` — bypassa RLS. Server-only, nunca importar desde
  * un componente cliente. Reservado para el Admin API de Auth (invitar usuarios);
@@ -7,7 +9,7 @@ import { createClient } from "@supabase/supabase-js";
  * con RLS (`is_admin()`), no por acá.
  */
 export function createAdminClient() {
-  return createClient(
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }

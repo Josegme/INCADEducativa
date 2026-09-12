@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { asJson } from "@/lib/supabase/json";
 
 export interface AuditLogInput {
   actorId: string;
@@ -24,7 +25,7 @@ export async function logAudit(input: AuditLogInput): Promise<void> {
     accion: input.accion,
     entidad: input.entidad,
     entidad_id: input.entidadId ?? null,
-    detalle: input.detalle ?? null,
+    detalle: input.detalle ? asJson(input.detalle) : null,
   });
 
   if (error) {

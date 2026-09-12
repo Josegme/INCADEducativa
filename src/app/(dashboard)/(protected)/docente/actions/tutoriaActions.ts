@@ -60,7 +60,7 @@ export async function createTutoriaAction(input: unknown): Promise<TutoriaAction
     const { data: space } = await supabase
       .from("spaces")
       .select("precio_hora, activo")
-      .eq("id", spaceId)
+      .eq("id", spaceId as string)
       .single();
 
     if (!space || !space.activo) {
@@ -75,7 +75,7 @@ export async function createTutoriaAction(input: unknown): Promise<TutoriaAction
       .from("bookings")
       .insert({
         user_id: user.id,
-        space_id: spaceId,
+        space_id: spaceId as string,
         fecha_inicio: fechaInicio.toISOString(),
         fecha_fin: fechaFin.toISOString(),
         estado: "confirmada",

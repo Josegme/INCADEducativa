@@ -8,7 +8,7 @@ import { notifyUsers } from "@/lib/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { computeCoursePurchaseAmount, purchaseFormSchema } from "@/modules/educativa/coursePurchase";
-import { registerFieldsSchema } from "@/modules/coworking/booking";
+import { registerFieldsSchema } from "@/modules/identity";
 
 export interface PurchaseCourseState {
   error?: string;

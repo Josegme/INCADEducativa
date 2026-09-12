@@ -1,6 +1,6 @@
 # CLAUDE.md — INCADEducativa
 > Fuente de verdad para Cursor + Claude Code CLI. Leer antes de escribir cualquier línea de código.
-> Versión: 3.6 — feature flags editables desde /admin (DB con fallback a env var, regla #6, Sprint deuda funcional E1/E2)
+> Versión: 3.8 — Plan Maestro: cimientos, DS v3.0, costuras ADR-19, seña, Estándar INCADE #14
 
 ## Proyecto
 INCADEducativa — Plataforma Educativa Digital · incadeducativa.com
@@ -27,8 +27,8 @@ para la comunidad interna y externa de Posadas.
 
 ## Stack
 - Frontend/PWA: Next.js 14 + TypeScript + App Router
-- UI: shadcn/ui tematizado con DS v2.1 + Tailwind CSS + Lucide React + Inter
-- Backend: tRPC + Next.js API Routes
+- UI: shadcn/ui tematizado con DS v3.0 + Tailwind CSS + Lucide React + Inter
+- Backend: Server Actions + Next.js API Routes (MercadoPago webhook + crons)
 - DB/Auth: Supabase (PostgreSQL + RLS + Auth + Storage + Realtime)
 - Pagos: MercadoPago SDK v2 (coworking en E2; cursos pagos en E3)
 - Email: Resend | WhatsApp: Twilio (E2)
@@ -86,7 +86,8 @@ FEATURE_PUBLICA=false      # E3
    `comunidad` únicamente como parte del flujo de reserva de Coworking (CU-06, registro
    mínimo nombre+email+contraseña en el paso de pago). No abre registro general de la
    plataforma — el único punto de entrada es el flujo de reserva bajo
-   `/servicios/coworking`, nunca `/registro` ni un link de alta libre en el resto del sitio
+   `/servicios/coworking`, nunca `/registro` ni un link de alta libre en el resto del sitio.
+   Con FEATURE_PUBLICA=true (E3) sí existe `/registro` de comunidad, gateado por flag.
 3. Toda migración de schema va en supabase/migrations/ con número secuencial
 4. RLS siempre activo en Supabase — usar SIEMPRE la función is_admin()
    (security definer) en policies, NUNCA subqueries a public.users
@@ -99,8 +100,9 @@ FEATURE_PUBLICA=false      # E3
    en el código. `educativa` (E1, producto central) no tiene UI de apagado.
    Ver `src/lib/flags.ts` (`getFlags()`)
 7. Sistema de puntos es ledger APPEND-ONLY: nunca UPDATE ni DELETE en points_log
-8. Design System v2.1 obligatorio — solo tokens --edu-* e --inc-* documentados.
-   Fuente: Inter (Google Fonts). Íconos: Lucide React exclusivamente.
+8. Design System v3.0 obligatorio — solo tokens --edu-* e --inc-* documentados.
+   Escala: display 30 · title 22 · section 17 · body 15 · caption 12.
+   Fuente: Inter via next/font. Íconos: Lucide React exclusivamente.
    Sin colores hex hardcodeados en componentes. Sin ALL CAPS en botones.
 9. Webhook de MercadoPago es la ÚNICA fuente de verdad del estado de pago.
    Verificar firma x-signature en cada webhook
@@ -115,6 +117,11 @@ FEATURE_PUBLICA=false      # E3
     puntos, pagos). Un email = un perfil (no duplicar cuentas). Cada cambio se
     registra en users.role_history y dispara notificación. Usar siempre
     convert_user_role() — nunca UPDATE directo de role (ADR-16).
+14. Estándar INCADE — nada se marca [x] en FUNCIONALIDADES.md sin: Lighthouse
+    performance mobile >= 90 · LCP < 2.5s · CLS < 0.1 · INP < 200 ms ·
+    <= 4 viajes a DB por navegación · WCAG 2.1 AA · estados vacío/carga/error/
+    éxito · tsc + lint + test:unit + build verdes. Las carreras se gestionan
+    (ADR-19) pero no se compran (ADR-15).
 
 ## Design System (obligatorio — leer ANTES de crear componentes)
 Fuente: docs/design/DESIGN_SYSTEM_INCADEducativa.md v2.1

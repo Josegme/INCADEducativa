@@ -247,7 +247,7 @@
 
 ### 5.3 Plataforma Educativa · `E1`
 
-- [ ] Acceder al panel educativo con cursos activos y progreso
+- [x] Acceder al panel educativo con cursos activos y progreso — `/dashboard` con “Continuá donde dejaste”, anillos de avance y empty state
 - [x] Ver catálogo de cursos con filtros por área y nivel — `/cursos` conectado a `public.courses` real, filtro por carrera (`FilterBar`) y nivel
 - [x] Inscribirse a cursos gratuitos con un clic (incluye cursos fuera de su carrera, que quedan como "curso adicional" — CU-T01) — `enrollUserAction` real sobre `enrollments`
 - [ ] Inscribirse a cursos pagos (flujo MercadoPago + acceso tras webhook) · `E3`

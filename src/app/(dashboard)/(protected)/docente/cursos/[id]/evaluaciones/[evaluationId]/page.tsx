@@ -42,11 +42,11 @@ export default async function EvaluationBuilderPage({
     id: evaluation.id,
     titulo: evaluation.titulo,
     tipo: evaluation.tipo,
-    course_id: evaluation.course_id,
+    course_id: evaluation.course_id ?? "",
     module_id: evaluation.module_id,
-    preguntas: evaluation.preguntas ?? [],
+    preguntas: (evaluation.preguntas as unknown as EditableEvaluation["preguntas"]) ?? [],
     nota_minima: evaluation.nota_minima,
-    config: evaluation.config,
+    config: evaluation.config as unknown as EditableEvaluation["config"],
   };
 
   const { data: attemptRows } = await supabase
@@ -79,7 +79,7 @@ export default async function EvaluationBuilderPage({
   for (const attempt of latestAttempts) {
     if (attempt.estado !== "pendiente_correccion") continue;
 
-    const manualAnswers = extractManualAnswers(editableEvaluation.preguntas, attempt.respuestas as Respuestas);
+    const manualAnswers = extractManualAnswers(editableEvaluation.preguntas, attempt.respuestas as unknown as Respuestas);
     const resolvedAnswers = await Promise.all(
       manualAnswers.map(async (answer) => {
         if (!answer.link || !answer.link.includes("/")) return answer;
@@ -92,7 +92,7 @@ export default async function EvaluationBuilderPage({
       })
     );
 
-    const grading = gradeAttempt(editableEvaluation.preguntas, attempt.respuestas as Respuestas);
+    const grading = gradeAttempt(editableEvaluation.preguntas, attempt.respuestas as unknown as Respuestas);
 
     pendingAttempts.push({
       id: attempt.id,

@@ -54,6 +54,7 @@ const SPACE_STATE_LABEL: Record<SpaceStatus["estado"], string> = {
 
 const STATUS_BADGE_STATE: Record<BookingStatus, BadgeProps["state"]> = {
   pendiente: "pending",
+  senada: "pending",
   confirmada: "active",
   en_uso: "completed",
   completada: "completed",

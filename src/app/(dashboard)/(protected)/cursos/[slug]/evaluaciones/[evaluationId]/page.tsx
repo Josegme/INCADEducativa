@@ -123,7 +123,7 @@ export default async function StudentEvaluationPage({
   return (
     <EvaluationPlayer
       evaluation={editableEvaluation}
-      attempt={attemptRow as AttemptRow}
+      attempt={attemptRow as unknown as AttemptRow}
       userId={user.id}
       courseSlug={course.slug}
       devolucion={correction?.comentario ?? null}

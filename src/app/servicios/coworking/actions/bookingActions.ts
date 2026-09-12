@@ -6,7 +6,7 @@ import { createBookingPreference } from "@/lib/mercadopago/preference";
 import { notifyUsers } from "@/lib/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { bookingFormSchema, computeBookingAmount, registerFieldsSchema } from "@/modules/coworking/booking";
+import { bookingFormSchema, computeBookingAmount, registerFieldsSchema, SENA_DEFAULT_PCT } from "@/modules/coworking/booking";
 
 export interface BookingActionState {
   error?: string;
@@ -50,13 +50,14 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     duracionHoras: formData.get("duracionHoras"),
     telefonoContacto: formData.get("telefonoContacto") || undefined,
     cuponCodigo: formData.get("cuponCodigo") || undefined,
+    pagarConSena: formData.get("pagarConSena") === "true",
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
-  const { spaceId, fecha, horaInicio, duracionHoras, telefonoContacto, cuponCodigo } = parsed.data;
+  const { spaceId, fecha, horaInicio, duracionHoras, telefonoContacto, cuponCodigo, pagarConSena } = parsed.data;
 
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -258,6 +259,8 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
       descuento_pct: amount.descuentoPct,
       tipo_descuento: amount.tipoDescuento,
       telefono_contacto: telefonoContacto || null,
+      sena_pct: pagarConSena ? SENA_DEFAULT_PCT : 0,
+      sena_vence_at: pagarConSena ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null,
     })
     .select("id")
     .single();
@@ -274,16 +277,20 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
 
   // payments es de escritura exclusiva del sistema (RLS solo permite admin) —
   // el webhook es la única fuente de verdad del estado (CLAUDE.md regla #9).
+  const cobro = pagarConSena
+    ? Math.round(amount.montoFinal * (SENA_DEFAULT_PCT / 100) * 100) / 100
+    : amount.montoFinal;
+
   const preference = await createBookingPreference({
     bookingId: booking.id,
     title: `${space.nombre} — ${location?.nombre ?? "Coworking INCADE"}`,
-    unitPrice: amount.montoFinal,
+    unitPrice: cobro,
     payerEmail: user.email,
   });
 
   await admin.from("payments").insert({
     booking_id: booking.id,
-    monto: amount.montoFinal,
+    monto: cobro,
     mp_preference_id: preference?.preferenceId ?? null,
   });
 
@@ -348,4 +355,59 @@ export async function cancelMyBookingAction(bookingId: string): Promise<BookingA
   }
 
   return { success: true };
+}
+
+export async function payBookingBalanceAction(bookingId: string): Promise<BookingActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Necesitás iniciar sesión" };
+  }
+
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("id, user_id, space_id, estado, monto, monto_pagado")
+    .eq("id", bookingId)
+    .maybeSingle();
+
+  if (!booking || booking.user_id !== user.id) {
+    return { error: "No encontramos esa reserva" };
+  }
+
+  if (booking.estado !== "senada") {
+    return { error: "Esta reserva no tiene un saldo pendiente" };
+  }
+
+  const saldo = Math.round((Number(booking.monto) - Number(booking.monto_pagado ?? 0)) * 100) / 100;
+  if (saldo <= 0) {
+    return { error: "El saldo ya está cubierto" };
+  }
+
+  const admin = createAdminClient();
+  const { data: space } = await admin.from("spaces").select("nombre, location_id").eq("id", booking.space_id).single();
+  const { data: location } = space
+    ? await admin.from("locations").select("nombre").eq("id", space.location_id).single()
+    : { data: null };
+
+  const preference = await createBookingPreference({
+    bookingId: booking.id,
+    title: `Saldo ${space?.nombre ?? "Coworking"} — ${location?.nombre ?? "INCADE"}`,
+    unitPrice: saldo,
+    payerEmail: user.email ?? "",
+  });
+
+  await admin.from("payments").insert({
+    booking_id: booking.id,
+    monto: saldo,
+    mp_preference_id: preference?.preferenceId ?? null,
+  });
+
+  if (preference) {
+    redirect(preference.initPoint);
+  }
+
+  return { error: "No se pudo iniciar el cobro del saldo" };
 }

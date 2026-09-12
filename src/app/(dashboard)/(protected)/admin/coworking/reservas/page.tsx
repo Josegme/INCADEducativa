@@ -13,6 +13,7 @@ import type { LocationRow, SpaceRow } from "@/modules/admin/coworking";
 
 const STATUS_BADGE_STATE: Record<BookingStatus, BadgeProps["state"]> = {
   pendiente: "pending",
+  senada: "pending",
   confirmada: "active",
   en_uso: "completed",
   completada: "completed",
@@ -52,9 +53,9 @@ export default async function AdminCoworkingReservasPage({ searchParams }: PageP
     .select("id, space_id, user_id, fecha_inicio, fecha_fin, estado, monto, descuento_pct, tipo_descuento, notas")
     .order("fecha_inicio", { ascending: true });
 
-  if (searchParams.estado) query = query.eq("estado", searchParams.estado);
+  if (searchParams.estado) query = query.eq("estado", searchParams.estado as BookingStatus);
   if (searchParams.spaceId) query = query.eq("space_id", searchParams.spaceId);
-  if (searchParams.tipoDescuento) query = query.eq("tipo_descuento", searchParams.tipoDescuento);
+  if (searchParams.tipoDescuento) query = query.eq("tipo_descuento", searchParams.tipoDescuento as DiscountType);
   if (fecha) {
     const dayStart = new Date(`${fecha}T00:00:00`);
     const dayEnd = new Date(`${fecha}T23:59:59`);

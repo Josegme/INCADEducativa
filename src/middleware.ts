@@ -2,8 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PUBLIC_PATHS = ["/", "/login", "/activar-cuenta", "/recuperar", "/design-preview", "/cuenta-desactivada"];
-const AUTH_ONLY_WHEN_LOGGED_OUT = ["/login", "/recuperar", "/activar-cuenta"];
+const PUBLIC_PATHS = ["/", "/login", "/registro", "/activar-cuenta", "/recuperar", "/design-preview", "/cuenta-desactivada"];
+const AUTH_ONLY_WHEN_LOGGED_OUT = ["/login", "/registro", "/recuperar", "/activar-cuenta"];
 
 function isPublicPath(pathname: string) {
   if (pathname.startsWith("/verificar/")) return true;
@@ -25,6 +25,7 @@ function isPublicPath(pathname: string) {
   // "sin sesión → /login" para que ese chequeo de flag pueda correr).
   // No incluye /admin/talleres (nunca debe ser público).
   if (pathname === "/talleres") return true;
+  if (pathname === "/registro") return true;
   // Webhooks de servicios externos (MercadoPago) llegan sin sesión de usuario
   // — la seguridad la da la verificación de x-signature dentro del route
   // handler (CLAUDE.md regla #9), no el middleware de auth.

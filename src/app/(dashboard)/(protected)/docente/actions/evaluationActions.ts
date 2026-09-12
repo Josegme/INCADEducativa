@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { asJson } from "@/lib/supabase/json";
 import {
   DEFAULT_EVALUATION_CONFIG,
   type EvaluationConfig,
@@ -39,7 +40,7 @@ export async function createEvaluationAction(
       tipo,
       titulo,
       preguntas: [],
-      config: DEFAULT_EVALUATION_CONFIG,
+      config: asJson(DEFAULT_EVALUATION_CONFIG),
     })
     .select("id")
     .single();
@@ -77,9 +78,9 @@ export async function updateEvaluationAction(
     .from("evaluations")
     .update({
       titulo: data.titulo,
-      preguntas: data.preguntas,
+      preguntas: asJson(data.preguntas),
       nota_minima: data.nota_minima,
-      config: data.config,
+      config: asJson(data.config),
     })
     .eq("id", evaluationId);
 

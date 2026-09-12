@@ -2,29 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/guards";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notifications";
 import { convertRoleSchema, ROLE_LABEL } from "@/modules/admin/convertRole";
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("No autenticado");
-  }
-
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-
-  if (profile?.role !== "admin") {
-    throw new Error("Solo el administrador puede convertir roles");
-  }
-
-  return { supabase, adminId: user.id };
-}
 
 export interface ConvertRoleState {
   error?: string;
@@ -50,8 +31,8 @@ export async function convertUserRoleAction(formData: FormData): Promise<Convert
   const { error } = await supabase.rpc("convert_user_role", {
     p_user_id: userId,
     p_new_role: newRole,
-    p_carrera_id: carreraId || null,
-    p_dni: dni || null,
+    p_carrera_id: carreraId || undefined,
+    p_dni: dni || undefined,
   });
 
   if (error) {

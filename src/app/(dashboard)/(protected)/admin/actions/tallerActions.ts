@@ -2,31 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/guards";
 import { logAudit } from "@/lib/audit";
 import { awardPoints } from "@/lib/points";
 import { tallerFormSchema, type TallerEstado } from "@/modules/talleres/talleres";
 
 const PUNTOS_POR_TALLER = 20;
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("No autenticado");
-  }
-
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-
-  if (profile?.role !== "admin") {
-    throw new Error("Solo el administrador puede gestionar talleres");
-  }
-
-  return { supabase, adminId: user.id };
-}
 
 export interface TallerFormState {
   error?: string;

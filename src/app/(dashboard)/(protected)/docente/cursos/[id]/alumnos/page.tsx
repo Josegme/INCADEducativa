@@ -29,15 +29,15 @@ export default async function DocenteAlumnosPage({ params }: { params: { id: str
 
   const rows = students ?? [];
   const total = rows.length;
-  const promedioProgreso = total > 0 ? Math.round(rows.reduce((sum, r) => sum + r.progreso_pct, 0) / total) : 0;
+  const promedioProgreso = total > 0 ? Math.round(rows.reduce((sum, r) => sum + (r.progreso_pct ?? 0), 0) / total) : 0;
   const completados = rows.filter((r) => r.enrollment_estado === "completado").length;
 
   const csvRows = rows.map((r) => [
-    `${r.nombre} ${r.apellido}`,
-    r.email,
-    `${r.progreso_pct}%`,
-    r.enrollment_estado,
-    new Date(r.fecha_inscripcion).toLocaleDateString("es-AR"),
+    `${r.nombre ?? ""} ${r.apellido ?? ""}`.trim(),
+    r.email ?? "",
+    `${r.progreso_pct ?? 0}%`,
+    r.enrollment_estado ?? "",
+    r.fecha_inscripcion ? new Date(r.fecha_inscripcion).toLocaleDateString("es-AR") : "—",
     r.fecha_completado ? new Date(r.fecha_completado).toLocaleDateString("es-AR") : "—",
   ]);
 
@@ -109,10 +109,10 @@ export default async function DocenteAlumnosPage({ params }: { params: { id: str
                 </div>
               </TableCell>
               <TableCell>
-                <Badge state={ENROLLMENT_BADGE[r.enrollment_estado] ?? "locked"}>{r.enrollment_estado}</Badge>
+                <Badge state={ENROLLMENT_BADGE[r.enrollment_estado ?? ""] ?? "locked"}>{r.enrollment_estado}</Badge>
               </TableCell>
               <TableCell className="text-[--edu-text-muted]">
-                {new Date(r.fecha_inscripcion).toLocaleDateString("es-AR")}
+                {r.fecha_inscripcion ? new Date(r.fecha_inscripcion).toLocaleDateString("es-AR") : "—"}
               </TableCell>
               <TableCell className="text-[--edu-text-muted]">
                 {r.fecha_completado ? new Date(r.fecha_completado).toLocaleDateString("es-AR") : "—"}

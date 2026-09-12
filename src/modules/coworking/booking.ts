@@ -8,6 +8,7 @@ export const MAX_DURATION_HOURS = 4;
 
 export type BookingStatus =
   | "pendiente"
+  | "senada"
   | "confirmada"
   | "en_uso"
   | "completada"
@@ -16,12 +17,15 @@ export type BookingStatus =
 
 export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   pendiente: "Pendiente de pago",
+  senada: "Seña recibida",
   confirmada: "Confirmada",
   en_uso: "En uso",
   completada: "Completada",
   cancelada: "Cancelada",
   no_show: "No se presentó",
 };
+
+export const SENA_DEFAULT_PCT = 30;
 
 export type DiscountType = "institucional" | "publico" | "manual" | "canje" | "cupon";
 
@@ -37,11 +41,7 @@ export interface BookingRow {
   tipo_descuento: DiscountType;
 }
 
-export const registerFieldsSchema = z.object({
-  nombre: z.string().trim().min(2, "Ingresá tu nombre"),
-  email: z.string().trim().email("Ingresá un email válido"),
-  password: z.string().min(8, "Mínimo 8 caracteres"),
-});
+export { registerFieldsSchema, type RegisterFieldsValues } from "@/modules/identity";
 
 export const bookingFormSchema = z.object({
   spaceId: z.string().uuid(),
@@ -55,10 +55,10 @@ export const bookingFormSchema = z.object({
     .optional()
     .or(z.literal("")),
   cuponCodigo: z.string().trim().optional().or(z.literal("")),
+  pagarConSena: z.boolean().optional(),
 });
 
 export type BookingFormValues = z.infer<typeof bookingFormSchema>;
-export type RegisterFieldsValues = z.infer<typeof registerFieldsSchema>;
 
 export interface BookingAmount {
   montoOriginal: number;

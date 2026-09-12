@@ -10,7 +10,7 @@ export async function awardPoints(userId: string, amount: number, motivo: string
     p_user_id: userId,
     p_amount: amount,
     p_reason: motivo,
-    p_ref: referenceId ?? null,
+    p_ref: referenceId,
   });
 
   if (error) {

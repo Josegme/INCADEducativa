@@ -33,6 +33,7 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
   const [horaInicio, setHoraInicio] = React.useState<number | null>(null);
   const [duracionHoras, setDuracionHoras] = React.useState(1);
   const [pagarConCredito, setPagarConCredito] = React.useState(false);
+  const [pagarConSena, setPagarConSena] = React.useState(false);
   const [occupied, setOccupied] = React.useState<Set<number>>(new Set());
   const [nombre, setNombre] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -130,6 +131,7 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
     formData.set("horaInicio", String(horaInicio));
     formData.set("duracionHoras", String(duracionHoras));
     if (pagarConCredito) formData.set("pagarConCredito", "true");
+    if (pagarConSena && !pagarConCredito) formData.set("pagarConSena", "true");
     if (telefonoContacto) formData.set("telefonoContacto", telefonoContacto);
     if (cuponCodigo) formData.set("cuponCodigo", cuponCodigo);
     if (!isLoggedIn) {
@@ -237,6 +239,18 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
           )}
         </div>
 
+        {!pagarConCredito ? (
+          <label className="mt-3 flex items-center gap-2 text-body text-[--edu-text]">
+            <input
+              type="checkbox"
+              checked={pagarConSena}
+              onChange={(e) => setPagarConSena(e.target.checked)}
+              className="h-4 w-4 rounded-sm border-[--edu-border] accent-[--inc-violet]"
+            />
+            Dejar seña del 30% (${Math.round(amount.montoFinal * 0.3)}) y pagar el resto después
+          </label>
+        ) : null}
+
         {isLoggedIn && canPayWithCredit ? (
           <label className="mt-3 flex items-center gap-2 text-[13px] text-[--edu-text]">
             <input
@@ -304,7 +318,13 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
       </div>
 
       <Button type="submit" size="lg" disabled={isSubmitting || horaInicio === null}>
-        {isSubmitting ? "Procesando…" : pagarConCredito ? "Reservar con crédito" : "Reservar y pagar"}
+        {isSubmitting
+          ? "Procesando…"
+          : pagarConCredito
+            ? "Reservar con crédito"
+            : pagarConSena
+              ? "Reservar con seña"
+              : "Reservar y pagar"}
       </Button>
     </form>
   );

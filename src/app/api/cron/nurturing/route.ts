@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
         emailSubject: subject,
       });
 
-      await admin.from("users").update({ [flagColumn]: true }).eq("id", lead.id as string);
+      await admin.from("users").update({ [flagColumn]: true } as never).eq("id", lead.id as string);
       sent++;
     }
 

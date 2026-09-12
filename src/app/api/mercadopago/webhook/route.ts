@@ -6,6 +6,7 @@ import { verifyMercadoPagoSignature } from "@/lib/mercadopago/verifySignature";
 import { notifyUsers } from "@/lib/notifications";
 import { sendEmail } from "@/lib/resend";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { asJson } from "@/lib/supabase/json";
 import { sendWhatsapp } from "@/lib/twilio";
 import { resolveTutoriaAddonEstado } from "@/modules/educativa/tutoriaAddon";
 
@@ -91,17 +92,50 @@ export async function POST(request: NextRequest) {
   const estado =
     payment.status === "approved" ? "aprobado" : payment.status === "rejected" ? "rechazado" : "pendiente";
 
-  await admin
+  const { data: existingPayment } = await admin
     .from("payments")
-    .update({ mp_payment_id: payment.id, estado, webhook_payload: payment.raw as object })
-    .eq("booking_id", bookingId);
+    .select("id")
+    .eq("booking_id", bookingId)
+    .or(`mp_payment_id.eq.${payment.id},mp_payment_id.is.null`)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingPayment) {
+    await admin
+      .from("payments")
+      .update({ mp_payment_id: payment.id, estado, webhook_payload: asJson(payment.raw), monto: payment.transactionAmount ?? undefined })
+      .eq("id", existingPayment.id);
+  } else {
+    await admin.from("payments").insert({
+      booking_id: bookingId,
+      mp_payment_id: payment.id,
+      monto: payment.transactionAmount ?? 0,
+      estado,
+      webhook_payload: asJson(payment.raw),
+    });
+  }
 
   if (estado === "aprobado") {
+    const { data: paidRows } = await admin
+      .from("payments")
+      .select("monto")
+      .eq("booking_id", bookingId)
+      .eq("estado", "aprobado");
+    const { data: currentBooking } = await admin
+      .from("bookings")
+      .select("monto")
+      .eq("id", bookingId)
+      .maybeSingle();
+    const pagado = (paidRows ?? []).reduce((sum, row) => sum + Number(row.monto ?? 0), 0);
+    const total = Number(currentBooking?.monto ?? 0);
+    const nextEstado = pagado + 0.01 >= total ? "confirmada" : "senada";
+
     const { data: booking } = await admin
       .from("bookings")
-      .update({ estado: "confirmada" })
+      .update({ estado: nextEstado, monto_pagado: pagado })
       .eq("id", bookingId)
-      .eq("estado", "pendiente")
+      .in("estado", ["pendiente", "senada"])
       .select("id, user_id, space_id, fecha_inicio, telefono_contacto, monto")
       .maybeSingle();
 
@@ -169,7 +203,7 @@ async function handleCoursePurchaseWebhook(
 
   const { data: compra } = await admin
     .from("compras_curso")
-    .update({ mp_payment_id: payment.id, estado, webhook_payload: payment.raw as object })
+    .update({ mp_payment_id: payment.id, estado, webhook_payload: asJson(payment.raw) })
     .eq("id", compraId)
     .eq("estado", "pendiente")
     .select("id, user_id, course_id, monto")
@@ -229,7 +263,7 @@ async function handleTutoriaAddonPurchaseWebhook(
 
   const { data: compra } = await admin
     .from("tutoria_addon_compras")
-    .update({ mp_payment_id: payment.id, estado, webhook_payload: payment.raw as object })
+    .update({ mp_payment_id: payment.id, estado, webhook_payload: asJson(payment.raw) })
     .eq("id", compraId)
     .eq("estado", "pendiente")
     .select("id, user_id, course_id, monto")
@@ -345,7 +379,7 @@ async function handleSubscriptionWebhook(preapprovalId: string) {
     const { data: plan } = await admin
       .from("membership_plans")
       .select("tipo, creditos_incluidos")
-      .eq("id", membership.plan_id)
+      .eq("id", membership.plan_id ?? "")
       .single();
 
     const inicio = new Date();

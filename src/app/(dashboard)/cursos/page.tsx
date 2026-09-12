@@ -1,5 +1,9 @@
+import { BookOpen } from "lucide-react";
+
 import { CourseCard } from "@/components/educativa/CourseCard";
 import { FilterBar } from "@/components/educativa/FilterBar";
+import { EmptyState } from "@/components/layout/EmptyState";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { createClient } from "@/lib/supabase/server";
 import type { CatalogCourse, CourseLevel } from "@/modules/educativa/catalog";
 
@@ -62,15 +66,18 @@ export default async function CursosPage({ searchParams }: CursosPageProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-[20px] font-semibold text-white">Cursos</h1>
-        <p className="text-sm text-[--edu-text-muted]">Catálogo de cursos disponibles en INCADEducativa.</p>
-      </div>
+      <PageHeader title="Cursos" description="Catálogo de cursos disponibles en INCADEducativa." />
 
       <FilterBar careers={(careers ?? []).map((c) => ({ slug: c.slug, nombre: c.nombre }))} />
 
       {courses.length === 0 ? (
-        <p className="text-sm text-[--edu-text-muted]">No hay cursos para este filtro.</p>
+        <EmptyState
+          icon={BookOpen}
+          title="No hay cursos para este filtro"
+          description="Probá otra carrera o nivel, o volvé más tarde."
+          actionHref="/cursos"
+          actionLabel="Limpiar filtros"
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (
