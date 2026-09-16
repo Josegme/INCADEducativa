@@ -47,6 +47,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@emnapi/runtime": "^1.11.3",
     "@playwright/test": "^1.61.1",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
