@@ -1,30 +1,37 @@
 import { Button } from "@/components/ui/button";
 import { NotificationBanner } from "@/components/ui/notification-banner";
+import { PageHeader } from "@/components/layout/PageHeader";
 import type { CatalogCareer } from "@/modules/educativa/catalog";
 
 interface CareerBlockedCTAProps {
   career: CatalogCareer;
 }
 
+function admisionesHref() {
+  const wa = process.env.NEXT_PUBLIC_ADMISIONES_WHATSAPP?.replace(/\D/g, "");
+  if (wa) {
+    const text = encodeURIComponent("Hola, quiero información sobre matrícula presencial en INCADE.");
+    return `https://wa.me/${wa}?text=${text}`;
+  }
+  return "https://incade.edu.ar";
+}
+
 export function CareerBlockedCTA({ career }: CareerBlockedCTAProps) {
+  const href = admisionesHref();
+  const isWhatsapp = href.includes("wa.me");
+
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-[20px] font-semibold text-white">{career.nombre}</h1>
-        <p className="mt-1 text-sm text-[--edu-text-muted]">{career.descripcion}</p>
-      </div>
+      <PageHeader title={career.nombre} description={career.descripcion ?? undefined} />
 
       <NotificationBanner type="info">
         Esta carrera requiere matrícula presencial en INCADE. El mapa completo y la
         inscripción a módulos están disponibles solo para alumnos INCADE.
       </NotificationBanner>
 
-      {/* Addendum 04 / ADR-15: CTA a admisiones presenciales, no a compra —
-          no hay número de WhatsApp de admisiones cargado en el repo, se linkea
-          al sitio institucional (incade.edu.ar) hasta que se sume ese dato. */}
       <Button variant="primary" className="w-fit" asChild>
-        <a href="https://incade.edu.ar" target="_blank" rel="noreferrer">
-          Inscribite en el Instituto
+        <a href={href} target="_blank" rel="noreferrer">
+          {isWhatsapp ? "Escribir a admisiones por WhatsApp" : "Inscribite en el Instituto"}
         </a>
       </Button>
     </div>

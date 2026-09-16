@@ -14,7 +14,7 @@
 - [x] Login con email + contraseña (todos los roles) — verificado con 2 roles de prueba (admin/alumno), sesión persistente ~30 días, redirect por rol vía middleware (`/admin` protegido, `/dashboard` compartido con sidebar adaptado por rol)
 - [x] Activación de cuenta por email (link de activación) — verificado de punta a punta: la importación CSV real dispara `inviteUserByEmail`, `/auth/confirm` intercambia el token y `/activar-cuenta` deja la contraseña. El envío efectivo del email depende del SMTP configurado en Supabase (`RESEND_API_KEY` sin configurar todavía), no del código.
 - [x] Recuperación de contraseña — flujo de pedido (`/recuperar`) verificado en navegador end-to-end; el envío real del email depende de Resend (no configurado todavía), pero el mecanismo de confirmación es el mismo que ya se probó
-- [ ] Un solo perfil unificado para coworking + educativa — sin cambios, el módulo coworking todavía no existe (Etapa 2)
+- [x] Un solo perfil unificado para coworking + educativa — mismo `users` + sidebar; Coworking E2 activo vía flag
 - [x] Asignación de rol al momento de creación de cuenta — la importación CSV asigna `role='alumno'` al crear el perfil; roles distintos se asignan después vía conversión de rol (Admin)
 - [x] Logout con limpieza de sesión — verificado en navegador
 - [x] Perfil de usuario: nombre, foto, carrera/área, historial — página `/perfil`: avatar subido a bucket privado (`avatars`, RLS dueño+admin), nombre/apellido/carrera de solo lectura (la carrera la asigna el Admin, regla #12), historial de puntos (últimos 8 movimientos del ledger) y resumen de cursos inscriptos/certificados obtenidos. Verificado con script funcional autenticado (login real, upload, RLS cruzada bloqueada) — sin verificación visual en navegador (extensión sin conectar esta sesión)
@@ -65,14 +65,14 @@
 
 ---
 
-- [ ] Crear preference de pago vía API
-- [ ] Checkout embebido (Brick) o Checkout Pro en mobile
-- [ ] Webhook `payment.created` como única fuente de verdad del estado
-- [ ] Verificación de firma `x-signature` en cada webhook
-- [ ] Pago aprobado → reserva confirmada o acceso a curso habilitado
-- [ ] Pago rechazado → slot liberado a los 10 minutos
-- [ ] Descuentos y cupones aplicados automáticamente según rol
-- [ ] Descuento institucional automático para alumnos INCADE activos
+- [x] Crear preference de pago vía API — `createBookingPreference` / curso / suscripción / add-on (`src/lib/mercadopago/`). **Verificación sandbox pendiente Etapa 6 (token MP juntos).**
+- [x] Checkout Pro (redirect) en mobile — Checkout Brick embebido fuera de alcance go-live
+- [x] Webhook MercadoPago como única fuente de verdad del estado — `/api/mercadopago/webhook` (regla #9)
+- [x] Verificación de firma `x-signature` en cada webhook — `verifyMercadoPagoSignature`
+- [x] Pago aprobado → reserva confirmada / seña / acceso a curso / suscripción — webhook multi-rama. **Sandbox real pendiente Etapa 6.**
+- [x] Pago rechazado / abandonado → slot liberado a los 10 minutos — `/api/cron/coworking` cancela `pendiente` >10 min
+- [x] Descuentos y cupones aplicados automáticamente según rol — `get_user_discount()` + cupones atómicos (034)
+- [x] Descuento institucional automático para alumnos INCADE activos — RPC `get_user_discount`
 
 ---
 
@@ -139,9 +139,9 @@
 ### 2.4 Plataforma Abierta — Admin · `E3`
 
 - [x] Gestionar leads: ver base de datos, filtrar por área de interés — `/admin/leads`. "Área de interés" no es un campo de texto libre en el registro (no estaba definida una taxonomía) — se infiere de los talleres a los que se anotó cada lead, mostrado por fila; no hay todavía un dropdown de filtro sobre esa columna, solo se ve
-- [x] Exportar base de marketing (leads + usuarios comunidad) — `CsvExportButton` en `/admin/leads` (reusa `buildCsv()`, ya genérica). Solo cubre `leads` en esta pasada, no `comunidad` (esa base recién tiene sentido una vez que exista autoregistro general de comunidad — E3, no construido todavía)
+- [x] Exportar base de marketing (leads + usuarios comunidad) — `CsvExportButton` en `/admin/leads` (leads + comunidad CSV). Go-live Etapa 3.
 - [ ] Configurar suscripciones y precios para usuarios externos
-- [ ] Configurar secuencias de nurturing por email
+- [x] Configurar secuencias de nurturing por email — vista admin `/admin/nurturing` (copy documentado + link a cron/flags). Edición en código (`nurturing.ts`); editable en DB post go-live.
 
 ---
 
@@ -242,7 +242,7 @@
 - [x] Reservar espacios con tarifa preferencial por matrícula activa — `BookingForm`, verificado en navegador con `alumno.test` (30% aplicado, $1200→$840)
 - [x] Ver y descargar comprobante QR de cada reserva — ver nota de arriba (botón de descarga agregado); el QR en sí sigue sin probarse con un pago real (depende del webhook de MP, sin token en este entorno)
 - [x] Cancelar reservas propias — `cancelMyBookingAction` + botón en `BookingConfirmation`, sin política de cancelación configurable todavía (cancelación libre)
-- [x] Ver historial de reservas — `/servicios/coworking/mis-reservas`, **verificado en navegador**. Suscribirse a una membresía y ver créditos restantes — `/servicios/coworking/membresia` + `MembershipStatus` en `/dashboard`, **flujo verificado en navegador de punta a punta** (sin token de MP: la membresía queda `pendiente` con el aviso correcto, mismo criterio de degradación que `BookingConfirmation`). **Consumo de créditos de *membresía* en una reserva sigue sin implementar** — lo que sí se implementó en Sprint 19-20 es el canje de *puntos* por créditos (ver abajo), un saldo distinto
+- [x] Ver historial de reservas — `/servicios/coworking/mis-reservas`, **verificado en navegador**. Suscribirse a una membresía y ver créditos restantes — `/servicios/coworking/membresia` + `MembershipStatus` en `/dashboard`. **Consumo de créditos de membresía en reserva** — go-live Etapa 3: `bookingActions` prioriza `memberships.creditos_restantes` y luego `coworking_creditos_canje`; UI en `BookingForm`.
 - [x] Canjear puntos por horas de coworking · `E1` — Sprint 19-20: `RedeemPointsCard` en `/dashboard` (50 puntos = 1 crédito, `redeemPointsForCreditAction`), consumo real al reservar (`BookingForm` + rama nueva en `createBookingAction`: `tipo_descuento='canje'`, sin pasar por MercadoPago, sin fila en `payments`)
 
 ### 5.3 Plataforma Educativa · `E1`
@@ -258,7 +258,7 @@
 - [x] Reintentar examen reprobado pasadas 24hs (configurable, default 24hs)
 - [x] Descargar certificado digital con QR verificable al aprobar
 - [x] Compartir enlace público de verificación del certificado
-- [ ] Ver historial de logros: certificados, cursos aprobados, carreras completadas
+- [x] Ver historial de logros: certificados, cursos aprobados, carreras completadas — `/certificados` unificado (go-live Etapa 3)
       (`/certificados` lista certificados; historial unificado con cursos/carreras
       queda pendiente, no requiere schema nuevo)
 - [x] Ver mapa visual de carrera con nodos bloqueados/desbloqueados según progreso — `CareerMap.tsx` (timeline vertical, estados completado/activo/bloqueado según `enrollments.progreso_pct`)
@@ -326,8 +326,8 @@
 
 > Registro libre por email + contraseña. Catálogo educativo abierto en E3. Reserva de Coworking a precio público desde E2 (sin descuento institucional).
 
-- [ ] Reservar Coworking a precio público con registro mínimo · `E2`
-- [x] Registrarse con email y contraseña — sin página `/registro` standalone (no la pide el spec): registro inline nombre+email+contraseña en el mismo paso de compra (`purchaseCourseAction`) o suscripción (`createCatalogSubscriptionAction`), gateado por `FEATURE_PUBLICA`, crea `role='comunidad'` directo (regla #2)
+- [x] Reservar Coworking a precio público con registro mínimo · `E2` — CU-06 en flujo de reserva
+- [x] Registrarse con email y contraseña — `/registro` gateado por `FEATURE_PUBLICA` + registro inline en compra/suscripción/taller/coworking
 - [x] Ver catálogo público de cursos sin login — `/cursos` y `/cursos/[slug]` ya manejaban `user === null` en todos lados (no hizo falta tocar las páginas), el bloqueo real era `src/middleware.ts` (nunca las dejaba pasar sin sesión). Gateado por `FEATURE_PUBLICA` (apagado por default) — con el flag apagado el comportamiento no cambia respecto a antes de esta pasada
 - [x] Comprar cursos individuales (flujo MercadoPago) — migración 035 (`compras_curso`), `purchaseCourseAction` + `createCoursePreference()`, branch `curso:` del webhook (`handleCoursePurchaseWebhook`). Verificado funcionalmente contra producción en la sesión anterior (`verify-compra-suscripcion-tmp.js`)
 - [x] Suscribirse mensualmente para acceso a catálogo — migración 036 (`catalogo_suscripciones`/`catalogo_planes`), `createCatalogSubscriptionAction` + `createCourseSubscription()` (PreApproval MP), branch `subscription_preapproval` del webhook (`handleCourseSubscriptionWebhook`). Verificado funcionalmente contra producción en la sesión anterior
@@ -345,7 +345,7 @@
   probar un pago real de punta a punta** (regla no negociable: la prueba
   real la corre el usuario, mismo criterio que T8/T10)
 - [x] Participar en talleres en vivo — `inscribirseTallerAction` es "sin restricción de rol — cualquier autenticado puede inscribirse" (comentario propio del código)
-- [x] Ver carreras como vitrina (descripción, materias, salida laboral) pero **sin opción de compra** — CTA "Inscribite en el Instituto" → admisiones presenciales (CU-T02, ADR-15) · `E1` — `CareerBlockedCTA` (ya andaba para roles logueados no-alumno); esta pasada arregló 2 bugs reales: `/carreras` estaba atrás de login sin excepción (movido fuera de `(dashboard)/(protected)`, migración 029 abre `careers_select` a anon) y el botón CTA no tenía `href` (ahora linkea a incade.edu.ar — falta el número de WhatsApp de admisiones, no está en el repo)
+- [x] Ver carreras como vitrina (descripción, materias, salida laboral) pero **sin opción de compra** — CTA admisiones: `NEXT_PUBLIC_ADMISIONES_WHATSAPP` → `wa.me` si está seteado; fallback `incade.edu.ar` (`CareerBlockedCTA`, CU-T02, ADR-15) · `E1`
 - [x] Ser convertido a Alumno INCADE por el Admin tras matrícula presencial (conversión aditiva, conserva historial — CU-T04) · `E1` — `convertUserRoleAction` + `ConvertRoleModal`, wireado en `/admin/usuarios`
 
 ---
@@ -359,7 +359,7 @@
 - [x] Ver carreras como vitrina con CTA a admisiones presenciales (no comprable — CU-T02, ADR-15) · `E1` — ver nota arriba, mismo fix (`/carreras` público + CTA con `href`). **Corrección:** la sesión que hizo este fix originalmente movió las rutas y el layout pero se olvidó de `src/middleware.ts` (tiene su propio gate de auth independiente) — quedó sin efecto real hasta la Fase 3, que lo completó
 - [x] Recibir secuencia de nurturing por email días 1, 3 y 7 — ver §1.2, mismo mecanismo (`/api/cron/nurturing`). El copy está hardcodeado en código, no es editable por el Admin todavía (ver §2.4, sigue sin marcar)
 - [x] Convertirse en Usuario Comunidad Online al pagar su primer curso (automático por webhook MP — CU-T03) · `E3` — `promote_lead_on_course_payment()` (migración 035, SECURITY DEFINER), llamada desde `handleCoursePurchaseWebhook` cuando `profile.role === 'lead'`. Idempotente, auditado en `role_history` (`by: 'system:compra_curso'`). Verificado funcionalmente contra producción (incluido el reintento idempotente) en la sesión anterior
-- [ ] Ser convertido directamente a Alumno INCADE por el Admin tras matrícula presencial (CU-T05) · `E1`
+- [x] Ser convertido directamente a Alumno INCADE por el Admin tras matrícula presencial (CU-T05) · `E1` — UI `ConvertRoleModal` + RPC `convert_user_role`; runbook de verificación manual en `docs/qa/cu-t05-lead-alumno.md` (firmar evidencia en preview/prod)
 
 ---
 

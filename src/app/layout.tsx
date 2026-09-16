@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
 import { Toaster } from "@/components/ui/toaster";
@@ -36,6 +37,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <ServiceWorkerRegister />
+          <Analytics />
         </TooltipProvider>
       </body>
     </html>

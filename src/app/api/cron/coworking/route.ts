@@ -24,6 +24,29 @@ export async function POST(request: NextRequest) {
   const { data: noShowCount } = await admin.rpc("detect_no_shows");
   const { data: completedCount } = await admin.rpc("detect_completed_bookings");
 
+  // Pago abandonado / rechazado: libera el slot a los 10 minutos (FUNCIONALIDADES §1).
+  // Cancela reservas `pendiente` cuya fila de payments no está aprobada y
+  // tienen más de 10 min — incluye senas no iniciadas (sena_pct>0 sin pago).
+  const expireBefore = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const { data: expiredPendings } = await admin
+    .from("bookings")
+    .update({ estado: "cancelada" })
+    .eq("estado", "pendiente")
+    .lt("created_at", expireBefore)
+    .select("id");
+  const slotsLiberados = expiredPendings?.length ?? 0;
+
+  if (slotsLiberados > 0) {
+    await admin
+      .from("payments")
+      .update({ estado: "rechazado" })
+      .in(
+        "booking_id",
+        (expiredPendings ?? []).map((b) => b.id)
+      )
+      .eq("estado", "pendiente");
+  }
+
   const now = new Date();
   const windowStart = new Date(now.getTime() + 23 * 60 * 60 * 1000);
   const windowEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000);
@@ -120,6 +143,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     noShowsDetected: (noShowCount as number) ?? 0,
     bookingsCompleted: (completedCount as number) ?? 0,
+    slotsLiberados,
     remindersSent,
     noShowsNotified,
     dailySummarySent,

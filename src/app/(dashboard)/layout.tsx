@@ -9,6 +9,7 @@ import {
   DoorOpen,
   Megaphone,
   MessageSquare,
+  Mail,
   GraduationCap,
   LayoutDashboard,
   LayoutGrid,
@@ -43,7 +44,7 @@ function sectionsForRole(
     { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className={ICON_CLASS} aria-hidden /> },
     { label: "Cursos", href: "/cursos", icon: <BookOpen className={ICON_CLASS} aria-hidden /> },
     { label: "Carreras", href: "/carreras", icon: <GraduationCap className={ICON_CLASS} aria-hidden /> },
-    { label: "Certificados", href: "/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
+    { label: "Logros", href: "/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
   ];
 
   // Coworking es un ítem de primer nivel, no un submódulo educativo — Addendum 03 §2.2.
@@ -94,6 +95,7 @@ function sectionsForRole(
       { label: "Certificados", href: "/admin/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
       { label: "Comunicados", href: "/admin/comunicados", icon: <Megaphone className={ICON_CLASS} aria-hidden /> },
       { label: "Leads", href: "/admin/leads", icon: <UserPlus className={ICON_CLASS} aria-hidden /> },
+      { label: "Nurturing", href: "/admin/nurturing", icon: <Mail className={ICON_CLASS} aria-hidden /> },
     ];
 
     if (flags.talleres) {

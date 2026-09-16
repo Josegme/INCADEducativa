@@ -23,12 +23,22 @@ interface BookingFormProps {
   discountPct: number;
   isLoggedIn: boolean;
   coworkingCreditos: number;
+  /** Créditos de membresía activa (`memberships.creditos_restantes`). */
+  membresiaCreditos?: number;
 }
 
 const days = nextBookingDays();
 const slots = hourSlots();
 
-export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, coworkingCreditos }: BookingFormProps) {
+export function BookingForm({
+  spaceId,
+  precioHora,
+  discountPct,
+  isLoggedIn,
+  coworkingCreditos,
+  membresiaCreditos = 0,
+}: BookingFormProps) {
+  const totalCreditos = membresiaCreditos + coworkingCreditos;
   const [fecha, setFecha] = React.useState(days[0].iso);
   const [horaInicio, setHoraInicio] = React.useState<number | null>(null);
   const [duracionHoras, setDuracionHoras] = React.useState(1);
@@ -101,7 +111,7 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
   }, [fecha]);
 
   const amount = computeBookingAmount(precioHora, duracionHoras, discountPct);
-  const canPayWithCredit = coworkingCreditos >= duracionHoras;
+  const canPayWithCredit = totalCreditos >= duracionHoras;
 
   React.useEffect(() => {
     if (!canPayWithCredit) setPagarConCredito(false);
@@ -226,7 +236,10 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
             <>
               <span className="text-[14px] text-[--edu-text-faint] line-through">${amount.montoFinal}</span>
               <span className="text-[22px] font-semibold text-[--edu-success-text]">$0</span>
-              <Badge state="completed">Pagás con {duracionHoras} crédito(s) canjeado(s)</Badge>
+              <Badge state="completed">
+                Pagás con {duracionHoras} crédito(s)
+                {membresiaCreditos >= duracionHoras ? " de membresía" : " de canje"}
+              </Badge>
             </>
           ) : discountPct > 0 ? (
             <>
@@ -259,7 +272,12 @@ export function BookingForm({ spaceId, precioHora, discountPct, isLoggedIn, cowo
               onChange={(e) => setPagarConCredito(e.target.checked)}
               className="h-4 w-4 rounded-sm border-[--edu-border] accent-[--inc-violet]"
             />
-            Pagar con crédito canjeado (tenés {coworkingCreditos})
+            Pagar con créditos
+            {membresiaCreditos > 0
+              ? ` (membresía ${membresiaCreditos}` +
+                (coworkingCreditos > 0 ? ` + canje ${coworkingCreditos}` : "") +
+                ")"
+              : ` (tenés ${coworkingCreditos} de canje)`}
           </label>
         ) : null}
       </div>

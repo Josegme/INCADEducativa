@@ -132,20 +132,28 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
 
   const { data: location } = await supabase.from("locations").select("nombre").eq("id", space.location_id).single();
 
-  // Pago con crédito canjeado (Sprint 19-20) — rama separada del pago en
-  // efectivo, no toca la lógica de MercadoPago de más abajo. Sin fila en
-  // `payments` (no es revenue real, mismo criterio que las reservas
-  // institucionales de coordinador).
+  // Pago con crédito: primero membresía activa (`creditos_restantes`), si no
+  // alcanza se prueba el saldo de canje de puntos (`coworking_creditos_canje`).
   if (formData.get("pagarConCredito") === "true") {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("coworking_creditos_canje")
-      .eq("id", user.id)
-      .single();
-    const creditosDisponibles = profile?.coworking_creditos_canje ?? 0;
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from("users").select("coworking_creditos_canje").eq("id", user.id).single(),
+      supabase
+        .from("memberships")
+        .select("id, creditos_restantes")
+        .eq("user_id", user.id)
+        .eq("activa", true)
+        .maybeSingle(),
+    ]);
 
-    if (creditosDisponibles < duracionHoras) {
-      return { error: "No tenés créditos suficientes para esta duración" };
+    const membresiaCreditos = membership?.creditos_restantes ?? 0;
+    const canjeCreditos = profile?.coworking_creditos_canje ?? 0;
+    const useMembership = membresiaCreditos >= duracionHoras;
+    const useCanje = !useMembership && canjeCreditos >= duracionHoras;
+
+    if (!useMembership && !useCanje) {
+      return {
+        error: "No tenés créditos suficientes (membresía o canje) para esta duración",
+      };
     }
 
     const fechaInicioCredito = new Date(`${fecha}T${String(horaInicio).padStart(2, "0")}:00:00`);
@@ -175,10 +183,17 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
       return { error: "No se pudo crear la reserva — intentá de nuevo" };
     }
 
-    await admin
-      .from("users")
-      .update({ coworking_creditos_canje: creditosDisponibles - duracionHoras })
-      .eq("id", user.id);
+    if (useMembership && membership) {
+      await admin
+        .from("memberships")
+        .update({ creditos_restantes: membresiaCreditos - duracionHoras })
+        .eq("id", membership.id);
+    } else {
+      await admin
+        .from("users")
+        .update({ coworking_creditos_canje: canjeCreditos - duracionHoras })
+        .eq("id", user.id);
+    }
 
     await notifyAdminsNewBooking(
       admin,

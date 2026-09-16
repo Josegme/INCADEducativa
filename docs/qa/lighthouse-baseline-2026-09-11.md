@@ -1,30 +1,37 @@
-# Lighthouse baseline — 2026-09-11
+# Lighthouse — go-live Etapa 1
 
-Medición de partida (Etapa 1.2) sobre mobile, 8 páginas. Servidor local o preview.
+Correr contra **preview Vercel** (no `next dev`):
 
-| Página | Perf | A11y | LCP | CLS | INP | Notas |
+```bash
+npx lighthouse https://<preview>/ --form-factor=mobile --only-categories=performance,accessibility --output=json --output-path=./docs/qa/lh-home.json
+```
+
+| Página | Perf | A11y | LCP | CLS | INP | Fecha |
 |---|---|---|---|---|---|---|
-| `/` | n/d | n/d | n/d | n/d | n/d | Landing reescrita; medir en preview |
-| `/login` | n/d | 1.00 (histórico) | n/d | n/d | n/d | Auth layout |
-| `/dashboard` | n/d | 1.00 (histórico) | n/d | n/d | n/d | Home alumno con cursos |
-| `/cursos` | n/d | 1.00 (histórico) | n/d | n/d | n/d | Catálogo |
-| `/carreras` | n/d | 1.00 (histórico) | n/d | n/d | n/d | Vitrina |
-| `/certificados` | n/d | 1.00 (histórico) | n/d | n/d | n/d | Requiere sesión |
-| `/servicios/coworking` | n/d | 1.00 (histórico) | n/d | n/d | n/d | LCP: `SpaceCard` + `next/image` |
-| `/design-preview` | n/d | 1.00 (histórico) | n/d | n/d | n/d | Catálogo DS v3.0 |
+| `/` | TBD | TBD | TBD | TBD | TBD | — |
+| `/login` | TBD | TBD | TBD | TBD | TBD | — |
+| `/dashboard` | TBD | TBD | TBD | TBD | TBD | — |
+| `/cursos` | TBD | TBD | TBD | TBD | TBD | — |
+| `/carreras` | TBD | TBD | TBD | TBD | TBD | — |
+| `/certificados` | TBD | TBD | TBD | TBD | TBD | — |
+| `/servicios/coworking` | TBD | TBD | TBD | TBD | TBD | — |
+| `/design-preview` | TBD | TBD | TBD | TBD | TBD | — |
+| `/docente` | TBD | TBD | TBD | TBD | TBD | — |
 
-## Hallazgos de arquitectura (antes de Etapa 1.4)
+Umbral cierre Etapa 2: performance mobile >= 90 · CLS < 0.1 · INP < 200 ms.
 
-- `getUser()` se llamaba 4 veces por navegación (middleware + 2 layouts + page).
-- Fuente Inter por `@import` bloqueante en `globals.css`.
-- 4 `<img>` crudos; el de `SpaceCard` era el LCP de coworking.
+## Estado go-live
 
-## Mitigaciones aplicadas en esta rama
+Scores TBD hasta URL de preview estable post-merge. Correr el comando arriba
+contra el deployment de `go-live/etapa-1-ops` (o `main`) y completar la tabla.
+Si alguna página queda &lt; 90: priorizar imágenes (`next/image`), dynamic
+import de paneles admin pesados, y ≤4 round-trips por navegación.
 
-- `getCurrentUser` / `getCurrentProfile` / `getFlags` con `cache()` de React.
-- `next/font/google` Inter.
-- `next/image` en `SpaceCard`.
-- Sidebar Sheet + Topbar 56 px.
+## Mitigaciones ya en código
 
-Umbral de cierre de etapa visual: performance mobile >= 90, CLS < 0.1, INP < 200 ms.
-Correr `npx lighthouse http://localhost:3000 --form-factor=mobile --only-categories=performance,accessibility --output=json` por página cuando el preview esté arriba y pegar scores reales en una fila nueva.
+- `cache()` auth/flags
+- `next/font` Inter
+- `next/image` en SpaceCard
+- Sidebar Sheet + skeletons loading (`docente/loading.tsx`)
+- Vercel Analytics montado
+- Tipografía DS v3.0 (`text-display|title|section|body|caption`) en pantallas núcleo

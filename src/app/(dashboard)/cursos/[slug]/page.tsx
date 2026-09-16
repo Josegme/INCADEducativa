@@ -285,16 +285,16 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
     <div className="flex max-w-2xl flex-col gap-5">
       <div className="flex flex-col gap-2">
         {carrera ? (
-          <span className="text-[12px] font-semibold uppercase tracking-[0.7px] text-[--inc-violet-text]">
+          <span className="text-caption font-semibold uppercase tracking-[0.7px] text-[--inc-violet-text]">
             {carrera.nombre}
           </span>
         ) : null}
-        <h1 className="text-[20px] font-semibold text-white">{course.titulo}</h1>
-        <p className="text-sm text-[--edu-text-muted]">{course.descripcion}</p>
+        <h1 className="text-title font-semibold text-white">{course.titulo}</h1>
+        <p className="text-body text-[--edu-text-muted]">{course.descripcion}</p>
         <div className="flex items-center gap-3">
           <Badge state="locked">{LEVEL_LABEL[nivel]}</Badge>
           {course.duracion_hs ? (
-            <span className="flex items-center gap-1 text-[12px] text-[--edu-text-muted]">
+            <span className="flex items-center gap-1 text-caption text-[--edu-text-muted]">
               <Clock className="h-[14px] w-[14px]" aria-hidden />
               {course.duracion_hs} hs
             </span>
