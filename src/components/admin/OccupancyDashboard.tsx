@@ -12,7 +12,7 @@ import { CsvExportButton } from "@/components/admin/CsvExportButton";
 import { PdfReportExportButton } from "@/components/admin/PdfReportExportButton";
 import { createClient } from "@/lib/supabase/client";
 import { BOOKING_STATUS_LABEL, type BookingStatus } from "@/modules/coworking/booking";
-import { runNoShowDetectionAction } from "@/app/(dashboard)/admin/actions/bookingAdminActions";
+import { runNoShowDetectionAction } from "@/app/(dashboard)/(protected)/admin/actions/bookingAdminActions";
 
 export interface SpaceStatus {
   id: string;
@@ -54,6 +54,7 @@ const SPACE_STATE_LABEL: Record<SpaceStatus["estado"], string> = {
 
 const STATUS_BADGE_STATE: Record<BookingStatus, BadgeProps["state"]> = {
   pendiente: "pending",
+  senada: "pending",
   confirmada: "active",
   en_uso: "completed",
   completada: "completed",

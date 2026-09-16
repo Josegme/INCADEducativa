@@ -51,3 +51,51 @@ export interface SpaceRow {
   imagen_url: string | null;
   activo: boolean;
 }
+
+export const maintenanceIncidentFormSchema = z.object({
+  spaceId: z.string().uuid("Elegí un espacio"),
+  descripcion: z.string().trim().min(3, "Describí la incidencia"),
+});
+
+export type MaintenanceIncidentFormValues = z.infer<typeof maintenanceIncidentFormSchema>;
+
+export interface MaintenanceIncidentRow {
+  id: string;
+  space_id: string;
+  descripcion: string;
+  resuelta: boolean;
+  created_at: string;
+  resuelta_at: string | null;
+}
+
+export const couponFormSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    codigo: z
+      .string()
+      .trim()
+      .min(3, "Mínimo 3 caracteres")
+      .transform((v) => v.toUpperCase()),
+    descuentoPct: z.coerce.number().int().min(1).max(100),
+    validoDesde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
+    validoHasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
+    usosMaximos: z.coerce.number().int().min(1).optional(),
+    activo: z.coerce.boolean().default(true),
+  })
+  .refine((data) => data.validoDesde <= data.validoHasta, {
+    message: "La fecha de fin no puede ser anterior a la de inicio",
+    path: ["validoHasta"],
+  });
+
+export type CouponFormValues = z.infer<typeof couponFormSchema>;
+
+export interface CouponRow {
+  id: string;
+  codigo: string;
+  descuento_pct: number;
+  valido_desde: string;
+  valido_hasta: string;
+  usos_maximos: number | null;
+  usos_actuales: number;
+  activo: boolean;
+}

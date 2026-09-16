@@ -1,5 +1,12 @@
 export type LessonType = "video" | "texto" | "documento";
 
+export interface LessonAttachment {
+  id: string;
+  titulo: string;
+  archivo_url: string;
+  orden: number;
+}
+
 export interface LessonRow {
   id: string;
   titulo: string;

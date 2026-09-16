@@ -30,10 +30,10 @@ import { LessonModal } from "@/components/docente/LessonModal";
 import { EvaluationModal } from "@/components/docente/EvaluationModal";
 import type { EditableCourse, EditableLesson, EditableModule } from "@/modules/docente/courseEditor";
 import { EVALUATION_TIPO_LABEL, type EvaluationSummary } from "@/modules/docente/evaluationEditor";
-import { deleteModuleAction, reorderModulesAction } from "@/app/(dashboard)/docente/actions/moduleActions";
-import { deleteLessonAction, reorderLessonsAction } from "@/app/(dashboard)/docente/actions/lessonActions";
-import { submitForReviewAction } from "@/app/(dashboard)/docente/actions/reviewActions";
-import { deleteEvaluationAction } from "@/app/(dashboard)/docente/actions/evaluationActions";
+import { deleteModuleAction, reorderModulesAction } from "@/app/(dashboard)/(protected)/docente/actions/moduleActions";
+import { deleteLessonAction, reorderLessonsAction } from "@/app/(dashboard)/(protected)/docente/actions/lessonActions";
+import { submitForReviewAction } from "@/app/(dashboard)/(protected)/docente/actions/reviewActions";
+import { deleteEvaluationAction } from "@/app/(dashboard)/(protected)/docente/actions/evaluationActions";
 
 const ESTADO_BADGE = {
   borrador: "locked",

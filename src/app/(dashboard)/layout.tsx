@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import {
   Award,
   BookOpen,
@@ -8,21 +7,31 @@ import {
   ClipboardList,
   CreditCard,
   DoorOpen,
+  Megaphone,
+  MessageSquare,
+  Mail,
   GraduationCap,
   LayoutDashboard,
   LayoutGrid,
   Presentation,
   Settings,
+  Tag,
+  UserPlus,
+  Wrench,
+  UserCircle,
   Users,
   Video,
   Wallet,
 } from "lucide-react";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PublicHeaderShell } from "@/components/layout/PublicHeaderShell";
 import type { SidebarSection } from "@/components/layout/Sidebar";
 import type { TopbarRole } from "@/components/layout/Topbar";
+import { getCurrentProfile, getCurrentUser } from "@/lib/auth/session";
 import { getFlags, type FeatureFlag } from "@/lib/flags";
 import { createClient } from "@/lib/supabase/server";
+import { getSignedAvatarUrl } from "@/lib/supabase/storage";
 
 const ICON_CLASS = "h-[18px] w-[18px]";
 
@@ -35,7 +44,7 @@ function sectionsForRole(
     { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className={ICON_CLASS} aria-hidden /> },
     { label: "Cursos", href: "/cursos", icon: <BookOpen className={ICON_CLASS} aria-hidden /> },
     { label: "Carreras", href: "/carreras", icon: <GraduationCap className={ICON_CLASS} aria-hidden /> },
-    { label: "Certificados", href: "/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
+    { label: "Logros", href: "/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
   ];
 
   // Coworking es un ítem de primer nivel, no un submódulo educativo — Addendum 03 §2.2.
@@ -47,6 +56,10 @@ function sectionsForRole(
     platformItems.push({ label: "Talleres", href: "/talleres", icon: <Video className={ICON_CLASS} aria-hidden /> });
   }
 
+  if (flags.comunidad) {
+    platformItems.push({ label: "Comunidad", href: "/comunidad", icon: <MessageSquare className={ICON_CLASS} aria-hidden /> });
+  }
+
   const sections: SidebarSection[] = [{ label: "Plataforma", items: platformItems }];
 
   if (role === "docente" || canTeach) {
@@ -56,13 +69,21 @@ function sectionsForRole(
     });
   }
 
-  if (role === "coordinador" && flags.coworking) {
-    sections.push({
-      label: "Coordinador",
-      items: [
-        { label: "Reservas en lote", href: "/coordinador/reservas", icon: <CalendarPlus className={ICON_CLASS} aria-hidden /> },
-      ],
+  if (role === "coordinador") {
+    const coordinadorItems: SidebarSection["items"] = [];
+    if (flags.coworking) {
+      coordinadorItems.push({
+        label: "Reservas en lote",
+        href: "/coordinador/reservas",
+        icon: <CalendarPlus className={ICON_CLASS} aria-hidden />,
+      });
+    }
+    coordinadorItems.push({
+      label: "Mis cursos",
+      href: "/coordinador/cursos",
+      icon: <Presentation className={ICON_CLASS} aria-hidden />,
     });
+    sections.push({ label: "Coordinador", items: coordinadorItems });
   }
 
   if (role === "admin") {
@@ -72,30 +93,45 @@ function sectionsForRole(
       { label: "Carreras", href: "/admin/carreras", icon: <GraduationCap className={ICON_CLASS} aria-hidden /> },
       { label: "Métricas", href: "/admin/metricas", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
       { label: "Certificados", href: "/admin/certificados", icon: <Award className={ICON_CLASS} aria-hidden /> },
+      { label: "Comunicados", href: "/admin/comunicados", icon: <Megaphone className={ICON_CLASS} aria-hidden /> },
+      { label: "Leads", href: "/admin/leads", icon: <UserPlus className={ICON_CLASS} aria-hidden /> },
+      { label: "Nurturing", href: "/admin/nurturing", icon: <Mail className={ICON_CLASS} aria-hidden /> },
     ];
-
-    if (flags.coworking) {
-      adminItems.push(
-        { label: "Sedes Coworking", href: "/admin/coworking/sedes", icon: <Building2 className={ICON_CLASS} aria-hidden /> },
-        { label: "Espacios Coworking", href: "/admin/coworking/espacios", icon: <DoorOpen className={ICON_CLASS} aria-hidden /> },
-        { label: "Ocupación Coworking", href: "/admin/coworking/ocupacion", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
-        { label: "Reservas Coworking", href: "/admin/coworking/reservas", icon: <CalendarDays className={ICON_CLASS} aria-hidden /> },
-        { label: "Ingresos Coworking", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> },
-        { label: "Membresías Coworking", href: "/admin/coworking/membresias", icon: <CreditCard className={ICON_CLASS} aria-hidden /> }
-      );
-    }
 
     if (flags.talleres) {
       adminItems.push({ label: "Talleres", href: "/admin/talleres", icon: <Video className={ICON_CLASS} aria-hidden /> });
     }
 
     adminItems.push(
+      { label: "Suscripciones", href: "/admin/suscripciones", icon: <CreditCard className={ICON_CLASS} aria-hidden /> },
       { label: "Auditoría", href: "/admin/auditoria", icon: <ClipboardList className={ICON_CLASS} aria-hidden /> },
       { label: "Configuración", href: "/admin/configuracion", icon: <Settings className={ICON_CLASS} aria-hidden /> }
     );
 
     sections.push({ label: "Administración", items: adminItems });
+
+    if (flags.coworking) {
+      sections.push({
+        label: "Coworking",
+        collapsible: true,
+        items: [
+          { label: "Sedes", href: "/admin/coworking/sedes", icon: <Building2 className={ICON_CLASS} aria-hidden /> },
+          { label: "Espacios", href: "/admin/coworking/espacios", icon: <DoorOpen className={ICON_CLASS} aria-hidden /> },
+          { label: "Ocupación", href: "/admin/coworking/ocupacion", icon: <LayoutGrid className={ICON_CLASS} aria-hidden /> },
+          { label: "Reservas", href: "/admin/coworking/reservas", icon: <CalendarDays className={ICON_CLASS} aria-hidden /> },
+          { label: "Ingresos", href: "/admin/coworking/ingresos", icon: <Wallet className={ICON_CLASS} aria-hidden /> },
+          { label: "Membresías", href: "/admin/coworking/membresias", icon: <CreditCard className={ICON_CLASS} aria-hidden /> },
+          { label: "Cupones", href: "/admin/coworking/cupones", icon: <Tag className={ICON_CLASS} aria-hidden /> },
+          { label: "Mantenimiento", href: "/admin/coworking/mantenimiento", icon: <Wrench className={ICON_CLASS} aria-hidden /> },
+        ],
+      });
+    }
   }
+
+  sections.push({
+    label: "Cuenta",
+    items: [{ label: "Perfil", href: "/perfil", icon: <UserCircle className={ICON_CLASS} aria-hidden /> }],
+  });
 
   return sections;
 }
@@ -113,25 +149,27 @@ export default async function DashboardGroupLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
+  // Sin sesión: las ramas que llegan hasta acá son /carreras (pública,
+  // vitrina CU-T02/ADR-15), /cursos* (vitrina E3 gateada por
+  // FEATURE_PUBLICA) y /talleres (captura de lead, ADR-18, misma flag)
+  // — ver middleware.ts. El resto vive bajo (protected), que sí exige
+  // sesión. Shell mínimo, no el DashboardLayout completo (asume usuario).
   if (!user) {
-    redirect("/login");
+    return <PublicHeaderShell>{children}</PublicHeaderShell>;
   }
 
-  const [{ data: profile }, flags] = await Promise.all([
-    supabase.from("users").select("nombre, apellido, role, can_teach").eq("id", user.id).single(),
-    getFlags(),
-  ]);
+  const [profile, flags] = await Promise.all([getCurrentProfile(), getFlags()]);
 
   const role = (profile?.role ?? "alumno") as TopbarRole;
+  const avatarUrl = profile?.avatar_url ? await getSignedAvatarUrl(supabase, profile.avatar_url) : null;
 
   return (
     <DashboardLayout
       sidebarSections={sectionsForRole(role, profile?.can_teach ?? false, flags)}
       userInitials={initialsFor(profile?.nombre, profile?.apellido, user.email)}
+      avatarUrl={avatarUrl}
       role={role}
       userId={user.id}
     >

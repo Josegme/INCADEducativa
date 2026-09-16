@@ -1,0 +1,147 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import { requireAdmin } from "@/lib/auth/guards";
+import { logAudit } from "@/lib/audit";
+import { courseFormSchema, type CourseStatusValue } from "@/modules/admin/courses";
+
+export interface CourseFormState {
+  error?: string;
+  success?: boolean;
+}
+
+function parseCourseFormData(formData: FormData) {
+  return courseFormSchema.safeParse({
+    id: formData.get("id") || undefined,
+    titulo: formData.get("titulo"),
+    slug: formData.get("slug"),
+    descripcion: formData.get("descripcion") ?? "",
+    carreraId: formData.get("carreraId") ?? "",
+    docenteId: formData.get("docenteId") ?? "",
+    nivel: formData.get("nivel"),
+    duracionHs: formData.get("duracionHs") || undefined,
+    esGratuito: formData.get("esGratuito") === "true",
+    precio: formData.get("precio") || 0,
+    precioTutoriasAddon: formData.get("precioTutoriasAddon") || 0,
+  });
+}
+
+export async function createCourseAction(formData: FormData): Promise<CourseFormState> {
+  const { supabase, adminId } = await requireAdmin();
+
+  const parsed = parseCourseFormData(formData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+  }
+
+  const { titulo, slug, descripcion, carreraId, docenteId, nivel, duracionHs, esGratuito, precio, precioTutoriasAddon } =
+    parsed.data;
+
+  const { data: created, error } = await supabase
+    .from("courses")
+    .insert({
+      titulo,
+      slug,
+      descripcion: descripcion || null,
+      carrera_id: carreraId || null,
+      docente_id: docenteId || null,
+      nivel,
+      duracion_hs: duracionHs ?? null,
+      es_gratuito: esGratuito,
+      precio: esGratuito ? 0 : precio,
+      precio_tutorias_addon: precioTutoriasAddon,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    return { error: error.code === "23505" ? "Ya existe un curso con ese slug" : error.message };
+  }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "curso.crear",
+    entidad: "courses",
+    entidadId: created?.id ?? null,
+    detalle: { titulo, slug, docenteId: docenteId || null },
+  });
+
+  revalidatePath("/admin/cursos");
+  return { success: true };
+}
+
+export async function updateCourseAction(formData: FormData): Promise<CourseFormState> {
+  const { supabase, adminId } = await requireAdmin();
+
+  const parsed = parseCourseFormData(formData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
+  }
+
+  const { id, titulo, slug, descripcion, carreraId, docenteId, nivel, duracionHs, esGratuito, precio, precioTutoriasAddon } =
+    parsed.data;
+  if (!id) {
+    return { error: "Falta el id del curso a editar" };
+  }
+
+  const { error } = await supabase
+    .from("courses")
+    .update({
+      titulo,
+      slug,
+      descripcion: descripcion || null,
+      carrera_id: carreraId || null,
+      docente_id: docenteId || null,
+      nivel,
+      duracion_hs: duracionHs ?? null,
+      es_gratuito: esGratuito,
+      precio: esGratuito ? 0 : precio,
+      precio_tutorias_addon: precioTutoriasAddon,
+    })
+    .eq("id", id);
+
+  if (error) {
+    return { error: error.code === "23505" ? "Ya existe un curso con ese slug" : error.message };
+  }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "curso.editar",
+    entidad: "courses",
+    entidadId: id,
+    detalle: { titulo, slug, docenteId: docenteId || null },
+  });
+
+  revalidatePath("/admin/cursos");
+  return { success: true };
+}
+
+export interface SetCourseEstadoState {
+  error?: string;
+  success?: boolean;
+}
+
+export async function setCourseEstadoAction(
+  courseId: string,
+  estado: CourseStatusValue
+): Promise<SetCourseEstadoState> {
+  const { supabase, adminId } = await requireAdmin();
+
+  const { error } = await supabase.from("courses").update({ estado }).eq("id", courseId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  await logAudit({
+    actorId: adminId,
+    accion: "curso.cambiar_estado",
+    entidad: "courses",
+    entidadId: courseId,
+    detalle: { estado },
+  });
+
+  revalidatePath("/admin/cursos");
+  return { success: true };
+}

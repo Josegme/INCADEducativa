@@ -1,4 +1,4 @@
-import type { LessonType } from "@/modules/educativa/lessons";
+import type { LessonAttachment, LessonType } from "@/modules/educativa/lessons";
 
 export const LESSON_TYPES: LessonType[] = ["video", "texto", "documento"];
 
@@ -16,6 +16,7 @@ export interface EditableLesson {
   contenido_text: string | null;
   duracion_min: number | null;
   orden: number;
+  attachments: LessonAttachment[];
 }
 
 export interface EditableModule {

@@ -1,5 +1,5 @@
 # Design System — INCADEducativa
-**Versión 2.2 · Julio 2026**
+**Versión 3.0 · Septiembre 2026**
 Preparado por: JosegmeDev + Alan Schwegler
 Ecosistema Digital INCADE — Posadas, Misiones
 
@@ -35,7 +35,7 @@ El sitio institucional de INCADE define la identidad real del ecosistema:
 - **Violeta:** brillante, saturado, más cercano a magenta-violeta que al institucional corporativo
 - **Botón primario:** violeta/magenta sólido, pill o border-radius generoso
 - **Botón secundario:** outline blanco, texto oscuro o blanco
-- **Tipografía:** bold, display, alto impacto en heroes y títulos
+- **Tipografía:** Inter. Escala v3.0: `display` 30 · `title` 22 · `section` 17 · `body` 15 · `caption` 12. Ritmo de 8 px. Cargar con `next/font/google`, no `@import`.
 - **Tono general:** profesional con energía — no universitario rígido, no startup neón puro
 
 INCADEducativa traduce esta identidad a una interfaz de uso sostenido (el alumno pasa horas aquí), ajustando contrastes y densidad de información sin perder el carácter visual.

@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { NotificationBanner } from "@/components/ui/notification-banner";
-import { updateCertificateNameAction } from "@/app/(dashboard)/admin/actions/certificateActions";
+import { updateCertificateNameAction } from "@/app/(dashboard)/(protected)/admin/actions/certificateActions";
 
 interface EditCertificateNameModalProps {
   certificateId: string;

@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -17,7 +19,7 @@ const ENV_FLAGS: Record<FeatureFlag, boolean> = {
   publica: process.env.FEATURE_PUBLICA === "true", // E3
 };
 
-export async function getFlags(): Promise<Record<FeatureFlag, boolean>> {
+export const getFlags = cache(async (): Promise<Record<FeatureFlag, boolean>> => {
   const supabase = await createClient();
   const { data } = await supabase.from("feature_flags").select("flag, activo");
   const overrides = new Map((data ?? []).map((row) => [row.flag as FeatureFlag, row.activo as boolean]));
@@ -30,4 +32,4 @@ export async function getFlags(): Promise<Record<FeatureFlag, boolean>> {
     comunidad: overrides.get("comunidad") ?? ENV_FLAGS.comunidad,
     publica: overrides.get("publica") ?? ENV_FLAGS.publica,
   };
-}
+});

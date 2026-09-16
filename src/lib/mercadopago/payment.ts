@@ -6,6 +6,7 @@ export interface MpPaymentInfo {
   id: string;
   status: string;
   externalReference: string | null;
+  transactionAmount: number | null;
   raw: unknown;
 }
 
@@ -28,6 +29,7 @@ export async function getPayment(paymentId: string): Promise<MpPaymentInfo | nul
     id: String(result.id),
     status: result.status ?? "unknown",
     externalReference: result.external_reference ?? null,
+    transactionAmount: typeof result.transaction_amount === "number" ? result.transaction_amount : null,
     raw: result,
   };
 }

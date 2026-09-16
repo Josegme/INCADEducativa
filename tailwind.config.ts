@@ -22,7 +22,14 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        sans: ['var(--font-inter)', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+      },
+      fontSize: {
+        caption: ['12px', { lineHeight: '1.4' }],
+        body: ['15px', { lineHeight: '1.65' }],
+        section: ['17px', { lineHeight: '1.4' }],
+        title: ['22px', { lineHeight: '1.25' }],
+        display: ['30px', { lineHeight: '1.2' }],
       },
       borderRadius: {
         sm:   '6px',

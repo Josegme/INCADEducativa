@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { GraduationCap, Laptop, Users } from "lucide-react";
 
@@ -27,10 +28,9 @@ export function SpaceCard({ id, nombre, tipo, capacidad, precioHora, descripcion
 
   return (
     <div className="flex flex-col gap-3 rounded-[14px] border-[0.5px] border-[--edu-border] bg-[--edu-surface-alt] p-4">
-      <div className="flex h-32 items-center justify-center rounded-md bg-white/[0.04]">
+      <div className="relative flex h-32 items-center justify-center overflow-hidden rounded-md bg-white/[0.04]">
         {imagenUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imagenUrl} alt={nombre} className="h-full w-full rounded-md object-cover" />
+          <Image src={imagenUrl} alt={nombre} fill className="rounded-md object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
         ) : (
           <Icon className="h-10 w-10 text-[--edu-text-faint]" aria-hidden />
         )}

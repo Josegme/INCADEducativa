@@ -11,3 +11,13 @@ coverage/
 playwright-report/
 test-results/
 .DS_Store
+
+# Sentry Config File
+.env.sentry-build-plugin
+
+# Cursor local config (IDE-local, no versionar)
+.cursor/
+
+# Supabase CLI local cache (link state, no versionar)
+supabase/.temp/
+.claude/settings.local.json

@@ -8,6 +8,7 @@ import { BOOKING_STATUS_LABEL, type BookingStatus } from "@/modules/coworking/bo
 
 const STATUS_BADGE_STATE: Record<BookingStatus, BadgeProps["state"]> = {
   pendiente: "pending",
+  senada: "pending",
   confirmada: "active",
   en_uso: "completed",
   completada: "completed",

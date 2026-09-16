@@ -1,3 +1,28 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"]
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "plugins": ["boundaries"],
+  "settings": {
+    "boundaries/include": ["src/**/*"],
+    "boundaries/elements": [
+      { "type": "module", "pattern": "src/modules/*", "mode": "folder" },
+      { "type": "app", "pattern": "src/app/**/*" },
+      { "type": "lib", "pattern": "src/lib/**/*" },
+      { "type": "components", "pattern": "src/components/**/*" }
+    ]
+  },
+  "rules": {
+    "boundaries/element-types": [
+      1,
+      {
+        "default": "allow",
+        "rules": [
+          {
+            "from": "module",
+            "disallow": ["module"],
+            "message": "Importá otro módulo solo desde su index.ts (@/modules/<x>)."
+          }
+        ]
+      }
+    ]
+  }
 }

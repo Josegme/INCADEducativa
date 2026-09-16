@@ -48,7 +48,7 @@ export default async function TalleresPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {misTalleres.map((t) => (
-              <TallerCard key={t.id} taller={t} inscripto cantidadInscriptos={countById.get(t.id) ?? 0} />
+              <TallerCard key={t.id} taller={t} inscripto cantidadInscriptos={countById.get(t.id) ?? 0} isLoggedIn={Boolean(user)} />
             ))}
           </div>
         )}
@@ -61,7 +61,7 @@ export default async function TalleresPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {disponibles.map((t) => (
-              <TallerCard key={t.id} taller={t} inscripto={false} cantidadInscriptos={countById.get(t.id) ?? 0} />
+              <TallerCard key={t.id} taller={t} inscripto={false} cantidadInscriptos={countById.get(t.id) ?? 0} isLoggedIn={Boolean(user)} />
             ))}
           </div>
         )}

@@ -7,9 +7,9 @@
 | Campo | Detalle |
 |---|---|
 | **Proyecto** | INCADEducativa — Plataforma Educativa + Módulos de Servicio |
-| **Versión** | 3.6 — Módulo Talleres (Addendum 06) |
+| **Versión** | 3.8 — Costuras académicas + seña coworking (ADR-19) |
 | **Autores** | Escobar, José Gustavo · Schwegler, Alan |
-| **Fecha** | Junio 2026 |
+| **Fecha** | Junio 2026 (v3.7: Septiembre 2026) |
 | **Metodología** | Spec-Driven Development (SDD) · Clean Architecture |
 | **Stack** | Next.js 14 · Supabase · MercadoPago · Claude API · Vercel |
 | **Dominio** | incadeducativa.com (dominio independiente) |
@@ -421,12 +421,24 @@ Aunque es independiente, mantiene los siguientes puntos de contacto mínimos:
 
 Submódulo del área educativa, bajo el feature flag `FEATURE_TUTORIAS` (Etapa 2). Es una
 **sesión grupal ligada a un curso** — el docente la programa para los alumnos inscriptos, no es
-una cita 1:1 (ese modelo queda reservado para el módulo futuro `FEATURE_MENTORIA`, §7). Sin
-flujo de pago: es un beneficio incluido para el alumno ya inscripto. *(ver Addendum 05)*
+una cita 1:1 (ese modelo queda reservado para el módulo futuro `FEATURE_MENTORIA`, §7). Para el
+**alumno INCADE** sigue sin flujo de pago: es un beneficio incluido en la matrícula. *(ver
+Addendum 05)*
+
+**Actualización v3.7 (Etapa 3, T13) — add-on pago para usuario Comunidad:** un usuario
+`comunidad` que compró o se suscribió a un curso (§8, apertura pública) accede al contenido del
+curso pero **no** a sus tutorías por default — tutorías nunca estuvo incluido en ese precio.
+El Admin puede habilitar un add-on pago por curso (`courses.precio_tutorias_addon`, default 0 =
+no se vende) para que ese usuario pague aparte y desbloquee las tutorías de ese curso puntual,
+vía MercadoPago con el mismo criterio que el resto del sistema (webhook como única fuente de
+verdad, `payment.approved` = acceso). No aplica a `alumno` (sigue gratis, sin cambios) ni a
+`docente`/`coordinador`/`admin` (roles internos, no pagan por acceder a contenido). Ver
+migración `038_tutoria_addon.sql`.
 
 - [ ] Docente programa tutorías virtuales (link Meet/Zoom pegado a mano) para sus cursos
 - [ ] Docente programa tutorías presenciales — bloquea automáticamente un aula de Coworking (requiere `FEATURE_COWORKING=true`), sin flujo de pago
-- [ ] Alumno inscripto ve el calendario de tutorías de sus cursos y se une (link o aula)
+- [ ] Alumno inscripto ve el calendario de tutorías de sus cursos y se une (link o aula), sin costo
+- [ ] Usuario Comunidad con curso comprado/suscripto paga el add-on por curso (si el Admin lo habilitó) para acceder a esas tutorías
 - [ ] Recordatorio automático 24hs y 1hs antes por Email + in-app, a alumno y docente (WhatsApp diferido — falta un campo de teléfono de perfil, ver Addendum 05)
 - [ ] Auto-completado: cron pasa la tutoría a `realizada` cuando termina
 - [ ] Docente registra asistencia por alumno y carga el link de grabación post-sesión
@@ -696,6 +708,7 @@ Empleador o tercero escanea el QR del certificado
 | **ADR-16** | Conversiones de rol aditivas + `role_history` + rol dual `can_teach` | Las transiciones nunca borran historial (solo suman beneficios); un email = un perfil. Cada cambio se audita en `role_history`. El rol docente para alumnos es un permiso granular por curso (`can_teach` + `courses.docente_id` vía `can_teach_course()`), no un rol global, evitando duplicar cuentas *(Addendum 04)*. |
 | **ADR-17** | Tutorías como sesión grupal ligada a curso, no cita 1:1 | El docente programa la tutoría para todo el curso (alumnos inscriptos), reusando la infraestructura de Coworking para el bloqueo de aula presencial. El modelo de cita 1:1 queda reservado para un módulo futuro y no relacionado (`FEATURE_MENTORIA`), evitando mezclar ambos dominios en el mismo schema *(Addendum 05)*. |
 | **ADR-18** | Talleres como contenido 100% autorado por Admin, alcance interno E2 | Ningún documento original le asigna un rol a Docente en Talleres — solo Admin publica. No aplica el flujo de curación de ADR-06 porque no hay autor previo que curar. El flag es E2 pero el consumo real documentado (Lead gratuito, Comunidad paga) estaba etiquetado E3 en el spec original; este ADR resuelve la ambigüedad acotando el alcance a consumo interno (Alumno INCADE ya logueado) hasta que se active `FEATURE_PUBLICA` *(Addendum 06)*. |
+| **ADR-19** | Costuras académicas abiertas, SGA no construido | `enrollments.periodo_id` y `course_careers` desbloquean recursar y planes N:M. Materia, comisión, correlativas, mesas, actas, escala 1–10 y rol bedelía quedan documentados y no se implementan hasta demanda real. Las carreras siguen no comprables (ADR-15); ahora también son gestionables como plan (campos nullable). |
 
 ---
 

@@ -6,11 +6,34 @@ import { createBookingPreference } from "@/lib/mercadopago/preference";
 import { notifyUsers } from "@/lib/notifications";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { bookingFormSchema, computeBookingAmount, registerFieldsSchema } from "@/modules/coworking/booking";
+import { bookingFormSchema, computeBookingAmount, registerFieldsSchema, SENA_DEFAULT_PCT } from "@/modules/coworking/booking";
 
 export interface BookingActionState {
   error?: string;
   success?: boolean;
+}
+
+/** "Nueva reserva recibida" al admin — dispara en ambas ramas (pago online
+ * y canje de crédito), apenas se crea la reserva, sin esperar confirmación
+ * de pago (a diferencia del comprobante, que sí espera el webhook). */
+async function notifyAdminsNewBooking(
+  admin: ReturnType<typeof createAdminClient>,
+  bookingId: string,
+  espacioNombre: string,
+  fecha: string,
+  usuarioNombre: string
+) {
+  const { data: admins } = await admin.from("users").select("id, email").eq("role", "admin");
+  if (!admins || admins.length === 0) return;
+
+  await notifyUsers(admin, {
+    tipo: "reserva",
+    referenciaId: bookingId,
+    titulo: `Nueva reserva — ${espacioNombre}`,
+    cuerpo: `${usuarioNombre} reservó ${espacioNombre} para el ${fecha}.`,
+    recipients: admins.map((a) => ({ userId: a.id as string, email: a.email as string })),
+    emailSubject: "Nueva reserva de Coworking",
+  });
 }
 
 /**
@@ -26,13 +49,15 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
     horaInicio: formData.get("horaInicio"),
     duracionHoras: formData.get("duracionHoras"),
     telefonoContacto: formData.get("telefonoContacto") || undefined,
+    cuponCodigo: formData.get("cuponCodigo") || undefined,
+    pagarConSena: formData.get("pagarConSena") === "true",
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
 
-  const { spaceId, fecha, horaInicio, duracionHoras, telefonoContacto } = parsed.data;
+  const { spaceId, fecha, horaInicio, duracionHoras, telefonoContacto, cuponCodigo, pagarConSena } = parsed.data;
 
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -107,27 +132,35 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
 
   const { data: location } = await supabase.from("locations").select("nombre").eq("id", space.location_id).single();
 
-  // Pago con crédito canjeado (Sprint 19-20) — rama separada del pago en
-  // efectivo, no toca la lógica de MercadoPago de más abajo. Sin fila en
-  // `payments` (no es revenue real, mismo criterio que las reservas
-  // institucionales de coordinador).
+  // Pago con crédito: primero membresía activa (`creditos_restantes`), si no
+  // alcanza se prueba el saldo de canje de puntos (`coworking_creditos_canje`).
   if (formData.get("pagarConCredito") === "true") {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("coworking_creditos_canje")
-      .eq("id", user.id)
-      .single();
-    const creditosDisponibles = profile?.coworking_creditos_canje ?? 0;
+    const [{ data: profile }, { data: membership }] = await Promise.all([
+      supabase.from("users").select("coworking_creditos_canje").eq("id", user.id).single(),
+      supabase
+        .from("memberships")
+        .select("id, creditos_restantes")
+        .eq("user_id", user.id)
+        .eq("activa", true)
+        .maybeSingle(),
+    ]);
 
-    if (creditosDisponibles < duracionHoras) {
-      return { error: "No tenés créditos suficientes para esta duración" };
+    const membresiaCreditos = membership?.creditos_restantes ?? 0;
+    const canjeCreditos = profile?.coworking_creditos_canje ?? 0;
+    const useMembership = membresiaCreditos >= duracionHoras;
+    const useCanje = !useMembership && canjeCreditos >= duracionHoras;
+
+    if (!useMembership && !useCanje) {
+      return {
+        error: "No tenés créditos suficientes (membresía o canje) para esta duración",
+      };
     }
 
     const fechaInicioCredito = new Date(`${fecha}T${String(horaInicio).padStart(2, "0")}:00:00`);
     const fechaFinCredito = new Date(fechaInicioCredito.getTime() + duracionHoras * 60 * 60 * 1000);
     const montoReferencia = Math.round(space.precio_hora * duracionHoras * 100) / 100;
 
-    const { data: booking, error: bookingError } = await supabase
+    const { data: booking, error: bookingError } = await admin
       .from("bookings")
       .insert({
         user_id: user.id,
@@ -150,18 +183,82 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
       return { error: "No se pudo crear la reserva — intentá de nuevo" };
     }
 
-    await admin
-      .from("users")
-      .update({ coworking_creditos_canje: creditosDisponibles - duracionHoras })
-      .eq("id", user.id);
+    if (useMembership && membership) {
+      await admin
+        .from("memberships")
+        .update({ creditos_restantes: membresiaCreditos - duracionHoras })
+        .eq("id", membership.id);
+    } else {
+      await admin
+        .from("users")
+        .update({ coworking_creditos_canje: canjeCreditos - duracionHoras })
+        .eq("id", user.id);
+    }
+
+    await notifyAdminsNewBooking(
+      admin,
+      booking.id,
+      space.nombre,
+      fechaInicioCredito.toLocaleString("es-AR"),
+      user.email
+    );
 
     redirect(`/servicios/coworking/reservas/${booking.id}`);
   }
 
-  const { data: discountData } = await supabase.rpc("get_user_discount");
-  const descuentoPct = typeof discountData === "number" ? discountData : 0;
+  // Cupón (early bird/promoción) — si es válido, gana por sobre el
+  // descuento institucional automático (no se acumulan). select vía la
+  // sesión del usuario (coupons_select ya lo permite, 002); el canje
+  // (usos_actuales) va por RPC atómica porque la escritura directa es
+  // admin-only (coupons_admin).
+  let coupon: { id: string; descuento_pct: number } | null = null;
+  if (cuponCodigo) {
+    const hoy = new Date().toISOString().slice(0, 10);
+    const { data: foundCoupon } = await supabase
+      .from("coupons")
+      .select("id, descuento_pct, valido_desde, valido_hasta, usos_maximos, usos_actuales")
+      .eq("codigo", cuponCodigo.toUpperCase())
+      .eq("activo", true)
+      .maybeSingle();
 
-  const amount = computeBookingAmount(space.precio_hora, duracionHoras, descuentoPct);
+    if (
+      !foundCoupon ||
+      foundCoupon.valido_desde > hoy ||
+      foundCoupon.valido_hasta < hoy ||
+      (foundCoupon.usos_maximos !== null && foundCoupon.usos_actuales >= foundCoupon.usos_maximos)
+    ) {
+      return { error: "Ese cupón no es válido o ya no está disponible" };
+    }
+
+    coupon = { id: foundCoupon.id, descuento_pct: foundCoupon.descuento_pct };
+  }
+
+  let descuentoPctInstitucional = 0;
+  if (!coupon) {
+    const { data: discountData } = await supabase.rpc("get_user_discount");
+    descuentoPctInstitucional = typeof discountData === "number" ? discountData : 0;
+  }
+
+  const amount = coupon
+    ? {
+        montoOriginal: Math.round(space.precio_hora * duracionHoras * 100) / 100,
+        montoFinal: Math.round(space.precio_hora * duracionHoras * (1 - coupon.descuento_pct / 100) * 100) / 100,
+        descuentoPct: coupon.descuento_pct,
+        tipoDescuento: "cupon" as const,
+      }
+    : computeBookingAmount(space.precio_hora, duracionHoras, descuentoPctInstitucional);
+
+  // El canje se hace ANTES de insertar la reserva: increment_coupon_usage()
+  // ahora es atómico (chequea usos_maximos y suma en la misma sentencia,
+  // migración 034) para que dos reservas concurrentes con el mismo código no
+  // superen el límite. Si el insert de la reserva falla después, se libera
+  // el cupón con decrement_coupon_usage().
+  if (coupon) {
+    const { data: redeemed } = await supabase.rpc("increment_coupon_usage", { p_coupon_id: coupon.id });
+    if (!redeemed) {
+      return { error: "Ese cupón alcanzó su límite de usos. Probá sin cupón o con otro código." };
+    }
+  }
 
   const fechaInicio = new Date(`${fecha}T${String(horaInicio).padStart(2, "0")}:00:00`);
   const fechaFin = new Date(fechaInicio.getTime() + duracionHoras * 60 * 60 * 1000);
@@ -177,11 +274,16 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
       descuento_pct: amount.descuentoPct,
       tipo_descuento: amount.tipoDescuento,
       telefono_contacto: telefonoContacto || null,
+      sena_pct: pagarConSena ? SENA_DEFAULT_PCT : 0,
+      sena_vence_at: pagarConSena ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null,
     })
     .select("id")
     .single();
 
   if (bookingError || !booking) {
+    if (coupon) {
+      await supabase.rpc("decrement_coupon_usage", { p_coupon_id: coupon.id });
+    }
     if (bookingError?.code === "23P01") {
       return { error: "Ese horario ya no está disponible — elegí otro" };
     }
@@ -190,18 +292,24 @@ export async function createBookingAction(formData: FormData): Promise<BookingAc
 
   // payments es de escritura exclusiva del sistema (RLS solo permite admin) —
   // el webhook es la única fuente de verdad del estado (CLAUDE.md regla #9).
+  const cobro = pagarConSena
+    ? Math.round(amount.montoFinal * (SENA_DEFAULT_PCT / 100) * 100) / 100
+    : amount.montoFinal;
+
   const preference = await createBookingPreference({
     bookingId: booking.id,
     title: `${space.nombre} — ${location?.nombre ?? "Coworking INCADE"}`,
-    unitPrice: amount.montoFinal,
+    unitPrice: cobro,
     payerEmail: user.email,
   });
 
   await admin.from("payments").insert({
     booking_id: booking.id,
-    monto: amount.montoFinal,
+    monto: cobro,
     mp_preference_id: preference?.preferenceId ?? null,
   });
+
+  await notifyAdminsNewBooking(admin, booking.id, space.nombre, fechaInicio.toLocaleString("es-AR"), user.email);
 
   if (preference) {
     redirect(preference.initPoint);
@@ -262,4 +370,59 @@ export async function cancelMyBookingAction(bookingId: string): Promise<BookingA
   }
 
   return { success: true };
+}
+
+export async function payBookingBalanceAction(bookingId: string): Promise<BookingActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Necesitás iniciar sesión" };
+  }
+
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("id, user_id, space_id, estado, monto, monto_pagado")
+    .eq("id", bookingId)
+    .maybeSingle();
+
+  if (!booking || booking.user_id !== user.id) {
+    return { error: "No encontramos esa reserva" };
+  }
+
+  if (booking.estado !== "senada") {
+    return { error: "Esta reserva no tiene un saldo pendiente" };
+  }
+
+  const saldo = Math.round((Number(booking.monto) - Number(booking.monto_pagado ?? 0)) * 100) / 100;
+  if (saldo <= 0) {
+    return { error: "El saldo ya está cubierto" };
+  }
+
+  const admin = createAdminClient();
+  const { data: space } = await admin.from("spaces").select("nombre, location_id").eq("id", booking.space_id).single();
+  const { data: location } = space
+    ? await admin.from("locations").select("nombre").eq("id", space.location_id).single()
+    : { data: null };
+
+  const preference = await createBookingPreference({
+    bookingId: booking.id,
+    title: `Saldo ${space?.nombre ?? "Coworking"} — ${location?.nombre ?? "INCADE"}`,
+    unitPrice: saldo,
+    payerEmail: user.email ?? "",
+  });
+
+  await admin.from("payments").insert({
+    booking_id: booking.id,
+    monto: saldo,
+    mp_preference_id: preference?.preferenceId ?? null,
+  });
+
+  if (preference) {
+    redirect(preference.initPoint);
+  }
+
+  return { error: "No se pudo iniciar el cobro del saldo" };
 }

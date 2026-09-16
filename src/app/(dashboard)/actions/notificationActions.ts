@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { asJson } from "@/lib/supabase/json";
 
 export interface NotificationActionState {
   error?: string;
@@ -114,7 +115,7 @@ export async function updateNotificationPrefsAction(prefs: NotificationPrefs): P
     return { error: "No autenticado" };
   }
 
-  const { error } = await supabase.from("users").update({ notification_prefs: prefs }).eq("id", user.id);
+  const { error } = await supabase.from("users").update({ notification_prefs: asJson(prefs) }).eq("id", user.id);
 
   if (error) {
     return { error: error.message };

@@ -6,6 +6,7 @@ import { PlayCircle, Video } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { TallerRow } from "@/modules/talleres/talleres";
 import { desinscribirseTallerAction, inscribirseTallerAction } from "@/app/(dashboard)/actions/tallerInscripcionActions";
 
@@ -13,24 +14,36 @@ interface TallerCardProps {
   taller: TallerRow;
   inscripto: boolean;
   cantidadInscriptos: number;
+  isLoggedIn: boolean;
 }
 
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleString("es-AR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-export function TallerCard({ taller, inscripto, cantidadInscriptos }: TallerCardProps) {
+export function TallerCard({ taller, inscripto, cantidadInscriptos, isLoggedIn }: TallerCardProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [showRegistro, setShowRegistro] = React.useState(false);
+  const [nombre, setNombre] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
 
   const lleno = taller.capacidad !== null && cantidadInscriptos >= taller.capacidad;
   const yaOcurrio = new Date(taller.fecha_inicio).getTime() + taller.duracion_minutos * 60 * 1000 < Date.now();
 
   async function handleToggle() {
+    if (!isLoggedIn && !inscripto && !showRegistro) {
+      setShowRegistro(true);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
-    const result = inscripto ? await desinscribirseTallerAction(taller.id) : await inscribirseTallerAction(taller.id);
+    const result = inscripto
+      ? await desinscribirseTallerAction(taller.id)
+      : await inscribirseTallerAction(taller.id, !isLoggedIn ? { nombre, email, password } : undefined);
     setIsLoading(false);
     if (result.error) {
       setError(result.error);
@@ -52,6 +65,22 @@ export function TallerCard({ taller, inscripto, cantidadInscriptos }: TallerCard
       </span>
 
       {error ? <p className="text-[12px] text-[--edu-danger-text]">{error}</p> : null}
+
+      {showRegistro ? (
+        <fieldset className="flex flex-col gap-2 rounded-md border-[0.5px] border-[--edu-border] p-3">
+          <legend className="px-1 text-[12px] font-semibold text-white">Creá tu cuenta para inscribirte</legend>
+          <Input placeholder="Nombre y apellido" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+          <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input
+            type="password"
+            placeholder="Contraseña (mínimo 8 caracteres)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+        </fieldset>
+      ) : null}
 
       {inscripto && !yaOcurrio && taller.link_virtual ? (
         <a href={taller.link_virtual} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-[--inc-violet-text] hover:underline">
@@ -79,7 +108,15 @@ export function TallerCard({ taller, inscripto, cantidadInscriptos }: TallerCard
           disabled={isLoading || (!inscripto && lleno)}
           onClick={handleToggle}
         >
-          {isLoading ? "..." : inscripto ? "Desinscribirme" : lleno ? "Cupo lleno" : "Inscribirme"}
+          {isLoading
+            ? "..."
+            : inscripto
+              ? "Desinscribirme"
+              : lleno
+                ? "Cupo lleno"
+                : showRegistro
+                  ? "Confirmar inscripción"
+                  : "Inscribirme"}
         </Button>
       ) : null}
     </div>

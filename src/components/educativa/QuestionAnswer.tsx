@@ -48,7 +48,7 @@ export function QuestionAnswer({ question, index, answer, disabled, onChange, ev
               disabled={disabled}
               onClick={() => onChange({ ...(answer as AnswerVF), respuesta: true })}
               className={`rounded-md border-[0.5px] px-3 py-1.5 text-[13px] ${
-                (answer as AnswerVF).respuesta
+                (answer as AnswerVF).respuesta === true
                   ? "border-[--inc-violet-border] bg-[--inc-violet-subtle] text-[--inc-violet-text]"
                   : "border-[--edu-border] text-[--edu-text-faint]"
               }`}
@@ -60,7 +60,7 @@ export function QuestionAnswer({ question, index, answer, disabled, onChange, ev
               disabled={disabled}
               onClick={() => onChange({ ...(answer as AnswerVF), respuesta: false })}
               className={`rounded-md border-[0.5px] px-3 py-1.5 text-[13px] ${
-                !(answer as AnswerVF).respuesta
+                (answer as AnswerVF).respuesta === false
                   ? "border-[--inc-violet-border] bg-[--inc-violet-subtle] text-[--inc-violet-text]"
                   : "border-[--edu-border] text-[--edu-text-faint]"
               }`}

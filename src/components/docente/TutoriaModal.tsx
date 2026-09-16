@@ -18,7 +18,7 @@ import { NotificationBanner } from "@/components/ui/notification-banner";
 import { createClient } from "@/lib/supabase/client";
 import { hourSlots, nextBookingDays } from "@/modules/coworking/booking";
 import type { TutoriaModalidad } from "@/modules/tutorias/tutorias";
-import { createTutoriaAction } from "@/app/(dashboard)/docente/actions/tutoriaActions";
+import { createTutoriaAction } from "@/app/(dashboard)/(protected)/docente/actions/tutoriaActions";
 import { cn } from "@/lib/utils";
 
 interface Aula {

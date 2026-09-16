@@ -38,7 +38,7 @@ import {
   type MostrarResultado,
   type QuestionType,
 } from "@/modules/docente/evaluationEditor";
-import { deleteEvaluationAction, updateEvaluationAction } from "@/app/(dashboard)/docente/actions/evaluationActions";
+import { deleteEvaluationAction, updateEvaluationAction } from "@/app/(dashboard)/(protected)/docente/actions/evaluationActions";
 
 const SELECT_CLASS =
   "flex h-10 w-full rounded-md border-[0.5px] border-[--edu-border] bg-white/[0.06] px-3 py-2 text-sm text-[--edu-text] transition-colors focus-visible:border-[--edu-border-strong] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--inc-violet-border-strong]";

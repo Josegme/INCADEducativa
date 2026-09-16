@@ -3,6 +3,7 @@ import { MapPin } from "lucide-react";
 
 import { SpaceCard } from "@/components/coworking/SpaceCard";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import type { LocationRow, SpaceRow } from "@/modules/admin/coworking";
@@ -116,6 +117,18 @@ export default async function CoworkingLandingPage({
           )}
         </>
       )}
+
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+        <div>
+          <p className="text-[14px] font-semibold text-white">¿Ya conocés nuestros cursos?</p>
+          <p className="text-[13px] text-[--edu-text-muted]">
+            INCADEducativa también tiene cursos y carreras online — mirá el catálogo.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/cursos">Ver cursos</Link>
+        </Button>
+      </Card>
     </div>
   );
 }
