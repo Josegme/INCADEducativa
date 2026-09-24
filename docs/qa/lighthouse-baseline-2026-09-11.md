@@ -1,31 +1,33 @@
 # Lighthouse — go-live Etapa 1
 
-Correr contra **preview Vercel** (no `next dev`):
+Corrido contra **Preview Vercel** (OIDC Trusted Sources), no `next dev`:
 
-```bash
-npx lighthouse https://<preview>/ --form-factor=mobile --only-categories=performance,accessibility --output=json --output-path=./docs/qa/lh-home.json
-```
+`https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app`
+
+JSON: `docs/qa/lighthouse/lh-*.json` · reporte: `docs/qa/preview-qa-report.json`
 
 | Página | Perf | A11y | LCP | CLS | INP | Fecha |
 |---|---|---|---|---|---|---|
-| `/` | TBD | TBD | TBD | TBD | TBD | — |
-| `/login` | TBD | TBD | TBD | TBD | TBD | — |
-| `/dashboard` | TBD | TBD | TBD | TBD | TBD | — |
-| `/cursos` | TBD | TBD | TBD | TBD | TBD | — |
-| `/carreras` | TBD | TBD | TBD | TBD | TBD | — |
-| `/certificados` | TBD | TBD | TBD | TBD | TBD | — |
-| `/servicios/coworking` | TBD | TBD | TBD | TBD | TBD | — |
-| `/design-preview` | TBD | TBD | TBD | TBD | TBD | — |
-| `/docente` | TBD | TBD | TBD | TBD | TBD | — |
+| `/` | 50 | 100 | 3.9 s | 0 | — | 2026-09-24 |
+| `/login` | 76 | 98 | 2.6 s | 0 | — | 2026-09-24 |
+| `/carreras` | 81 | 100 | 1.7 s | 0 | — | 2026-09-24 |
+| `/design-preview` | 73 | 100 | 2.1 s | 0 | — | 2026-09-24 |
+| `/servicios/coworking` | 77 | 100 | 1.5 s | 0 | — | 2026-09-24 |
+| `/cursos` | — | — | — | — | — | redirect con `publica=off` (soft launch) |
+| `/dashboard` | — | — | — | — | — | requiere sesión (medir en follow-up) |
+| `/certificados` | — | — | — | — | — | requiere sesión |
+| `/docente` | — | — | — | — | — | requiere sesión |
 
 Umbral cierre Etapa 2: performance mobile >= 90 · CLS < 0.1 · INP < 200 ms.
 
-## Estado go-live
+## Gaps (&lt; 90 Perf)
 
-Scores TBD hasta URL de preview estable post-merge. Correr el comando arriba
-contra el deployment de `go-live/etapa-1-ops` (o `main`) y completar la tabla.
-Si alguna página queda &lt; 90: priorizar imágenes (`next/image`), dynamic
-import de paneles admin pesados, y ≤4 round-trips por navegación.
+Todas las páginas públicas medidas quedaron **por debajo de 90**. Backlog mínimo:
+
+- Home (50): LCP 3.9s — revisar hero/fonts, dynamic imports, menos JS inicial
+- Resto (73–81): imágenes `next/image`, reducir round-trips auth/flags en shell
+
+No bloquea firma soft-launch; sí bloquea “Lighthouse >= 90” del DoD visual hasta el backlog.
 
 ## Mitigaciones ya en código
 

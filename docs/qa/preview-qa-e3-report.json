@@ -1,0 +1,39 @@
+{
+  "base": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app",
+  "date": "2026-09-24T19:44:29.019Z",
+  "steps": {
+    "adminLogin": {
+      "ok": true,
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/dashboard"
+    },
+    "adminConfig": {
+      "ok": true
+    },
+    "publicaOn": {
+      "ok": true
+    },
+    "registroWithPublicaOn": {
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/registro",
+      "showsForm": true
+    },
+    "cursosPublic": {
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/cursos",
+      "statusOk": true
+    },
+    "publicaOff": {
+      "ok": true
+    },
+    "registroWithPublicaOff": {
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/login",
+      "redirectedToLogin": true
+    },
+    "alumnoCursos": {
+      "ok": true,
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/cursos"
+    },
+    "alumnoEnroll": {
+      "attempted": false,
+      "note": "no free enroll CTA visible"
+    }
+  }
+}

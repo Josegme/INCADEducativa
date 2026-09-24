@@ -37,3 +37,20 @@ Con `publica=false` (default soft launch):
 | Soporte | bajo | medio-alto |
 
 Ver también: `docs/qa/soft-launch-checklist.md`, `docs/qa/go-live-prod.md`.
+
+## Evidencia preview / QA — 2026-09-24
+
+| Paso | Resultado |
+|---|---|
+| URL | Preview `incadeducativa-abgu37vcd-…vercel.app` (OIDC) |
+| Soft-launch flags | `coworking/tutorias/talleres` on; `publica` off al final |
+| Prender `publica` (UI admin) | `Catálogo público` → Activo |
+| `/registro` con on | Formulario “Creá tu cuenta” visible |
+| `/cursos` con on | Catálogo accesible sin sesión |
+| Apagar `publica` | Inactivo otra vez |
+| `/registro` con off | Redirect a `/login` |
+| Compra/suscripción MP | No ejecutada (sin token real — Etapa 6) |
+| Add-on tutorías UI | No ejecutada en esta pasada |
+
+**Reportes:** `docs/qa/preview-qa-e3-report.json`, `docs/qa/preview-qa-report.json`.  
+**Estado final:** `publica=off` (soft launch). No tocar prod hasta Etapa 6.

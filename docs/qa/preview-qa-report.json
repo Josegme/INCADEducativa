@@ -1,0 +1,77 @@
+{
+  "base": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app",
+  "date": "2026-09-24",
+  "publicRoutes": {
+    "/": {
+      "status": 200,
+      "sso": false,
+      "ok": true
+    },
+    "/login": {
+      "status": 200,
+      "sso": false,
+      "ok": true
+    },
+    "/carreras": {
+      "status": 200,
+      "sso": false,
+      "ok": true
+    },
+    "/manifest.json": {
+      "status": 200,
+      "sso": false,
+      "ok": true
+    },
+    "/servicios/coworking": {
+      "status": 200,
+      "sso": false,
+      "ok": true
+    }
+  },
+  "logins": {
+    "admin": {
+      "email": "qa.e2e.coworking.admin@incadeducativa.com",
+      "ok": true,
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/dashboard"
+    },
+    "adminConfig": {
+      "ok": true,
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/admin/configuracion"
+    },
+    "alumno": {
+      "email": "qa.e2e.coworking.alumno@incadeducativa.com",
+      "ok": true,
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/dashboard"
+    },
+    "alumnoCursos": {
+      "ok": true,
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/cursos"
+    },
+    "docente": {
+      "email": "docente.test@incadeducativa.com",
+      "ok": false,
+      "error": "page.waitForURL: Timeout 45000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+    }
+  },
+  "pwa": {
+    "manifest": true
+  },
+  "lighthouse": {
+    "skipped": true
+  },
+  "e3": {
+    "configPage": {
+      "ok": true,
+      "hasToggle": false,
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/admin/configuracion"
+    },
+    "registroWithPublicaOff": {
+      "status": 200,
+      "url": "https://incadeducativa-abgu37vcd-josegmescobar-2036s-projects.vercel.app/login",
+      "redirectedToLogin": true
+    }
+  },
+  "errors": [
+    "docente: page.waitForURL: Timeout 45000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================"
+  ]
+}
